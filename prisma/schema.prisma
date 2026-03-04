@@ -1,0 +1,380 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---
+
+// --- Enums ---
+
+enum Role {
+  LEARNER
+  CONTENT_MANAGER
+  ADMIN
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED // Chỉ được chuyển sang trạng thái này nếu đã có người mua
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum LessonType {
+  VIDEO
+  TEXT
+  QUIZ // Loại 2: Bài kiểm tra độc lập (Standalone)
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+// --- Models ---
+
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  password String
+  fullName String
+  avatar   String?
+  role     Role    @default(LEARNER)
+
+  // Hỗ trợ Anonymization (Vô danh hóa) khi xóa tài khoản
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
+  coursesCreated Course[]          @relation("CourseCreator")
+  enrollments    Enrollment[]
+  transactions   Transaction[]
+  progress       Progress[]
+  discussions    Discussion[]
+  replies        Reply[]
+  reviews        Review[]
+  certificates   Certificate[]
+  heartbeats     LessonHeartbeat[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refreshTokens     RefreshToken[]
+  verificationCodes VerificationCode[]
+
+  @@index([email])
+}
+
+enum VerificationCodeType {
+  REGISTER
+  FORGOT_PASSWORD
+}
+
+model VerificationCode {
+  id    Int                  @id @default(autoincrement())
+  email String               @db.VarChar(500)
+  code  String               @db.VarChar(50)
+  type  VerificationCodeType
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+
+  @@unique([email, code])
+  @@unique([email, type])
+  @@index([email, code, type])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  token  String @unique @db.VarChar(1000)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+model Category {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  slug    String   @unique
+  courses Course[]
+}
+
+model Course {
+  id         String      @id @default(cuid())
+  title      String
+  slug       String      @unique
+  categoryId String
+  category   Category    @relation(fields: [categoryId], references: [id])
+  tags       String[]
+  level      CourseLevel @default(BEGINNER)
+
+  // Fields cho Khóa học chưa hoàn thiện (Drip Content)
+  isCompleted           Boolean @default(false) // Đã quay xong toàn bộ chưa?
+  publishedLessonsCount Int     @default(0) // Số bài hiện đang công khai
+  totalPlannedLessons   Int? // Tổng số bài dự kiến
+
+  shortDesc String  @db.Text
+  fullDesc  String  @db.Text // Context cho AI
+  thumbnail String?
+
+  status        CourseStatus @default(DRAFT)
+  isFree        Boolean      @default(true)
+  price         Float        @default(0)
+  originalPrice Float?
+
+  // Analytics Fields (Static configuration)
+  expectedDays Int? // Số ngày dự kiến hoàn thành
+
+  creatorId String
+  creator   User   @relation("CourseCreator", fields: [creatorId], references: [id])
+
+  chapters     Chapter[]
+  enrollments  Enrollment[]
+  transactions Transaction[]
+  reviews      Review[]
+  discussions  Discussion[]
+  certificates Certificate[]
+
+  // Link tới hệ thống Snapshot
+  dailySnapshots   CourseDailySnapshot[]
+  overallAnalytics CourseOverallAnalytics?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Chapter {
+  id       String   @id @default(cuid())
+  title    String
+  order    Int
+  courseId String
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons  Lesson[]
+}
+
+model Lesson {
+  id          String     @id @default(cuid())
+  title       String
+  description String?    @db.Text
+  contentAI   String?    @db.Text // Context cho AI
+  type        LessonType
+  order       Int
+
+  videoUrl    String?
+  textContent String? @db.Text
+  duration    Int     @default(0) // Giây
+
+  chapterId String
+  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  embeddedQuiz     Quiz?   @relation("EmbeddedQuiz")
+  standaloneQuizId String? @unique
+  standaloneQuiz   Quiz?   @relation("StandaloneQuiz", fields: [standaloneQuizId], references: [id])
+
+  progress    Progress[]
+  discussions Discussion[]
+  heartbeats  LessonHeartbeat[]
+
+  // Snapshot cho từng bài học
+  analytics LessonAnalyticsSnapshot?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Quiz {
+  id          String  @id @default(cuid())
+  title       String?
+  description String? @db.Text
+
+  lessonId String? @unique
+  lesson   Lesson? @relation("EmbeddedQuiz", fields: [lessonId], references: [id])
+
+  asStandalone Lesson?    @relation("StandaloneQuiz")
+  questions    Question[]
+}
+
+model Question {
+  id      String   @id @default(cuid())
+  content String   @db.Text
+  quizId  String
+  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers Answer[]
+}
+
+model Answer {
+  id         String   @id @default(cuid())
+  content    String
+  isCorrect  Boolean  @default(false)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Enrollment {
+  id       String @id @default(cuid())
+  userId   String
+  courseId String
+  user     User   @relation(fields: [userId], references: [id])
+  course   Course @relation(fields: [courseId], references: [id])
+
+  enrolledAt     DateTime  @default(now())
+  completedAt    DateTime?
+  lastCaughtUpAt DateTime? // Cho khóa Drip Content
+
+  @@unique([userId, courseId])
+}
+
+model Progress {
+  id          String   @id @default(cuid())
+  userId      String
+  lessonId    String
+  isCompleted Boolean  @default(false)
+  lastAccess  DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+}
+
+model LessonHeartbeat {
+  id        String @id @default(cuid())
+  userId    String
+  lessonId  String
+  lastPoint Int
+
+  user      User     @relation(fields: [userId], references: [id])
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, lessonId])
+}
+
+model Discussion {
+  id       String  @id @default(cuid())
+  content  String  @db.Text
+  isPinned Boolean @default(false)
+
+  userId   String
+  courseId String
+  lessonId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  replies   Reply[]
+  createdAt DateTime @default(now())
+}
+
+model Reply {
+  id           String     @id @default(cuid())
+  content      String     @db.Text
+  discussionId String
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  createdAt    DateTime   @default(now())
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      @default(5)
+  comment   String?  @db.Text
+  userId    String
+  courseId  String
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+}
+
+model Transaction {
+  id        String        @id @default(cuid())
+  userId    String
+  courseId  String
+  amount    Float
+  status    PaymentStatus @default(PENDING)
+  provider  String
+  user      User          @relation(fields: [userId], references: [id])
+  course    Course        @relation(fields: [courseId], references: [id])
+  createdAt DateTime      @default(now())
+}
+
+model Certificate {
+  id              String   @id @default(cuid())
+  userId          String
+  courseId        String
+  issuedAt        DateTime @default(now())
+  certificateHash String   @unique
+  txHash          String?
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+}
+
+// --- NEW: Analytics Snapshot Models (Để Dashboard mượt và bảo vệ Data) ---
+
+model CourseOverallAnalytics {
+  id       String @id @default(cuid())
+  courseId String @unique
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  totalStudents    Int   @default(0)
+  totalRevenue     Float @default(0)
+  avgRating        Float @default(0)
+  avgInterestScore Float @default(0) // Tính theo Vận tốc học
+  dropoutRate      Float @default(0)
+  completionRate   Float @default(0)
+
+  updatedAt DateTime @updatedAt
+}
+
+model CourseDailySnapshot {
+  id       String @id @default(cuid())
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  date           DateTime @default(now())
+  newEnrollments Int      @default(0)
+  activeLearners Int      @default(0)
+  revenueToday   Float    @default(0)
+
+  @@unique([courseId, date])
+}
+
+model LessonAnalyticsSnapshot {
+  id       String @id @default(cuid())
+  lessonId String @unique
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  totalViews   Int    @default(0)
+  avgWatchTime Int    @default(0)
+  dropOffCount Int    @default(0) // Số người dừng học tại bài này
+  quizPassRate Float? // Nếu là bài Quiz
+
+  updatedAt DateTime @updatedAt
+}
