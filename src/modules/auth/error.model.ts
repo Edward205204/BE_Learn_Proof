@@ -1,4 +1,4 @@
-import { UnprocessableEntityException } from '@nestjs/common'
+import { ConflictException, UnprocessableEntityException } from '@nestjs/common'
 
 export class EmailOrPasswordInvalidException extends UnprocessableEntityException {
   constructor() {
@@ -21,6 +21,11 @@ export class InvalidVerificationCodeException extends UnprocessableEntityExcepti
   }
 }
 
+export class InvalidForgotPasswordCodeException extends ConflictException {
+  constructor() {
+    super('Đường dẫn không hợp lệ, vui lòng thử lại')
+  }
+}
 export class EmailAlreadyExistsAndCannotSendOtpException extends UnprocessableEntityException {
   constructor() {
     super([{ message: 'Email đã được đăng ký, không thể gửi mã otp', path: 'code' }])
@@ -30,5 +35,11 @@ export class EmailAlreadyExistsAndCannotSendOtpException extends UnprocessableEn
 export class OTPAwaitTimeExpiredException extends UnprocessableEntityException {
   constructor() {
     super([{ message: 'Vui lòng chờ 1 phút để gửi lại', path: 'code' }])
+  }
+}
+
+export class EmailNotFoundException extends ConflictException {
+  constructor() {
+    super('Email không tồn tại')
   }
 }

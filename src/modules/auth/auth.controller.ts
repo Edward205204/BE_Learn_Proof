@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common'
 import { AuthService } from './auth.service'
-import { LoginBodyDTO, RegisterBodyDTO, SendOtpDTO } from './auth.dto'
+import { ForgotPassworDto, ForgotPasswordVerifyDto, LoginBodyDTO, RegisterBodyDTO, SendOtpDTO } from './auth.dto'
 import { ZodSerializerDto } from 'nestjs-zod'
 import { AuthResDto } from './auth.model'
 import { IsPublic } from 'src/shared/decorators/auth.decorator'
@@ -29,5 +29,19 @@ export class AuthController {
   @HttpCode(200)
   sendOtpForRegister(@Body() body: SendOtpDTO) {
     return this.authService.sendOtpForRegister(body)
+  }
+
+  @IsPublic()
+  @Post('forgot-password')
+  @HttpCode(200)
+  forgotPassword(@Body() body: ForgotPassworDto) {
+    return this.authService.forgotPassword(body)
+  }
+
+  @IsPublic()
+  @Post('forgot-password/verify')
+  @HttpCode(200)
+  forgotPasswordVerify(@Body() body: ForgotPasswordVerifyDto) {
+    return this.authService.forgotPasswordVerify(body)
   }
 }

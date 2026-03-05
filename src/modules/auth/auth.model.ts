@@ -1,6 +1,13 @@
 import { Role } from 'src/generated/prisma/enums'
 import { z } from 'zod'
 
+const EmailSchema = z
+  .string()
+  .trim()
+  .min(1, 'Email là bắt buộc')
+  .max(255, 'Email quá dài')
+  .email('Email không đúng định dạng')
+
 const PasswordSchema = z
   .string()
   .min(1, 'Mật khẩu là bắt buộc')
@@ -12,7 +19,7 @@ const PasswordSchema = z
 
 export const LoginBodySchema = z
   .object({
-    email: z.string().trim().min(1, 'Email là bắt buộc').max(255, 'Email quá dài').email('Email không đúng định dạng'),
+    email: EmailSchema,
 
     password: PasswordSchema,
   })
@@ -20,7 +27,7 @@ export const LoginBodySchema = z
 
 export const RegisterBodySchema = z
   .object({
-    email: z.string().trim().min(1, 'Email là bắt buộc').max(255, 'Email quá dài').email('Email không đúng định dạng'),
+    email: EmailSchema,
     fullName: z.string().trim().min(1, 'Tên là bắt buộc').max(255, 'Tên quá dài'),
     password: PasswordSchema,
     confirmPassword: PasswordSchema,
@@ -53,11 +60,47 @@ export const AuthResDto = z.object({
   user: UserResSchema,
 })
 
-export const SendOtp = z.object({
-  email: z.string().trim().min(1, 'Email là bắt buộc').max(255, 'Email quá dài').email('Email không đúng định dạng'),
-})
+export const SendOtpBodySchema = z
+  .object({
+    email: EmailSchema,
+  })
+  .strict()
 
+export const ForgotPasswordBodySchema = z
+  .object({
+    email: EmailSchema,
+  })
+  .strict()
+
+export const ForgotPasswordVerifyBodySchema = z
+  .object({
+    email: EmailSchema,
+    code: z.string().trim().length(6, 'Mã otp không đúng định dạng'),
+  })
+  .strict()
+
+export const ResetPasswordBodySchema = z
+  .object({
+    email: EmailSchema,
+    password: PasswordSchema,
+    confirmPassword: PasswordSchema,
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Mật khẩu và xác nhận mật khẩu không khớp',
+        path: ['confirmPassword'],
+      })
+    }
+  })
+
+export type ResetPasswordBodyType = z.infer<typeof ResetPasswordBodySchema>
+
+export type ForgotPasswordVerifyBodyType = z.infer<typeof ForgotPasswordVerifyBodySchema>
+export type ForgotPasswordBodyType = z.infer<typeof ForgotPasswordBodySchema>
 export type LoginBodyType = z.infer<typeof LoginBodySchema>
 export type AuthResType = z.infer<typeof AuthResDto>
 export type RegisterBodyType = z.infer<typeof RegisterBodySchema>
-export type SendOtpType = z.infer<typeof SendOtp>
+export type SendOtpBodyType = z.infer<typeof SendOtpBodySchema>

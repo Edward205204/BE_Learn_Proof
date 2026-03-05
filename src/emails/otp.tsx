@@ -3,9 +3,10 @@ import { Body, Container, Head, Heading, Html, Section, Text } from '@react-emai
 interface OTPEmailProps {
   otpCode: string
   title: string
+  heading: string
 }
 
-export const OTPEmail = ({ otpCode, title }: OTPEmailProps) => (
+export const OTPEmail = ({ otpCode, title, heading }: OTPEmailProps) => (
   <Html>
     <Head>
       <title>{title}</title>
@@ -14,8 +15,8 @@ export const OTPEmail = ({ otpCode, title }: OTPEmailProps) => (
       <Container style={container}>
         {/* <Img src={logoUrl} width="212" height="88" alt="Logo" style={logo} /> */}
         <div style={logo}>Learn Proof</div>
-        <Text style={tertiary}>Mã xác thực OTP xác thực email của bạn</Text>
-        <Heading style={secondary}>Hãy nhập mã xác thực OTP sau vào trang đăng ký tài khoản</Heading>
+        <Text style={tertiary}>Mã xác thực OTP xác thực </Text>
+        <Heading style={secondary}>{heading}</Heading>
         <Section style={codeContainer}>
           <Text style={code}>{otpCode}</Text>
         </Section>
@@ -119,11 +120,6 @@ const paragraph = {
   padding: '0 40px',
   margin: '0',
   textAlign: 'center' as const,
-}
-
-const link = {
-  color: '#444',
-  textDecoration: 'underline',
 }
 
 const footer = {

@@ -1,10 +1,20 @@
 import { Injectable } from '@nestjs/common'
-import { AuthResType, LoginBodyType, RegisterBodyType } from './auth.model'
+import {
+  AuthResType,
+  ForgotPasswordBodyType,
+  ForgotPasswordVerifyBodyType,
+  LoginBodyType,
+  RegisterBodyType,
+  ResetPasswordBodyType,
+  SendOtpBodyType,
+} from './auth.model'
 import { AuthRepo } from './auth.repo'
 import {
   EmailAlreadyExistsAndCannotSendOtpException,
   EmailAlreadyExistsException,
+  EmailNotFoundException,
   EmailOrPasswordInvalidException,
+  InvalidForgotPasswordCodeException,
   InvalidVerificationCodeException,
   OTPAwaitTimeExpiredException,
 } from './error.model'
@@ -12,7 +22,6 @@ import { TokenService } from 'src/shared/services/token.service'
 import { HashingService } from 'src/shared/services/hashing.service'
 import { Role, VerificationCodeType } from 'src/generated/prisma/enums'
 import { MailService } from 'src/shared/services/mail.service'
-import { SendOtpDTO } from './auth.dto'
 import { addMilliseconds } from 'date-fns'
 import ms, { StringValue } from 'ms'
 import envConfig from 'src/shared/config'
@@ -95,7 +104,7 @@ export class AuthService {
     }
   }
 
-  async sendOtpForRegister(body: SendOtpDTO) {
+  async sendOtpForRegister(body: SendOtpBodyType) {
     const { email } = body
     const user = await this.authRepo.findUserUnique({ email })
 
@@ -131,5 +140,51 @@ export class AuthService {
     }
 
     return { message: 'OTP sent successfully' }
+  }
+
+  async forgotPassword(body: ForgotPasswordBodyType) {
+    const { email } = body
+    const user = await this.authRepo.findUserUnique({ email })
+    if (!user) throw new EmailNotFoundException()
+
+    const otp = generateOTP()
+    await this.authRepo.createVerificationCode({
+      email,
+      code: otp,
+      type: VerificationCodeType.FORGOT_PASSWORD,
+      expiresAt: addMilliseconds(new Date(), ms(envConfig.OTP_EXPIRES_IN as StringValue)),
+    })
+
+    const link = `${envConfig.FE_URL}/reset-password?email=${email}&code=${otp}`
+    const emailResponse = await this.mailService.sendLink(email, link)
+
+    if (emailResponse.error) {
+      console.log(emailResponse.error.message)
+    }
+
+    return { message: 'Link sent successfully' }
+  }
+
+  async forgotPasswordVerify(body: ForgotPasswordVerifyBodyType) {
+    const { email, code } = body
+    const verifyCode = await this.authRepo.findVerificationCode({
+      email,
+      code,
+      type: VerificationCodeType.FORGOT_PASSWORD,
+    })
+
+    if (!verifyCode || verifyCode.expiresAt < new Date() || verifyCode.code !== code)
+      throw new InvalidForgotPasswordCodeException()
+    return { message: 'Xác thực đường dẫn thành công!' }
+  }
+
+  async resetPassword(body: ResetPasswordBodyType) {
+    const { email, password } = body
+    const user = await this.authRepo.findUserUnique({ email })
+    if (!user) throw new EmailNotFoundException()
+    const hashedPassword = await this.hashingService.hash(password)
+    await this.authRepo.updateUser({ where: { email }, data: { password: hashedPassword } })
+
+    return { message: 'Mật khẩu đã được đặt lại thành công!' }
   }
 }

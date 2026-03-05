@@ -49,11 +49,12 @@ export class AuthRepo {
     })
   }
 
-  // createVerificationCode(payload: Pick<VerificationCode, 'email' | 'code' | 'type' | 'expiresAt'>) {
-  //   return this.prisma.verificationCode.create({
-  //     data: payload,
-  //   })
-  // }
+  updateUser(payload: { where: { email: string } | { id: string }; data: Partial<User> }) {
+    return this.prisma.user.update({
+      where: payload.where,
+      data: payload.data,
+    })
+  }
 
   createVerificationCode(payload: Pick<VerificationCode, 'email' | 'code' | 'type' | 'expiresAt'>) {
     return this.prisma.verificationCode.upsert({
