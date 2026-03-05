@@ -1,4 +1,5 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Post, Query, Res } from '@nestjs/common'
+import { Response } from 'express'
 import { AuthService } from './auth.service'
 import {
   ForgotPassworDto,
@@ -9,13 +10,20 @@ import {
   SendOtpDTO,
 } from './auth.dto'
 import { ZodSerializerDto } from 'nestjs-zod'
-import { AuthResDto } from './auth.model'
+import { AuthResDto, UserResSchema } from './auth.model'
 import { IsPublic } from 'src/shared/decorators/auth.decorator'
 import { MessageResDTO } from 'src/shared/models/message.model'
+import { GoogleService } from './google.service'
+import envConfig from 'src/shared/config'
+import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
+import { TokenPayload } from 'src/shared/types/jwt.type'
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly googleService: GoogleService,
+  ) {}
 
   @IsPublic()
   @Post('login')
@@ -61,5 +69,38 @@ export class AuthController {
   @ZodSerializerDto(MessageResDTO)
   resetPassword(@Body() body: ResetPasswordDto) {
     return this.authService.resetPassword(body)
+  }
+
+  @Get('me')
+  @ZodSerializerDto(UserResSchema)
+  getMe(@ActiveUser() payload: TokenPayload) {
+    return this.authService.getMe(payload)
+  }
+
+  @Get('google-link')
+  @IsPublic()
+  // @ZodSerializerDto(GetAuthorizationUrlResType)
+  getAuthorizationUrl() {
+    return this.googleService.getAuthorizationUrl()
+  }
+
+  @Get('google/callback')
+  @IsPublic()
+  async googleCallback(@Query('code') code: string, @Res() res: Response) {
+    try {
+      const data = await this.googleService.googleCallback({
+        code,
+      })
+
+      return res.redirect(
+        `${envConfig.GOOGLE_CLIENT_REDIRECT_URI}?accessToken=${data.accessToken}&refreshToken=${data.refreshToken}`,
+      )
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Đã xảy ra lỗi khi đăng nhập bằng Google, vui lòng thử lại bằng cách khác'
+      return res.redirect(`${envConfig.GOOGLE_CLIENT_REDIRECT_URI}?errorMessage=${message}`)
+    }
   }
 }

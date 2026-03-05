@@ -20,8 +20,7 @@ export class MailService {
       heading: 'Hãy nhập mã xác thực OTP sau vào trang đăng ký tài khoản',
     })
     return await this.resend.emails.send({
-      // from: `${envConfig.APP_NAME} <learnproof@gmail.com>`,
-      from: 'onboarding@resend.dev',
+      from: `${envConfig.APP_NAME} <no-reply@${envConfig.RESEND_DOMAIN}>`,
       to: [email],
       subject: 'Mã otp xác thực tài khoản Learn Proof',
       react: component,
@@ -35,8 +34,7 @@ export class MailService {
       heading: 'Hãy nhập link sau để tiến hành đặt lại mật khẩu cho tài khoản Learn Proof của bạn',
     })
     return await this.resend.emails.send({
-      // from: `${envConfig.APP_NAME} <learnproof@gmail.com>`,
-      from: 'onboarding@resend.dev',
+      from: `${envConfig.APP_NAME} <no-reply@${envConfig.RESEND_DOMAIN}>`,
       to: [email],
       subject: 'Link đặt lại mật khẩu Learn Proof',
       react: component,

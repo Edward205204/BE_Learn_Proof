@@ -25,7 +25,7 @@ export class AuthRepo {
     })
   }
 
-  createUser(payload: Pick<User, 'email' | 'fullName' | 'password'>) {
+  createUser(payload: Pick<User, 'email' | 'fullName' | 'password'> & { avatar?: string }) {
     return this.prisma.user.create({
       data: payload,
       select: {

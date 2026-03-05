@@ -1,4 +1,5 @@
-import { Body, Container, Head, Heading, Html, Section, Text } from '@react-email/components'
+import { Body, Button, Container, Head, Heading, Hr, Html, Preview, Section, Text } from '@react-email/components'
+import * as React from 'react'
 
 interface LinkEmailProps {
   link: string
@@ -8,109 +9,120 @@ interface LinkEmailProps {
 
 export const LinkEmail = ({ link, title, heading }: LinkEmailProps) => (
   <Html>
-    <Head>
-      <title>{title}</title>
-    </Head>
+    <Head />
+    <Preview>{title}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <div style={logo}>Learn Proof</div>
-        <Heading style={secondary}>{heading}</Heading>
-        <Section style={codeContainer}>
-          <a href={link} style={{ color: '#0a85ea', textDecoration: 'underline' }}>
-            {link}
-          </a>
+        {/* Logo Section */}
+        <Section style={logoContainer}>
+          <Text style={logoText}>LEARN PROOF</Text>
         </Section>
-        <Text style={paragraph}>Nếu bạn không chủ động thực hiện hành động này, xin hãy bỏ qua email?</Text>
+
+        {/* Content Section */}
+        <Heading style={h1}>{title}</Heading>
+        <Text style={text}>{heading}</Text>
+
+        <Section style={btnContainer}>
+          <Button style={button} href={link}>
+            Đặt lại mật khẩu ngay
+          </Button>
+        </Section>
+
+        <Text style={text}>Hoặc copy và dán đường dẫn này vào trình duyệt của bạn:</Text>
+        <Text style={linkText}>{link}</Text>
+
+        <Hr style={hr} />
+
+        {/* Footer */}
+        <Text style={footer}>
+          Nếu bạn không yêu cầu thay đổi này, hãy bỏ qua email này. Tài khoản của bạn vẫn an toàn.
+        </Text>
+        <Text style={footer}>© {new Date().getFullYear()} Learn Proof Team. Đà Nẵng, Việt Nam.</Text>
       </Container>
-      <Text style={footer}>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.</Text>
     </Body>
   </Html>
 )
 
 export default LinkEmail
 
+// --- Styles ---
 const main = {
-  backgroundColor: '#ffffff',
-  fontFamily: 'HelveticaNeue,Helvetica,Arial,sans-serif',
+  backgroundColor: '#f6f9fc',
+  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 }
 
 const container = {
   backgroundColor: '#ffffff',
-  border: '1px solid #eee',
-  borderRadius: '5px',
-  boxShadow: '0 5px 10px rgba(20,50,70,.2)',
-  marginTop: '20px',
-  maxWidth: '360px',
   margin: '0 auto',
-  padding: '68px 0 130px',
+  padding: '40px 20px',
+  marginBottom: '64px',
+  borderRadius: '8px',
+  border: '1px solid #e6ebf1',
+  maxWidth: '450px',
 }
 
-const logo = {
-  margin: '0 auto',
-  width: '70px',
-  height: '70px',
-  borderRadius: '100%',
-  backgroundColor: '#0a85ea',
-  color: '#fff',
+const logoContainer = {
+  textAlign: 'center' as const,
+  marginBottom: '32px',
+}
+
+const logoText = {
   fontSize: '24px',
-  fontWeight: 700,
-  textAlign: 'center' as const,
-  lineHeight: '70px',
-}
-
-const tertiary = {
+  fontWeight: 'bold',
   color: '#0a85ea',
-  fontSize: '11px',
-  fontWeight: 700,
-  fontFamily: 'HelveticaNeue,Helvetica,Arial,sans-serif',
-  height: '16px',
-  letterSpacing: '0',
-  lineHeight: '16px',
-  margin: '16px 8px 8px 8px',
-  textTransform: 'uppercase' as const,
-  textAlign: 'center' as const,
-}
-
-const secondary = {
-  color: '#000',
-  display: 'inline-block',
-  fontFamily: 'HelveticaNeue-Medium,Helvetica,Arial,sans-serif',
-  fontSize: '20px',
-  fontWeight: 500,
-  lineHeight: '24px',
-  marginBottom: '0',
-  marginTop: '0',
-  textAlign: 'center' as const,
-}
-
-const codeContainer = {
-  background: 'rgba(0,0,0,.05)',
-  borderRadius: '4px',
-  margin: '16px auto 14px',
-  verticalAlign: 'middle',
-  width: '280px',
-}
-
-const paragraph = {
-  color: '#444',
-  fontSize: '15px',
-  fontFamily: 'HelveticaNeue,Helvetica,Arial,sans-serif',
-  letterSpacing: '0',
-  lineHeight: '23px',
-  padding: '0 40px',
+  letterSpacing: '-0.5px',
   margin: '0',
+}
+
+const h1 = {
+  color: '#1f2937',
+  fontSize: '20px',
+  fontWeight: '600',
   textAlign: 'center' as const,
+  margin: '30px 0',
+}
+
+const text = {
+  color: '#4b5563',
+  fontSize: '15px',
+  lineHeight: '24px',
+  textAlign: 'center' as const,
+}
+
+const btnContainer = {
+  textAlign: 'center' as const,
+  margin: '32px 0',
+}
+
+const button = {
+  backgroundColor: '#0a85ea',
+  borderRadius: '6px',
+  color: '#fff',
+  fontSize: '16px',
+  fontWeight: '600',
+  textDecoration: 'none',
+  textAlign: 'center' as const,
+  display: 'block',
+  padding: '12px 24px',
+}
+
+const linkText = {
+  fontSize: '13px',
+  color: '#9ca3af',
+  wordBreak: 'break-all' as const,
+  textAlign: 'center' as const,
+  marginTop: '8px',
+}
+
+const hr = {
+  borderColor: '#e6ebf1',
+  margin: '40px 0',
 }
 
 const footer = {
-  color: '#000',
+  color: '#8898aa',
   fontSize: '12px',
-  fontWeight: 800,
-  letterSpacing: '0',
-  lineHeight: '23px',
-  margin: '0',
-  marginTop: '20px',
-  fontFamily: 'HelveticaNeue,Helvetica,Arial,sans-serif',
+  lineHeight: '18px',
   textAlign: 'center' as const,
-  textTransform: 'uppercase' as const,
+  marginTop: '12px',
 }

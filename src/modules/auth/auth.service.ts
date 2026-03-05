@@ -17,6 +17,7 @@ import {
   InvalidForgotPasswordCodeException,
   InvalidVerificationCodeException,
   OTPAwaitTimeExpiredException,
+  UserNotFoundException,
 } from './error.model'
 import { TokenService } from 'src/shared/services/token.service'
 import { HashingService } from 'src/shared/services/hashing.service'
@@ -26,6 +27,7 @@ import { addMilliseconds } from 'date-fns'
 import ms, { StringValue } from 'ms'
 import envConfig from 'src/shared/config'
 import { generateOTP } from './auth.util'
+import { TokenPayload } from 'src/shared/types/jwt.type'
 
 @Injectable()
 export class AuthService {
@@ -186,5 +188,18 @@ export class AuthService {
     await this.authRepo.updateUser({ where: { email }, data: { password: hashedPassword } })
 
     return { message: 'Mật khẩu đã được đặt lại thành công!' }
+  }
+
+  async getMe(payload: TokenPayload) {
+    const { userId } = payload
+    const user = await this.authRepo.findUserUnique({ id: userId })
+    if (!user) throw new UserNotFoundException()
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      avatar: user.avatar,
+      role: user.role,
+    }
   }
 }

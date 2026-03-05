@@ -1,4 +1,4 @@
-import { ConflictException, UnprocessableEntityException } from '@nestjs/common'
+import { BadRequestException, ConflictException, UnprocessableEntityException } from '@nestjs/common'
 
 export class EmailOrPasswordInvalidException extends UnprocessableEntityException {
   constructor() {
@@ -6,6 +6,12 @@ export class EmailOrPasswordInvalidException extends UnprocessableEntityExceptio
       { message: 'Email hoặc mật khẩu không đúng', path: 'email' },
       { message: 'Email hoặc mật khẩu không đúng', path: 'password' },
     ])
+  }
+}
+
+export class UserNotFoundException extends BadRequestException {
+  constructor() {
+    super('Người dùng không tồn tại')
   }
 }
 
