@@ -97,7 +97,6 @@ export const ResetPasswordBodySchema = z
   })
 
 export type ResetPasswordBodyType = z.infer<typeof ResetPasswordBodySchema>
-
 export type ForgotPasswordVerifyBodyType = z.infer<typeof ForgotPasswordVerifyBodySchema>
 export type ForgotPasswordBodyType = z.infer<typeof ForgotPasswordBodySchema>
 export type LoginBodyType = z.infer<typeof LoginBodySchema>
