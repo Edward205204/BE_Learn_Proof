@@ -49,9 +49,25 @@ export class AuthRepo {
     })
   }
 
+  // createVerificationCode(payload: Pick<VerificationCode, 'email' | 'code' | 'type' | 'expiresAt'>) {
+  //   return this.prisma.verificationCode.create({
+  //     data: payload,
+  //   })
+  // }
+
   createVerificationCode(payload: Pick<VerificationCode, 'email' | 'code' | 'type' | 'expiresAt'>) {
-    return this.prisma.verificationCode.create({
-      data: payload,
+    return this.prisma.verificationCode.upsert({
+      where: {
+        email_type: {
+          email: payload.email,
+          type: payload.type,
+        },
+      },
+      update: {
+        code: payload.code,
+        expiresAt: payload.expiresAt,
+      },
+      create: payload,
     })
   }
 }

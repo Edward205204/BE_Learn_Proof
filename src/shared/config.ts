@@ -23,6 +23,7 @@ const configSchema = z.object({
   RESEND_API_KEY: z.string(),
   OTP_BUFFER_TIME: z.string(),
   OTP_EXPIRES_IN: z.string(),
+  FE_URL: z.string(),
   // ADMIN_NAME: z.string(),
   // ADMIN_PASSWORD: z.string(),
   // ADMIN_EMAIL: z.string(),

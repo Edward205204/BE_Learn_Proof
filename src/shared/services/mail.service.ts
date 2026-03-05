@@ -15,7 +15,8 @@ export class MailService {
   async sendOtp(email: string, otp: string) {
     const component = React.createElement(OTPEmail, { otpCode: otp, title: 'Mã otp xác thực tài khoản Learn Proof' })
     return await this.resend.emails.send({
-      from: `${envConfig.APP_NAME} <learnproof@gmail.com>`,
+      // from: `${envConfig.APP_NAME} <learnproof@gmail.com>`,
+      from: 'onboarding@resend.dev',
       to: [email],
       subject: 'Mã otp xác thực tài khoản Learn Proof',
       react: component,

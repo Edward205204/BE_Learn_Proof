@@ -11,7 +11,7 @@ export class HttpExceptionFilter extends BaseExceptionFilter {
     if (exception instanceof ZodSerializationException) {
       const zodError = exception.getZodError()
       if (zodError instanceof ZodError) {
-        const details = zodError.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ')
+        const details = zodError.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ')
         this.logger.error(`[Data response sai] => ${details}`)
       }
     }
