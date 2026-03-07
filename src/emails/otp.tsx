@@ -15,7 +15,7 @@ export const OTPEmail = ({ otpCode, title, heading }: OTPEmailProps) => (
       <Container style={container}>
         {/* Logo Section */}
         <Section style={logoContainer}>
-          <Text style={logoText}>LEARN PROOF</Text>
+          <Text style={logoText}>LP</Text>
         </Section>
 
         {/* Content Section */}

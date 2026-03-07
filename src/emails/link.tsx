@@ -15,7 +15,7 @@ export const LinkEmail = ({ link, title, heading }: LinkEmailProps) => (
       <Container style={container}>
         {/* Logo Section */}
         <Section style={logoContainer}>
-          <Text style={logoText}>LEARN PROOF</Text>
+          <Text style={logoText}>LP</Text>
         </Section>
 
         {/* Content Section */}
