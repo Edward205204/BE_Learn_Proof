@@ -239,7 +239,7 @@ export const CreateCourseSt2DtoSchema = z
 
 export type CreateCourseSt2Dto = z.infer<typeof CreateCourseSt2DtoSchema>
 
-export const CreateCourseSt2ResponseSchema = z.object({
+export const CreateCourseFullResponseSchema = z.object({
   id: z.string(),
   title: z.string(),
   slug: z.string(),
@@ -268,7 +268,15 @@ export const CreateCourseSt2ResponseSchema = z.object({
     }),
   ),
 })
-export type CreateCourseSt2Response = z.infer<typeof CreateCourseSt2ResponseSchema>
+export type CreateCourseSt2Response = z.infer<typeof CreateCourseFullResponseSchema>
+
+export const CreateCourseSt3DtoSchema = z.object({
+  courseId: z.string(),
+  isFree: z.boolean(),
+  price: z.number(),
+  originalPrice: z.number().nullable(),
+})
+export type CreateCourseSt3Dto = z.infer<typeof CreateCourseSt3DtoSchema>
 
 // ----
 

@@ -12,7 +12,8 @@ import {
   CourseDetailResponseSchema,
   CreateCourseSt1Dto,
   CreateCourseSt1ResponseSchema,
-  CreateCourseSt2ResponseSchema,
+  CreateCourseFullResponseSchema,
+  CreateCourseSt3Dto,
   GetCategoriesResponseSchema,
   GetCoursesResponseSchema,
   GetSearchSuggestionsResponseSchema,
@@ -82,14 +83,14 @@ export class CourseController {
   }
 
   @Post('create-course/st2')
-  @ZodSerializerDto(CreateCourseSt2ResponseSchema)
+  @ZodSerializerDto(CreateCourseFullResponseSchema)
   createCourseSt2(@Body() body: CreateCourseSt2Dto, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.createCourseSt2(body, user.userId)
   }
 
   @Post('create-course/st3')
-  // @ZodSerializerDto(CreateCourseSt2ResponseSchema)
-  createCourseSt3(@Body() body: CreateCourseSt2Dto, @ActiveUser() user: TokenPayload) {
-    // return this.courseManagerService.createCourseSt2(body, user.userId)
+  @ZodSerializerDto(CreateCourseFullResponseSchema)
+  createCourseSt3(@Body() body: CreateCourseSt3Dto, @ActiveUser() user: TokenPayload) {
+    return this.courseManagerService.createCourseSt3(body, user.userId)
   }
 }

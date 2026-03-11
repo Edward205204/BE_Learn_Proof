@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { z } from 'zod'
-import { CreateCourseSt1Dto, CreateCourseSt2Dto, GetCoursesQuery } from './courses.model'
+import { CreateCourseSt1Dto, CreateCourseSt2Dto, CreateCourseSt3Dto, GetCoursesQuery } from './courses.model'
 import { PrismaService } from 'src/shared/services/prisma.service'
 import { CourseStatus, Prisma } from 'src/generated/prisma/client'
 
@@ -21,7 +21,7 @@ export class CourseRepo {
         title: dto.title,
         slug,
         categoryId: dto.categoryId,
-        tags: dto.tags ?? [],
+
         level: dto.level,
         shortDesc: dto.shortDesc,
         fullDesc: dto.fullDesc,
@@ -37,7 +37,7 @@ export class CourseRepo {
         title: true,
         slug: true,
         categoryId: true,
-        tags: true,
+
         level: true,
         shortDesc: true,
         fullDesc: true,
@@ -158,7 +158,7 @@ export class CourseRepo {
         shortDesc: true,
         fullDesc: true,
         thumbnail: true,
-        tags: true,
+
         level: true,
         status: true,
         isFree: true,
@@ -332,6 +332,28 @@ export class CourseRepo {
   getCourseUnique(body: { id: string } | { slug: string } | { creatorId: string; id: string }) {
     return this.prisma.course.findUnique({
       where: body,
+    })
+  }
+
+  finishCreateCourse(payload: CreateCourseSt3Dto & { creatorId: string }) {
+    return this.prisma.course.update({
+      where: {
+        id_creatorId: {
+          id: payload.courseId,
+          creatorId: payload.creatorId,
+        },
+      },
+      data: {
+        status: 'PUBLISHED',
+        isFree: payload.isFree,
+        price: payload.price,
+        originalPrice: payload.originalPrice,
+      },
+      include: {
+        chapters: {
+          orderBy: { order: 'asc' },
+        },
+      },
     })
   }
 }

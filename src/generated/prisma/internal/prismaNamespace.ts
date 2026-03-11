@@ -2071,7 +2071,6 @@ export const CourseScalarFieldEnum = {
   title: 'title',
   slug: 'slug',
   categoryId: 'categoryId',
-  tags: 'tags',
   level: 'level',
   isCompleted: 'isCompleted',
   publishedLessonsCount: 'publishedLessonsCount',

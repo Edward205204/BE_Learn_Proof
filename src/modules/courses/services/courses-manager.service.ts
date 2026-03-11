@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { CreateCourseSt1Dto, CreateCourseSt2Dto } from '../courses.model'
+import { CreateCourseSt1Dto, CreateCourseSt2Dto, CreateCourseSt3Dto } from '../courses.model'
 import { CourseRepo } from '../courses.repo'
 import { SlugService } from 'src/shared/services/slug.service'
 import { CategoryNotFoundException, CourseNotDraftException, CourseNotFoundException } from '../error.model'
@@ -33,6 +33,20 @@ export class CoursesManagerService {
     }
 
     const data = await this.courseRepo.syncChaptersFrame(body)
+    return data
+  }
+
+  async createCourseSt3(body: CreateCourseSt3Dto, creatorId: string) {
+    const course = await this.courseRepo.getCourseUnique({ creatorId, id: body.courseId })
+    if (!course) {
+      throw new CourseNotFoundException()
+    }
+
+    if (course.status !== CourseStatus.DRAFT) {
+      throw new CourseNotDraftException()
+    }
+
+    const data = await this.courseRepo.finishCreateCourse({ ...body, creatorId })
     return data
   }
 }

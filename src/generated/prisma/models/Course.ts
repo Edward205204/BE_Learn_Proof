@@ -91,7 +91,6 @@ export type CourseCountAggregateOutputType = {
   title: number
   slug: number
   categoryId: number
-  tags: number
   level: number
   isCompleted: number
   publishedLessonsCount: number
@@ -176,7 +175,6 @@ export type CourseCountAggregateInputType = {
   title?: true
   slug?: true
   categoryId?: true
-  tags?: true
   level?: true
   isCompleted?: true
   publishedLessonsCount?: true
@@ -286,7 +284,6 @@ export type CourseGroupByOutputType = {
   title: string
   slug: string
   categoryId: string
-  tags: string[]
   level: $Enums.CourseLevel
   isCompleted: boolean
   publishedLessonsCount: number
@@ -332,7 +329,6 @@ export type CourseWhereInput = {
   title?: Prisma.StringFilter<"Course"> | string
   slug?: Prisma.StringFilter<"Course"> | string
   categoryId?: Prisma.StringFilter<"Course"> | string
-  tags?: Prisma.StringNullableListFilter<"Course">
   level?: Prisma.EnumCourseLevelFilter<"Course"> | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFilter<"Course"> | boolean
   publishedLessonsCount?: Prisma.IntFilter<"Course"> | number
@@ -365,7 +361,6 @@ export type CourseOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   categoryId?: Prisma.SortOrder
-  tags?: Prisma.SortOrder
   level?: Prisma.SortOrder
   isCompleted?: Prisma.SortOrder
   publishedLessonsCount?: Prisma.SortOrder
@@ -396,12 +391,12 @@ export type CourseOrderByWithRelationInput = {
 export type CourseWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   slug?: string
+  id_creatorId?: Prisma.CourseIdCreatorIdCompoundUniqueInput
   AND?: Prisma.CourseWhereInput | Prisma.CourseWhereInput[]
   OR?: Prisma.CourseWhereInput[]
   NOT?: Prisma.CourseWhereInput | Prisma.CourseWhereInput[]
   title?: Prisma.StringFilter<"Course"> | string
   categoryId?: Prisma.StringFilter<"Course"> | string
-  tags?: Prisma.StringNullableListFilter<"Course">
   level?: Prisma.EnumCourseLevelFilter<"Course"> | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFilter<"Course"> | boolean
   publishedLessonsCount?: Prisma.IntFilter<"Course"> | number
@@ -427,14 +422,13 @@ export type CourseWhereUniqueInput = Prisma.AtLeast<{
   certificates?: Prisma.CertificateListRelationFilter
   dailySnapshots?: Prisma.CourseDailySnapshotListRelationFilter
   overallAnalytics?: Prisma.XOR<Prisma.CourseOverallAnalyticsNullableScalarRelationFilter, Prisma.CourseOverallAnalyticsWhereInput> | null
-}, "id" | "slug">
+}, "id" | "slug" | "id_creatorId">
 
 export type CourseOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   categoryId?: Prisma.SortOrder
-  tags?: Prisma.SortOrder
   level?: Prisma.SortOrder
   isCompleted?: Prisma.SortOrder
   publishedLessonsCount?: Prisma.SortOrder
@@ -465,7 +459,6 @@ export type CourseScalarWhereWithAggregatesInput = {
   title?: Prisma.StringWithAggregatesFilter<"Course"> | string
   slug?: Prisma.StringWithAggregatesFilter<"Course"> | string
   categoryId?: Prisma.StringWithAggregatesFilter<"Course"> | string
-  tags?: Prisma.StringNullableListFilter<"Course">
   level?: Prisma.EnumCourseLevelWithAggregatesFilter<"Course"> | $Enums.CourseLevel
   isCompleted?: Prisma.BoolWithAggregatesFilter<"Course"> | boolean
   publishedLessonsCount?: Prisma.IntWithAggregatesFilter<"Course"> | number
@@ -487,7 +480,6 @@ export type CourseCreateInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -519,7 +511,6 @@ export type CourseUncheckedCreateInput = {
   title: string
   slug: string
   categoryId: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -549,7 +540,6 @@ export type CourseUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -581,7 +571,6 @@ export type CourseUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -612,7 +601,6 @@ export type CourseCreateManyInput = {
   title: string
   slug: string
   categoryId: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -634,7 +622,6 @@ export type CourseUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -656,7 +643,6 @@ export type CourseUncheckedUpdateManyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -684,12 +670,9 @@ export type CourseOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type StringNullableListFilter<$PrismaModel = never> = {
-  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
-  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
-  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
-  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
-  isEmpty?: boolean
+export type CourseIdCreatorIdCompoundUniqueInput = {
+  id: string
+  creatorId: string
 }
 
 export type CourseCountOrderByAggregateInput = {
@@ -697,7 +680,6 @@ export type CourseCountOrderByAggregateInput = {
   title?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   categoryId?: Prisma.SortOrder
-  tags?: Prisma.SortOrder
   level?: Prisma.SortOrder
   isCompleted?: Prisma.SortOrder
   publishedLessonsCount?: Prisma.SortOrder
@@ -864,15 +846,6 @@ export type CourseUncheckedUpdateManyWithoutCategoryNestedInput = {
   deleteMany?: Prisma.CourseScalarWhereInput | Prisma.CourseScalarWhereInput[]
 }
 
-export type CourseCreatetagsInput = {
-  set: string[]
-}
-
-export type CourseUpdatetagsInput = {
-  set?: string[]
-  push?: string | string[]
-}
-
 export type EnumCourseLevelFieldUpdateOperationsInput = {
   set?: $Enums.CourseLevel
 }
@@ -1021,7 +994,6 @@ export type CourseCreateWithoutCreatorInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1052,7 +1024,6 @@ export type CourseUncheckedCreateWithoutCreatorInput = {
   title: string
   slug: string
   categoryId: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1111,7 +1082,6 @@ export type CourseScalarWhereInput = {
   title?: Prisma.StringFilter<"Course"> | string
   slug?: Prisma.StringFilter<"Course"> | string
   categoryId?: Prisma.StringFilter<"Course"> | string
-  tags?: Prisma.StringNullableListFilter<"Course">
   level?: Prisma.EnumCourseLevelFilter<"Course"> | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFilter<"Course"> | boolean
   publishedLessonsCount?: Prisma.IntFilter<"Course"> | number
@@ -1133,7 +1103,6 @@ export type CourseCreateWithoutCategoryInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1163,7 +1132,6 @@ export type CourseUncheckedCreateWithoutCategoryInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1219,7 +1187,6 @@ export type CourseCreateWithoutChaptersInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1250,7 +1217,6 @@ export type CourseUncheckedCreateWithoutChaptersInput = {
   title: string
   slug: string
   categoryId: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1295,7 +1261,6 @@ export type CourseUpdateWithoutChaptersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1326,7 +1291,6 @@ export type CourseUncheckedUpdateWithoutChaptersInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1355,7 +1319,6 @@ export type CourseCreateWithoutEnrollmentsInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1386,7 +1349,6 @@ export type CourseUncheckedCreateWithoutEnrollmentsInput = {
   title: string
   slug: string
   categoryId: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1431,7 +1393,6 @@ export type CourseUpdateWithoutEnrollmentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1462,7 +1423,6 @@ export type CourseUncheckedUpdateWithoutEnrollmentsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1491,7 +1451,6 @@ export type CourseCreateWithoutDiscussionsInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1522,7 +1481,6 @@ export type CourseUncheckedCreateWithoutDiscussionsInput = {
   title: string
   slug: string
   categoryId: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1567,7 +1525,6 @@ export type CourseUpdateWithoutDiscussionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1598,7 +1555,6 @@ export type CourseUncheckedUpdateWithoutDiscussionsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1627,7 +1583,6 @@ export type CourseCreateWithoutReviewsInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1658,7 +1613,6 @@ export type CourseUncheckedCreateWithoutReviewsInput = {
   title: string
   slug: string
   categoryId: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1703,7 +1657,6 @@ export type CourseUpdateWithoutReviewsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1734,7 +1687,6 @@ export type CourseUncheckedUpdateWithoutReviewsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1763,7 +1715,6 @@ export type CourseCreateWithoutTransactionsInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1794,7 +1745,6 @@ export type CourseUncheckedCreateWithoutTransactionsInput = {
   title: string
   slug: string
   categoryId: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1839,7 +1789,6 @@ export type CourseUpdateWithoutTransactionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1870,7 +1819,6 @@ export type CourseUncheckedUpdateWithoutTransactionsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1899,7 +1847,6 @@ export type CourseCreateWithoutCertificatesInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1930,7 +1877,6 @@ export type CourseUncheckedCreateWithoutCertificatesInput = {
   title: string
   slug: string
   categoryId: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -1975,7 +1921,6 @@ export type CourseUpdateWithoutCertificatesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2006,7 +1951,6 @@ export type CourseUncheckedUpdateWithoutCertificatesInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2035,7 +1979,6 @@ export type CourseCreateWithoutOverallAnalyticsInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -2066,7 +2009,6 @@ export type CourseUncheckedCreateWithoutOverallAnalyticsInput = {
   title: string
   slug: string
   categoryId: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -2111,7 +2053,6 @@ export type CourseUpdateWithoutOverallAnalyticsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2142,7 +2083,6 @@ export type CourseUncheckedUpdateWithoutOverallAnalyticsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2171,7 +2111,6 @@ export type CourseCreateWithoutDailySnapshotsInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -2202,7 +2141,6 @@ export type CourseUncheckedCreateWithoutDailySnapshotsInput = {
   title: string
   slug: string
   categoryId: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -2247,7 +2185,6 @@ export type CourseUpdateWithoutDailySnapshotsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2278,7 +2215,6 @@ export type CourseUncheckedUpdateWithoutDailySnapshotsInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2308,7 +2244,6 @@ export type CourseCreateManyCreatorInput = {
   title: string
   slug: string
   categoryId: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -2329,7 +2264,6 @@ export type CourseUpdateWithoutCreatorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2360,7 +2294,6 @@ export type CourseUncheckedUpdateWithoutCreatorInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2390,7 +2323,6 @@ export type CourseUncheckedUpdateManyWithoutCreatorInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2411,7 +2343,6 @@ export type CourseCreateManyCategoryInput = {
   id?: string
   title: string
   slug: string
-  tags?: Prisma.CourseCreatetagsInput | string[]
   level?: $Enums.CourseLevel
   isCompleted?: boolean
   publishedLessonsCount?: number
@@ -2433,7 +2364,6 @@ export type CourseUpdateWithoutCategoryInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2463,7 +2393,6 @@ export type CourseUncheckedUpdateWithoutCategoryInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2493,7 +2422,6 @@ export type CourseUncheckedUpdateManyWithoutCategoryInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.CourseUpdatetagsInput | string[]
   level?: Prisma.EnumCourseLevelFieldUpdateOperationsInput | $Enums.CourseLevel
   isCompleted?: Prisma.BoolFieldUpdateOperationsInput | boolean
   publishedLessonsCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2601,7 +2529,6 @@ export type CourseSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   title?: boolean
   slug?: boolean
   categoryId?: boolean
-  tags?: boolean
   level?: boolean
   isCompleted?: boolean
   publishedLessonsCount?: boolean
@@ -2635,7 +2562,6 @@ export type CourseSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   title?: boolean
   slug?: boolean
   categoryId?: boolean
-  tags?: boolean
   level?: boolean
   isCompleted?: boolean
   publishedLessonsCount?: boolean
@@ -2660,7 +2586,6 @@ export type CourseSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   title?: boolean
   slug?: boolean
   categoryId?: boolean
-  tags?: boolean
   level?: boolean
   isCompleted?: boolean
   publishedLessonsCount?: boolean
@@ -2685,7 +2610,6 @@ export type CourseSelectScalar = {
   title?: boolean
   slug?: boolean
   categoryId?: boolean
-  tags?: boolean
   level?: boolean
   isCompleted?: boolean
   publishedLessonsCount?: boolean
@@ -2703,7 +2627,7 @@ export type CourseSelectScalar = {
   updatedAt?: boolean
 }
 
-export type CourseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "slug" | "categoryId" | "tags" | "level" | "isCompleted" | "publishedLessonsCount" | "totalPlannedLessons" | "shortDesc" | "fullDesc" | "thumbnail" | "status" | "isFree" | "price" | "originalPrice" | "expectedDays" | "creatorId" | "createdAt" | "updatedAt", ExtArgs["result"]["course"]>
+export type CourseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "slug" | "categoryId" | "level" | "isCompleted" | "publishedLessonsCount" | "totalPlannedLessons" | "shortDesc" | "fullDesc" | "thumbnail" | "status" | "isFree" | "price" | "originalPrice" | "expectedDays" | "creatorId" | "createdAt" | "updatedAt", ExtArgs["result"]["course"]>
 export type CourseInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   category?: boolean | Prisma.CategoryDefaultArgs<ExtArgs>
   creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -2745,7 +2669,6 @@ export type $CoursePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     title: string
     slug: string
     categoryId: string
-    tags: string[]
     level: $Enums.CourseLevel
     isCompleted: boolean
     publishedLessonsCount: number
@@ -3198,7 +3121,6 @@ export interface CourseFieldRefs {
   readonly title: Prisma.FieldRef<"Course", 'String'>
   readonly slug: Prisma.FieldRef<"Course", 'String'>
   readonly categoryId: Prisma.FieldRef<"Course", 'String'>
-  readonly tags: Prisma.FieldRef<"Course", 'String[]'>
   readonly level: Prisma.FieldRef<"Course", 'CourseLevel'>
   readonly isCompleted: Prisma.FieldRef<"Course", 'Boolean'>
   readonly publishedLessonsCount: Prisma.FieldRef<"Course", 'Int'>
