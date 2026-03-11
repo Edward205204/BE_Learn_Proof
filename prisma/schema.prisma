@@ -127,7 +127,6 @@ model Course {
   slug       String      @unique
   categoryId String
   category   Category    @relation(fields: [categoryId], references: [id])
-  tags       String[]
   level      CourseLevel @default(BEGINNER)
 
   // Fields cho Khóa học chưa hoàn thiện (Drip Content)
@@ -163,6 +162,8 @@ model Course {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([id, creatorId])
 }
 
 model Chapter {

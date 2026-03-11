@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { GetCoursesQueryType, GetSearchSuggestionsQueryType } from './courses.model'
-import { CourseRepo } from './courses.repo'
-import { CourseNotFoundException } from './error.model'
+import { GetCoursesQueryType, GetSearchSuggestionsQueryType } from '../courses.model'
+import { CourseRepo } from '../courses.repo'
+import { CourseNotFoundException } from '../error.model'
 
 @Injectable()
 export class CourseService {

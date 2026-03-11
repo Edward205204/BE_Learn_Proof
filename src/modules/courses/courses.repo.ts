@@ -1,12 +1,79 @@
 import { Injectable } from '@nestjs/common'
 import { z } from 'zod'
-import { GetCoursesQuery } from './courses.model'
+import { CreateCourseSt1Dto, CreateCourseSt2Dto, GetCoursesQuery } from './courses.model'
 import { PrismaService } from 'src/shared/services/prisma.service'
 import { CourseStatus, Prisma } from 'src/generated/prisma/client'
 
 @Injectable()
 export class CourseRepo {
   constructor(private prisma: PrismaService) {}
+
+  findCategoryById(id: string) {
+    return this.prisma.category.findUnique({
+      where: { id },
+      select: { id: true, name: true, slug: true },
+    })
+  }
+
+  createCourseSt1(dto: CreateCourseSt1Dto, slug: string, creatorId: string) {
+    return this.prisma.course.create({
+      data: {
+        title: dto.title,
+        slug,
+        categoryId: dto.categoryId,
+        tags: dto.tags ?? [],
+        level: dto.level,
+        shortDesc: dto.shortDesc,
+        fullDesc: dto.fullDesc,
+        thumbnail: dto.thumbnail ?? null,
+        expectedDays: dto.expectedDays ?? null,
+        isFree: true,
+        price: 0,
+        status: 'DRAFT',
+        creatorId,
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        categoryId: true,
+        tags: true,
+        level: true,
+        shortDesc: true,
+        fullDesc: true,
+        thumbnail: true,
+        expectedDays: true,
+        status: true,
+        isFree: true,
+        price: true,
+        createdAt: true,
+        updatedAt: true,
+        category: {
+          select: { id: true, name: true, slug: true },
+        },
+      },
+    })
+  }
+
+  async syncChaptersFrame(dto: CreateCourseSt2Dto) {
+    return await this.prisma.course.update({
+      where: { id: dto.courseId },
+      data: {
+        chapters: {
+          createMany: {
+            data: dto.chapterList,
+          },
+        },
+      },
+      include: {
+        chapters: {
+          orderBy: { order: 'asc' }, // Lấy ra luôn danh sách đã sắp xếp
+        },
+      },
+    })
+  }
+
+  // ----- Public catalog -----
 
   async getCoursesCatalog(query: z.infer<typeof GetCoursesQuery>) {
     const { page, limit, category, level, price, rating, search, sort } = query
@@ -260,5 +327,11 @@ export class CourseRepo {
         orderBy: { createdAt: 'desc' },
       })
       .then((rows) => rows.map((r) => r.slug))
+  }
+
+  getCourseUnique(body: { id: string } | { slug: string } | { creatorId: string; id: string }) {
+    return this.prisma.course.findUnique({
+      where: body,
+    })
   }
 }
