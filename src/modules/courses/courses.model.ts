@@ -285,19 +285,23 @@ export type CreateCourseSt3Dto = z.infer<typeof CreateCourseSt3DtoSchema>
 // DTO cho Lesson
 export const ReorderLessonBodySchema = z
   .object({
+    courseId: z.string(),
     targetChapterId: z.string(),
     // ID của bài đứng ngay phía TRÊN vị trí mới (null nếu là đầu danh sách)
     prevLessonId: z.string().nullable(),
     // ID của bài đứng ngay phía DƯỚI vị trí mới (null nếu là cuối danh sách)
     nextLessonId: z.string().nullable(),
+    lessonId: z.string(),
   })
   .strict()
 
 // DTO cho Chapter
 export const ReorderChapterBodySchema = z
   .object({
+    courseId: z.string(),
     prevChapterId: z.string().nullable(),
     nextChapterId: z.string().nullable(),
+    chapterId: z.string(),
   })
   .strict()
 

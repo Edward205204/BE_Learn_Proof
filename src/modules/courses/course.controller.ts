@@ -18,6 +18,8 @@ import {
   GetCoursesResponseSchema,
   GetSearchSuggestionsResponseSchema,
   HomeSectionsResponseSchema,
+  ReorderLessonDto,
+  ReorderChapterDto,
 } from './courses.model'
 import { ZodSerializerDto } from 'nestjs-zod'
 import { CoursesManagerService } from './services/courses-manager.service'
@@ -94,11 +96,13 @@ export class CourseController {
     return this.courseManagerService.createCourseSt3(body, user.userId)
   }
 
-  // @Patch(':categoryId/reorder')
-  // async reorder(
-  //   @Param('categoryId') categoryId: string, // CUID từ URL
-  //   @Body() { orderedIds }: ReorderLessonsDto,
-  // ) {
-  //   return await this.lessonService.reorder(categoryId, orderedIds)
-  // }
+  @Patch('/reorder/lessons')
+  async reorderLessons(@Body() body: ReorderLessonDto, @ActiveUser() user: TokenPayload) {
+    return this.courseManagerService.reorderLesson(body, user.userId)
+  }
+
+  @Patch('/reorder/chapters')
+  async reorderChapters(@Body() body: ReorderChapterDto, @ActiveUser() user: TokenPayload) {
+    return this.courseManagerService.reorderChapters(body, user.userId)
+  }
 }

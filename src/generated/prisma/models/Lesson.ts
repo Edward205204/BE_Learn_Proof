@@ -276,7 +276,7 @@ export type LessonWhereInput = {
   description?: Prisma.StringNullableFilter<"Lesson"> | string | null
   contentAI?: Prisma.StringNullableFilter<"Lesson"> | string | null
   type?: Prisma.EnumLessonTypeFilter<"Lesson"> | $Enums.LessonType
-  order?: Prisma.IntFilter<"Lesson"> | number
+  order?: Prisma.FloatFilter<"Lesson"> | number
   videoUrl?: Prisma.StringNullableFilter<"Lesson"> | string | null
   textContent?: Prisma.StringNullableFilter<"Lesson"> | string | null
   duration?: Prisma.IntFilter<"Lesson"> | number
@@ -326,7 +326,7 @@ export type LessonWhereUniqueInput = Prisma.AtLeast<{
   description?: Prisma.StringNullableFilter<"Lesson"> | string | null
   contentAI?: Prisma.StringNullableFilter<"Lesson"> | string | null
   type?: Prisma.EnumLessonTypeFilter<"Lesson"> | $Enums.LessonType
-  order?: Prisma.IntFilter<"Lesson"> | number
+  order?: Prisma.FloatFilter<"Lesson"> | number
   videoUrl?: Prisma.StringNullableFilter<"Lesson"> | string | null
   textContent?: Prisma.StringNullableFilter<"Lesson"> | string | null
   duration?: Prisma.IntFilter<"Lesson"> | number
@@ -372,7 +372,7 @@ export type LessonScalarWhereWithAggregatesInput = {
   description?: Prisma.StringNullableWithAggregatesFilter<"Lesson"> | string | null
   contentAI?: Prisma.StringNullableWithAggregatesFilter<"Lesson"> | string | null
   type?: Prisma.EnumLessonTypeWithAggregatesFilter<"Lesson"> | $Enums.LessonType
-  order?: Prisma.IntWithAggregatesFilter<"Lesson"> | number
+  order?: Prisma.FloatWithAggregatesFilter<"Lesson"> | number
   videoUrl?: Prisma.StringNullableWithAggregatesFilter<"Lesson"> | string | null
   textContent?: Prisma.StringNullableWithAggregatesFilter<"Lesson"> | string | null
   duration?: Prisma.IntWithAggregatesFilter<"Lesson"> | number
@@ -430,7 +430,7 @@ export type LessonUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -451,7 +451,7 @@ export type LessonUncheckedUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -488,7 +488,7 @@ export type LessonUpdateManyMutationInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -502,7 +502,7 @@ export type LessonUncheckedUpdateManyInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -815,7 +815,7 @@ export type LessonScalarWhereInput = {
   description?: Prisma.StringNullableFilter<"Lesson"> | string | null
   contentAI?: Prisma.StringNullableFilter<"Lesson"> | string | null
   type?: Prisma.EnumLessonTypeFilter<"Lesson"> | $Enums.LessonType
-  order?: Prisma.IntFilter<"Lesson"> | number
+  order?: Prisma.FloatFilter<"Lesson"> | number
   videoUrl?: Prisma.StringNullableFilter<"Lesson"> | string | null
   textContent?: Prisma.StringNullableFilter<"Lesson"> | string | null
   duration?: Prisma.IntFilter<"Lesson"> | number
@@ -932,7 +932,7 @@ export type LessonUpdateWithoutEmbeddedQuizInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -952,7 +952,7 @@ export type LessonUncheckedUpdateWithoutEmbeddedQuizInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -983,7 +983,7 @@ export type LessonUpdateWithoutStandaloneQuizInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1003,7 +1003,7 @@ export type LessonUncheckedUpdateWithoutStandaloneQuizInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1079,7 +1079,7 @@ export type LessonUpdateWithoutProgressInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1099,7 +1099,7 @@ export type LessonUncheckedUpdateWithoutProgressInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1175,7 +1175,7 @@ export type LessonUpdateWithoutHeartbeatsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1195,7 +1195,7 @@ export type LessonUncheckedUpdateWithoutHeartbeatsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1271,7 +1271,7 @@ export type LessonUpdateWithoutDiscussionsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1291,7 +1291,7 @@ export type LessonUncheckedUpdateWithoutDiscussionsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1367,7 +1367,7 @@ export type LessonUpdateWithoutAnalyticsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1387,7 +1387,7 @@ export type LessonUncheckedUpdateWithoutAnalyticsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1422,7 +1422,7 @@ export type LessonUpdateWithoutChapterInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1442,7 +1442,7 @@ export type LessonUncheckedUpdateWithoutChapterInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1462,7 +1462,7 @@ export type LessonUncheckedUpdateManyWithoutChapterInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contentAI?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.EnumLessonTypeFieldUpdateOperationsInput | $Enums.LessonType
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   duration?: Prisma.IntFieldUpdateOperationsInput | number
@@ -2076,7 +2076,7 @@ export interface LessonFieldRefs {
   readonly description: Prisma.FieldRef<"Lesson", 'String'>
   readonly contentAI: Prisma.FieldRef<"Lesson", 'String'>
   readonly type: Prisma.FieldRef<"Lesson", 'LessonType'>
-  readonly order: Prisma.FieldRef<"Lesson", 'Int'>
+  readonly order: Prisma.FieldRef<"Lesson", 'Float'>
   readonly videoUrl: Prisma.FieldRef<"Lesson", 'String'>
   readonly textContent: Prisma.FieldRef<"Lesson", 'String'>
   readonly duration: Prisma.FieldRef<"Lesson", 'Int'>

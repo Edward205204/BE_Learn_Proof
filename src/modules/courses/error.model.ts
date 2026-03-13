@@ -17,3 +17,9 @@ export class CourseNotDraftException extends BadRequestException {
     super('Không thể chỉnh cấu trúc khóa học khi không ở trạng thái nháp')
   }
 }
+
+export class CourseNotMatchException extends BadRequestException {
+  constructor() {
+    super('Không có quyền chỉnh sửa khóa học')
+  }
+}

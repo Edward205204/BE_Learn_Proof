@@ -206,7 +206,7 @@ export type ChapterWhereInput = {
   NOT?: Prisma.ChapterWhereInput | Prisma.ChapterWhereInput[]
   id?: Prisma.StringFilter<"Chapter"> | string
   title?: Prisma.StringFilter<"Chapter"> | string
-  order?: Prisma.IntFilter<"Chapter"> | number
+  order?: Prisma.FloatFilter<"Chapter"> | number
   courseId?: Prisma.StringFilter<"Chapter"> | string
   course?: Prisma.XOR<Prisma.CourseScalarRelationFilter, Prisma.CourseWhereInput>
   lessons?: Prisma.LessonListRelationFilter
@@ -227,7 +227,7 @@ export type ChapterWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.ChapterWhereInput[]
   NOT?: Prisma.ChapterWhereInput | Prisma.ChapterWhereInput[]
   title?: Prisma.StringFilter<"Chapter"> | string
-  order?: Prisma.IntFilter<"Chapter"> | number
+  order?: Prisma.FloatFilter<"Chapter"> | number
   courseId?: Prisma.StringFilter<"Chapter"> | string
   course?: Prisma.XOR<Prisma.CourseScalarRelationFilter, Prisma.CourseWhereInput>
   lessons?: Prisma.LessonListRelationFilter
@@ -251,7 +251,7 @@ export type ChapterScalarWhereWithAggregatesInput = {
   NOT?: Prisma.ChapterScalarWhereWithAggregatesInput | Prisma.ChapterScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Chapter"> | string
   title?: Prisma.StringWithAggregatesFilter<"Chapter"> | string
-  order?: Prisma.IntWithAggregatesFilter<"Chapter"> | number
+  order?: Prisma.FloatWithAggregatesFilter<"Chapter"> | number
   courseId?: Prisma.StringWithAggregatesFilter<"Chapter"> | string
 }
 
@@ -274,7 +274,7 @@ export type ChapterUncheckedCreateInput = {
 export type ChapterUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   course?: Prisma.CourseUpdateOneRequiredWithoutChaptersNestedInput
   lessons?: Prisma.LessonUpdateManyWithoutChapterNestedInput
 }
@@ -282,7 +282,7 @@ export type ChapterUpdateInput = {
 export type ChapterUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   courseId?: Prisma.StringFieldUpdateOperationsInput | string
   lessons?: Prisma.LessonUncheckedUpdateManyWithoutChapterNestedInput
 }
@@ -297,13 +297,13 @@ export type ChapterCreateManyInput = {
 export type ChapterUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
 }
 
 export type ChapterUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   courseId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
@@ -453,7 +453,7 @@ export type ChapterScalarWhereInput = {
   NOT?: Prisma.ChapterScalarWhereInput | Prisma.ChapterScalarWhereInput[]
   id?: Prisma.StringFilter<"Chapter"> | string
   title?: Prisma.StringFilter<"Chapter"> | string
-  order?: Prisma.IntFilter<"Chapter"> | number
+  order?: Prisma.FloatFilter<"Chapter"> | number
   courseId?: Prisma.StringFilter<"Chapter"> | string
 }
 
@@ -490,14 +490,14 @@ export type ChapterUpdateToOneWithWhereWithoutLessonsInput = {
 export type ChapterUpdateWithoutLessonsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   course?: Prisma.CourseUpdateOneRequiredWithoutChaptersNestedInput
 }
 
 export type ChapterUncheckedUpdateWithoutLessonsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   courseId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
@@ -510,21 +510,21 @@ export type ChapterCreateManyCourseInput = {
 export type ChapterUpdateWithoutCourseInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   lessons?: Prisma.LessonUpdateManyWithoutChapterNestedInput
 }
 
 export type ChapterUncheckedUpdateWithoutCourseInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
   lessons?: Prisma.LessonUncheckedUpdateManyWithoutChapterNestedInput
 }
 
 export type ChapterUncheckedUpdateManyWithoutCourseInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
-  order?: Prisma.IntFieldUpdateOperationsInput | number
+  order?: Prisma.FloatFieldUpdateOperationsInput | number
 }
 
 
@@ -1042,7 +1042,7 @@ export interface Prisma__ChapterClient<T, Null = never, ExtArgs extends runtime.
 export interface ChapterFieldRefs {
   readonly id: Prisma.FieldRef<"Chapter", 'String'>
   readonly title: Prisma.FieldRef<"Chapter", 'String'>
-  readonly order: Prisma.FieldRef<"Chapter", 'Int'>
+  readonly order: Prisma.FieldRef<"Chapter", 'Float'>
   readonly courseId: Prisma.FieldRef<"Chapter", 'String'>
 }
     

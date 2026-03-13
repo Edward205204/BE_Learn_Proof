@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { z } from 'zod'
-import { CreateCourseSt1Dto, CreateCourseSt2Dto, CreateCourseSt3Dto, GetCoursesQuery } from './courses.model'
+import {
+  CreateCourseSt1Dto,
+  CreateCourseSt2Dto,
+  CreateCourseSt3Dto,
+  GetCoursesQuery,
+  ReorderChapterDto,
+  ReorderLessonDto,
+} from './courses.model'
 import { PrismaService } from 'src/shared/services/prisma.service'
 import { CourseStatus, Prisma } from 'src/generated/prisma/client'
 
@@ -335,6 +342,19 @@ export class CourseRepo {
     })
   }
 
+  private calculateNewOrder(prevOrder: number | null, nextOrder: number | null) {
+    if (prevOrder !== null && nextOrder !== null) {
+      return (prevOrder + nextOrder) / 2
+    }
+    if (prevOrder !== null) {
+      return prevOrder + 100
+    }
+    if (nextOrder !== null) {
+      return nextOrder / 2
+    }
+    return 1000
+  }
+
   finishCreateCourse(payload: CreateCourseSt3Dto & { creatorId: string }) {
     return this.prisma.course.update({
       where: {
@@ -353,6 +373,67 @@ export class CourseRepo {
         chapters: {
           orderBy: { order: 'asc' },
         },
+      },
+    })
+  }
+
+  updateOrderLesson(payload: ReorderLessonDto) {
+    return this.prisma.$transaction(async (tx) => {
+      const prevLesson = payload.prevLessonId
+        ? await tx.lesson.findUnique({ where: { id: payload.prevLessonId }, select: { order: true } })
+        : null
+
+      const nextLesson = payload.nextLessonId
+        ? await tx.lesson.findUnique({ where: { id: payload.nextLessonId }, select: { order: true } })
+        : null
+
+      const newOrder = this.calculateNewOrder(prevLesson?.order ?? null, nextLesson?.order ?? null)
+
+      return await tx.lesson.update({
+        where: { id: payload.lessonId },
+        data: {
+          order: newOrder,
+          chapterId: payload.targetChapterId,
+        },
+      })
+    })
+  }
+
+  updateOrderChapters(payload: ReorderChapterDto) {
+    return this.prisma.$transaction(async (tx) => {
+      const prevChapter = payload.prevChapterId
+        ? await tx.chapter.findUnique({ where: { id: payload.prevChapterId }, select: { order: true } })
+        : null
+
+      const nextChapter = payload.nextChapterId
+        ? await tx.chapter.findUnique({ where: { id: payload.nextChapterId }, select: { order: true } })
+        : null
+
+      const newOrder = this.calculateNewOrder(prevChapter?.order ?? null, nextChapter?.order ?? null)
+
+      return await tx.chapter.update({
+        where: { id: payload.chapterId },
+        data: {
+          order: newOrder,
+        },
+      })
+    })
+  }
+
+  findLessonUnique(payload: { id: string; creatorId: string }) {
+    return this.prisma.lesson.findFirst({
+      where: {
+        id: payload.id,
+        chapter: { course: { creatorId: payload.creatorId } },
+      },
+    })
+  }
+
+  findChapterUnique(payload: { id: string; creatorId: string }) {
+    return this.prisma.chapter.findFirst({
+      where: {
+        id: payload.id,
+        course: { creatorId: payload.creatorId },
       },
     })
   }
