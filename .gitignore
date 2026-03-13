@@ -12,6 +12,9 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+# Prisma 
+/src/generated
+
 # OS
 .DS_Store
 
