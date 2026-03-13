@@ -280,6 +280,31 @@ export type CreateCourseSt3Dto = z.infer<typeof CreateCourseSt3DtoSchema>
 
 // ----
 
+// ----
+// Reorder
+// DTO cho Lesson
+export const ReorderLessonBodySchema = z
+  .object({
+    targetChapterId: z.string(),
+    // ID của bài đứng ngay phía TRÊN vị trí mới (null nếu là đầu danh sách)
+    prevLessonId: z.string().nullable(),
+    // ID của bài đứng ngay phía DƯỚI vị trí mới (null nếu là cuối danh sách)
+    nextLessonId: z.string().nullable(),
+  })
+  .strict()
+
+// DTO cho Chapter
+export const ReorderChapterBodySchema = z
+  .object({
+    prevChapterId: z.string().nullable(),
+    nextChapterId: z.string().nullable(),
+  })
+  .strict()
+
+export type ReorderLessonDto = z.infer<typeof ReorderLessonBodySchema>
+export type ReorderChapterDto = z.infer<typeof ReorderChapterBodySchema>
+
+// ----
 export type SearchSuggestion = z.infer<typeof SearchSuggestionSchema>
 export type GetSearchSuggestionsQueryType = z.infer<typeof GetSearchSuggestionsQuery>
 export type AllSlugsResponse = z.infer<typeof AllSlugsResponseSchema>

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common'
 import { CourseService } from './services/courses.service'
 import {
   CreateCourseSt2Dto,
@@ -93,4 +93,12 @@ export class CourseController {
   createCourseSt3(@Body() body: CreateCourseSt3Dto, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.createCourseSt3(body, user.userId)
   }
+
+  // @Patch(':categoryId/reorder')
+  // async reorder(
+  //   @Param('categoryId') categoryId: string, // CUID từ URL
+  //   @Body() { orderedIds }: ReorderLessonsDto,
+  // ) {
+  //   return await this.lessonService.reorder(categoryId, orderedIds)
+  // }
 }

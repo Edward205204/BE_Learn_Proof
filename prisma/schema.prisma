@@ -169,7 +169,7 @@ model Course {
 model Chapter {
   id       String   @id @default(cuid())
   title    String
-  order    Int
+  order    Float
   courseId String
   course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons  Lesson[]
@@ -181,7 +181,7 @@ model Lesson {
   description String?    @db.Text
   contentAI   String?    @db.Text // Context cho AI
   type        LessonType
-  order       Int
+  order       Float
 
   videoUrl    String?
   textContent String? @db.Text
