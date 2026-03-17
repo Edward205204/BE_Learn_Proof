@@ -17,12 +17,15 @@ export class CourseService {
     return course
   }
 
-  getHomeSections() {
-    return this.repo.getHomeSections()
+  async getHomeSections() {
+    const data = await this.repo.getHomeSections()
+    console.log(data)
+    return data
   }
 
-  getCategories() {
-    return this.repo.getCategories()
+  async getCategories() {
+    const data = await this.repo.getCategories()
+    return data
   }
 
   getSearchSuggestions(query: GetSearchSuggestionsQueryType) {

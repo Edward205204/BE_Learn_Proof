@@ -176,6 +176,20 @@ export const GetSearchSuggestionsResponseSchema = z.array(SearchSuggestionSchema
 // -----
 // Crud cho content manager
 
+export const GetCourseParamByIdSchema = z.object({
+  id: z.string(),
+})
+export type GetCourseParamByIdType = z.infer<typeof GetCourseParamByIdSchema>
+
+export const GetMyCoursesManagerQuerySchema = z
+  .object({
+    status: z.enum(['ALL', 'DRAFT', 'PUBLISHED', 'ARCHIVED']).default('ALL'),
+    page: z.coerce.number({ message: 'Tham số page phải là một số' }).int().min(1).default(1),
+    limit: z.coerce.number({ message: 'Tham số limit phải là một số' }).int().min(1).default(10),
+  })
+  .strict()
+export type GetMyCoursesManagerQueryType = z.infer<typeof GetMyCoursesManagerQuerySchema>
+
 export const CreateCourseSt1DtoSchema = z
   .object({
     title: z.string().min(1).max(100),
@@ -184,10 +198,13 @@ export const CreateCourseSt1DtoSchema = z
     shortDesc: z.string().min(1),
     fullDesc: z.string().min(1),
     thumbnail: z.string().url().nullable().optional(),
-    expectedDays: z.number().int().min(1).optional(),
+    // expectedDays: z.number().int().min(1).optional(),
   })
   .strict()
 export type CreateCourseSt1Dto = z.infer<typeof CreateCourseSt1DtoSchema>
+
+export const UpdateCourseBaseInfoDtoSchema = CreateCourseSt1DtoSchema
+export type UpdateCourseBaseInfoDto = z.infer<typeof UpdateCourseBaseInfoDtoSchema>
 
 export const CreateCourseSt1ResponseSchema = z.object({
   id: z.string(),
@@ -220,7 +237,6 @@ export const ChapterSchema = z.object({
 
 export const CreateCourseSt2DtoSchema = z
   .object({
-    courseId: z.string(),
     chapterList: ChapterSchema.array(),
   })
   .strict()
@@ -271,7 +287,6 @@ export const CreateCourseFullResponseSchema = z.object({
 export type CreateCourseSt2Response = z.infer<typeof CreateCourseFullResponseSchema>
 
 export const CreateCourseSt3DtoSchema = z.object({
-  courseId: z.string(),
   isFree: z.boolean(),
   price: z.number(),
   originalPrice: z.number().nullable(),

@@ -5,6 +5,7 @@ import {
   CreateCourseSt2Dto,
   CreateCourseSt3Dto,
   GetCoursesQuery,
+  GetMyCoursesManagerQueryType,
   ReorderChapterDto,
   ReorderLessonDto,
 } from './courses.model'
@@ -15,9 +16,9 @@ import { CourseStatus, Prisma } from 'src/generated/prisma/client'
 export class CourseRepo {
   constructor(private prisma: PrismaService) {}
 
-  findCategoryById(id: string) {
+  findCategoryUnique(body: { id: string } | { slug: string }) {
     return this.prisma.category.findUnique({
-      where: { id },
+      where: body,
       select: { id: true, name: true, slug: true },
     })
   }
@@ -33,7 +34,8 @@ export class CourseRepo {
         shortDesc: dto.shortDesc,
         fullDesc: dto.fullDesc,
         thumbnail: dto.thumbnail ?? null,
-        expectedDays: dto.expectedDays ?? null,
+        // expectedDays: dto.expectedDays ?? null,
+        expectedDays: null,
         isFree: true,
         price: 0,
         status: 'DRAFT',
@@ -62,9 +64,9 @@ export class CourseRepo {
     })
   }
 
-  async syncChaptersFrame(dto: CreateCourseSt2Dto) {
+  async syncChaptersFrame(courseId: string, dto: CreateCourseSt2Dto) {
     return await this.prisma.course.update({
-      where: { id: dto.courseId },
+      where: { id: courseId },
       data: {
         chapters: {
           createMany: {
@@ -342,6 +344,42 @@ export class CourseRepo {
     })
   }
 
+  getCourseUniqueIncludeChapters(body: { id: string } | { slug: string } | { creatorId: string; id: string }) {
+    return this.prisma.course.findUnique({
+      where: body,
+      include: {
+        chapters: {
+          orderBy: { order: 'asc' },
+        },
+      },
+    })
+  }
+
+  updateCourseBaseInfo(courseId: string, creatorId: string, dto: CreateCourseSt1Dto, slug?: string) {
+    return this.prisma.course.update({
+      where: {
+        id_creatorId: {
+          id: courseId,
+          creatorId,
+        },
+      },
+      data: {
+        title: dto.title,
+        ...(slug ? { slug } : {}),
+        categoryId: dto.categoryId,
+        level: dto.level,
+        shortDesc: dto.shortDesc,
+        fullDesc: dto.fullDesc,
+        thumbnail: dto.thumbnail ?? null,
+      },
+      include: {
+        chapters: {
+          orderBy: { order: 'asc' },
+        },
+      },
+    })
+  }
+
   private calculateNewOrder(prevOrder: number | null, nextOrder: number | null) {
     if (prevOrder !== null && nextOrder !== null) {
       return (prevOrder + nextOrder) / 2
@@ -355,11 +393,11 @@ export class CourseRepo {
     return 1000
   }
 
-  finishCreateCourse(payload: CreateCourseSt3Dto & { creatorId: string }) {
+  finishCreateCourse(courseId: string, payload: CreateCourseSt3Dto & { creatorId: string }) {
     return this.prisma.course.update({
       where: {
         id_creatorId: {
-          id: payload.courseId,
+          id: courseId,
           creatorId: payload.creatorId,
         },
       },
@@ -436,5 +474,48 @@ export class CourseRepo {
         course: { creatorId: payload.creatorId },
       },
     })
+  }
+
+  async getListCoursesManager(query: GetMyCoursesManagerQueryType, userId: string) {
+    const { page, limit, status } = query
+
+    const where = status === 'ALL' ? { creatorId: userId } : { status, creatorId: userId }
+
+    // 1. Tính toán Pagination
+    const skip = (page - 1) * limit
+    const [courses, total] = await this.prisma.$transaction([
+      this.prisma.course.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          isCompleted: true,
+          thumbnail: true,
+          price: true,
+          originalPrice: true,
+          isFree: true,
+          level: true,
+          shortDesc: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          overallAnalytics: { select: { avgRating: true, totalStudents: true, avgInterestScore: true } },
+        },
+      }),
+      this.prisma.course.count({ where }),
+    ])
+    return {
+      items: courses,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    }
   }
 }
