@@ -47,17 +47,15 @@ export class InteractionRepo {
           },
         },
       },
-      // 🔥 pin lên trước
-      orderBy: [
-        { isPinned: 'desc' },
-        { createdAt: 'desc' },
-      ],
+      // pin lên trước
+      orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
       skip: (page - 1) * limit,
       take: limit,
     })
   }
 
-  async findAllComments(page: number, limit: number) {
+  async
+  findAllComments(page: number, limit: number) {
     return this.prisma.discussion.findMany({
       where: {
         isDeleted: false,
@@ -107,4 +105,26 @@ export class InteractionRepo {
       data,
     })
   }
+  async createComment(data: any) {
+    return this.prisma.discussion.create({
+      data,
+    })
+  }
+  async createReply(data: any) {
+    return this.prisma.reply.create({
+      data,
+    })
+  }
+  async findReplyById(id: string) {
+    return this.prisma.reply.findUnique({
+      where: { id },
+    })
+  }
+  async updateReply(id: string, data: any) {
+    return this.prisma.reply.update({
+      where: { id },
+      data,
+    })
+  }
+  
 }
