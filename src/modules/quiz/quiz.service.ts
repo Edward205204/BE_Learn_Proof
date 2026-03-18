@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, BadRequestException } from '@nestjs/common'
 import { QuizRepo } from './quiz.repo'
 import {
   QuizNotFoundException,
@@ -17,22 +17,47 @@ export class QuizService {
   constructor(private readonly quizRepo: QuizRepo) {}
 
   async createQuiz(body: CreateQuizBodyType, userId: string) {
-    const { lessonId, title, description } = body
+    const { type, lessonId, chapterId, title, description } = body
 
-    const lesson = await this.quizRepo.findLessonWithAuthorId({ id: lessonId, authorId: userId })
-    if (!lesson) throw new LessonNotFoundException()
+    // 🔥 VALIDATE TYPE
+    if (type === 'LESSON') {
+      if (!lessonId) throw new BadRequestException('lessonId is required')
 
-    const quiz = await this.quizRepo.createQuiz({
+      const lesson = await this.quizRepo.findLessonWithAuthorId({
+        id: lessonId,
+        authorId: userId,
+      })
+      if (!lesson) throw new LessonNotFoundException()
+
+      // ❗ tránh tạo duplicate quiz
+      const existed = await this.quizRepo.findQuizByLesson(lessonId)
+      if (existed) throw new BadRequestException('Lesson already has a quiz')
+    }
+
+    if (type === 'CHAPTER') {
+      if (!chapterId) throw new BadRequestException('chapterId is required')
+
+      const chapter = await this.quizRepo.findChapterWithAuthorId({
+        id: chapterId,
+        authorId: userId,
+      })
+      if (!chapter) throw new BadRequestException('Chapter not found')
+
+      const existed = await this.quizRepo.findQuizByChapter(chapterId)
+      if (existed) throw new BadRequestException('Chapter already has a quiz')
+    }
+
+    return this.quizRepo.createQuiz({
+      type,
+      lessonId,
+      chapterId,
       title,
       description,
-      lessonId,
     })
-
-    return quiz
   }
 
   async updateQuiz(quizId: string, body: UpdateQuizBodyType) {
-    const quiz = await this.quizRepo.findQuiz({ id: quizId })
+    const quiz = await this.quizRepo.findQuizById(quizId)
     if (!quiz) throw new QuizNotFoundException()
 
     return this.quizRepo.updateQuiz({
@@ -42,7 +67,7 @@ export class QuizService {
   }
 
   async deleteQuiz(quizId: string) {
-    const quiz = await this.quizRepo.findQuiz({ id: quizId })
+    const quiz = await this.quizRepo.findQuizById(quizId)
     if (!quiz) throw new QuizNotFoundException()
 
     await this.quizRepo.deleteQuiz({ id: quizId })
@@ -52,7 +77,6 @@ export class QuizService {
 
   async getQuizById(quizId: string) {
     const quiz = await this.quizRepo.getQuizDetail(quizId)
-
     if (!quiz) throw new QuizNotFoundException()
 
     return quiz
@@ -60,17 +84,34 @@ export class QuizService {
 
   async getQuizByLesson(lessonId: string) {
     const quiz = await this.quizRepo.findQuizByLesson(lessonId)
-
     if (!quiz) throw new QuizNotFoundException()
 
     return quiz
   }
 
+  async getQuizByChapter(chapterId: string) {
+    const quiz = await this.quizRepo.findQuizByChapter(chapterId)
+    if (!quiz) throw new QuizNotFoundException()
+
+    return quiz
+  }
+
+  // ================= QUESTION =================
+
   async addQuestion(body: AddQuestionBodyType) {
     const { quizId, content, answers } = body
 
-    const quiz = await this.quizRepo.findQuiz({ id: quizId })
+    const quiz = await this.quizRepo.findQuizById(quizId)
     if (!quiz) throw new QuizNotFoundException()
+
+    if (!answers || answers.length < 2) {
+      throw new BadRequestException('At least 2 answers required')
+    }
+
+    const correctCount = answers.filter(a => a.isCorrect).length
+    if (correctCount !== 1) {
+      throw new BadRequestException('Must have exactly 1 correct answer')
+    }
 
     return this.quizRepo.createQuestion({
       quizId,
@@ -85,7 +126,9 @@ export class QuizService {
 
     return this.quizRepo.updateQuestion({
       where: { id: questionId },
-      data: body,
+      data: {
+        content: body.content,
+      },
     })
   }
 
@@ -98,8 +141,12 @@ export class QuizService {
     return { message: 'Question deleted successfully' }
   }
 
+  // ================= SUBMIT =================
+
   async submitQuiz(userId: string, body: SubmitQuizBodyType) {
     const { quizId, answers } = body
+
+    if (!userId) throw new BadRequestException('Unauthorized')
 
     const quiz = await this.quizRepo.getQuizDetail(quizId)
     if (!quiz) throw new QuizNotFoundException()
@@ -107,19 +154,19 @@ export class QuizService {
     let correct = 0
 
     for (const question of quiz.questions) {
-      const userAnswer = answers.find((a) => a.questionId === question.id)
-
-      const correctAnswer = question.answers.find((a) => a.isCorrect)
+      const userAnswer = answers.find(a => a.questionId === question.id)
+      const correctAnswer = question.answers.find(a => a.isCorrect)
 
       if (userAnswer && userAnswer.answerId === correctAnswer?.id) {
         correct++
       }
     }
 
-    const score = (correct / quiz.questions.length) * 100
+    const total = quiz.questions.length
+    const score = total > 0 ? (correct / total) * 100 : 0
 
     return {
-      totalQuestions: quiz.questions.length,
+      totalQuestions: total,
       correctAnswers: correct,
       score,
     }
