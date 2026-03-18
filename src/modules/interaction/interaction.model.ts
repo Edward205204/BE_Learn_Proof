@@ -6,5 +6,12 @@ export const PaginationSchema = z.object({
 })
 
 export const IdParamSchema = z.object({
-  id: z.string().cuid(), 
+  id: z.string().min(1),
+})
+export const LessonParamSchema = z.object({
+  courseId: z.string().min(1),
+  lessonId: z.string().min(1),
+})
+export const ChangePinSchema = z.object({
+  isPinned: z.boolean(),
 })

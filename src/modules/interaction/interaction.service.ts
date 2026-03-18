@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { InteractionRepo } from './interaction.repo'
 
 @Injectable()
@@ -7,7 +7,6 @@ export class InteractionService {
 
   async getLessonComments(courseId: string, lessonId: string, page = 1, limit = 10) {
     const lesson = await this.repo.findLessonInCourse(courseId, lessonId)
-
     if (!lesson) {
       throw new NotFoundException('Lesson khong thuoc course')
     }
@@ -31,27 +30,21 @@ export class InteractionService {
     }
   }
 
-  async pinComment(id: string) {
+  async changePin(id: string, isPinnedFromFE: boolean) {
     const comment = await this.repo.findCommentById(id)
 
     if (!comment) {
       throw new NotFoundException('Comment khong ton tai')
     }
 
-    return this.repo.updateComment(id, {
-      isPinned: true,
-    })
-  }
-
-  async unpinComment(id: string) {
-    const comment = await this.repo.findCommentById(id)
-
-    if (!comment) {
-      throw new NotFoundException('Comment khong ton tai')
+    // check trạng thái FE gửi lên có đúng với DB không
+    if (comment.isPinned !== isPinnedFromFE) {
+      throw new BadRequestException('Trang thai pin khong hop le (stale data)')
     }
 
+    // toggle
     return this.repo.updateComment(id, {
-      isPinned: false,
+      isPinned: !comment.isPinned,
     })
   }
 }
