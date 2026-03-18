@@ -338,6 +338,8 @@ model Discussion {
   content  String  @db.Text
   isPinned Boolean @default(false)
 
+ isDeleted Boolean @default(false)
+
   userId   String
   courseId String
   lessonId String
@@ -348,16 +350,22 @@ model Discussion {
 
   replies   Reply[]
   createdAt DateTime @default(now())
+  @@index([courseId, lessonId])
+@@index([createdAt])
+@@index([isDeleted])
 }
 
 model Reply {
   id           String     @id @default(cuid())
   content      String     @db.Text
+  isDeleted Boolean @default(false)
   discussionId String
   discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   userId       String
   user         User       @relation(fields: [userId], references: [id])
   createdAt    DateTime   @default(now())
+  @@index([discussionId])
+@@index([isDeleted])
 }
 
 model Review {
