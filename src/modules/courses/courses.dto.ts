@@ -11,10 +11,14 @@ import {
   GetMyCoursesManagerQuerySchema,
   GetCourseParamByIdSchema,
   UpdateCourseBaseInfoDtoSchema,
+  QueryCourseDetailById,
 } from './courses.model'
 
 export class GetCoursesQueryDTO extends createZodDto(GetCoursesQuery) {}
 export class GetCourseDetailQueryDTO extends createZodDto(GetCourseDetailQuery) {}
+
+export class QueryCourseDetailByIdDTO extends createZodDto(QueryCourseDetailById) {}
+
 export class GetSearchSuggestionsQueryDTO extends createZodDto(GetSearchSuggestionsQuery) {}
 export class CreateCourseSt1Dto extends createZodDto(CreateCourseSt1DtoSchema) {}
 export class CreateCourseSt2Dto extends createZodDto(CreateCourseSt2DtoSchema) {}
