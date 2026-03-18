@@ -6,10 +6,11 @@ import { ZodSerializerInterceptor } from 'nestjs-zod'
 import { SharedModule } from './shared/shared.module'
 import { CoursesModule } from './modules/courses/courses.module'
 import { QuizModule } from './modules/quiz/quiz.module';
+import { InteractionModule } from './modules/interaction/interaction.module';
 
 
 @Module({
-  imports: [AuthModule, SharedModule, CoursesModule, QuizModule],
+  imports: [AuthModule, SharedModule, CoursesModule, QuizModule, InteractionModule],
   controllers: [],
   providers: [
     {
