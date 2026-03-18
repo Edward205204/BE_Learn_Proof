@@ -47,6 +47,11 @@ enum PaymentStatus {
   FAILED
 }
 
+enum QuizType {
+  LESSON
+  CHAPTER
+}
+
 // --- Models ---
 
 model User {
@@ -76,6 +81,7 @@ model User {
 
   refreshTokens     RefreshToken[]
   verificationCodes VerificationCode[]
+  quizAttempts      QuizAttempt[]
 
   @@index([email])
 }
@@ -163,16 +169,18 @@ model Course {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([id, creatorId])
+  @@unique([id, creatorId])
+  @@index([creatorId])
 }
 
 model Chapter {
   id       String   @id @default(cuid())
   title    String
-  order    Int
+  order    Float
   courseId String
   course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons  Lesson[]
+  quizzes  Quiz[]
 }
 
 model Lesson {
@@ -181,7 +189,7 @@ model Lesson {
   description String?    @db.Text
   contentAI   String?    @db.Text // Context cho AI
   type        LessonType
-  order       Int
+  order       Float
 
   videoUrl    String?
   textContent String? @db.Text
@@ -190,9 +198,7 @@ model Lesson {
   chapterId String
   chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
-  embeddedQuiz     Quiz?   @relation("EmbeddedQuiz")
-  standaloneQuizId String? @unique
-  standaloneQuiz   Quiz?   @relation("StandaloneQuiz", fields: [standaloneQuizId], references: [id])
+  quizzes Quiz[]
 
   progress    Progress[]
   discussions Discussion[]
@@ -210,27 +216,81 @@ model Quiz {
   title       String?
   description String? @db.Text
 
-  lessonId String? @unique
-  lesson   Lesson? @relation("EmbeddedQuiz", fields: [lessonId], references: [id])
+  type QuizType
 
-  asStandalone Lesson?    @relation("StandaloneQuiz")
-  questions    Question[]
+  lessonId String?
+  lesson   Lesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  chapterId String?
+  chapter   Chapter? @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  questions Question[]
+  attempts  QuizAttempt[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([lessonId])
+  @@index([chapterId])
+  @@index([type])
+}
+
+model QuizAttemptAnswer {
+  id String @id @default(cuid())
+
+  attemptId String
+  attempt   QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+
+  answerId String
+  answer   Answer @relation(fields: [answerId], references: [id])
+
+  isCorrect Boolean
+}
+
+model QuizAttempt {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  score   Float
+  correct Int
+  total   Int
+
+  answers QuizAttemptAnswer[]
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([quizId])
 }
 
 model Question {
-  id      String   @id @default(cuid())
-  content String   @db.Text
-  quizId  String
-  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  answers Answer[]
+  id      String @id @default(cuid())
+  content String @db.Text
+
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  answers        Answer[]
+  attemptAnswers QuizAttemptAnswer[]
+  createdAt      DateTime            @default(now())
 }
 
 model Answer {
-  id         String   @id @default(cuid())
-  content    String
-  isCorrect  Boolean  @default(false)
-  questionId String
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  content   String
+  isCorrect Boolean @default(false)
+
+  questionId     String
+  question       Question            @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  attemptAnswers QuizAttemptAnswer[]
 }
 
 model Enrollment {

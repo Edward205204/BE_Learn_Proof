@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { z } from 'zod'
-import { CreateCourseSt1Dto, CreateCourseSt2Dto, GetCoursesQuery } from './courses.model'
+import {
+  CreateCourseSt1Dto,
+  CreateCourseSt2Dto,
+  CreateCourseSt3Dto,
+  GetCoursesQuery,
+  GetMyCoursesManagerQueryType,
+  ReorderChapterDto,
+  ReorderLessonDto,
+} from './courses.model'
 import { PrismaService } from 'src/shared/services/prisma.service'
 import { CourseStatus, Prisma } from 'src/generated/prisma/client'
 
@@ -8,9 +16,9 @@ import { CourseStatus, Prisma } from 'src/generated/prisma/client'
 export class CourseRepo {
   constructor(private prisma: PrismaService) {}
 
-  findCategoryById(id: string) {
+  findCategoryUnique(body: { id: string } | { slug: string }) {
     return this.prisma.category.findUnique({
-      where: { id },
+      where: body,
       select: { id: true, name: true, slug: true },
     })
   }
@@ -21,12 +29,13 @@ export class CourseRepo {
         title: dto.title,
         slug,
         categoryId: dto.categoryId,
-        tags: dto.tags ?? [],
+
         level: dto.level,
         shortDesc: dto.shortDesc,
         fullDesc: dto.fullDesc,
         thumbnail: dto.thumbnail ?? null,
-        expectedDays: dto.expectedDays ?? null,
+        // expectedDays: dto.expectedDays ?? null,
+        expectedDays: null,
         isFree: true,
         price: 0,
         status: 'DRAFT',
@@ -37,7 +46,7 @@ export class CourseRepo {
         title: true,
         slug: true,
         categoryId: true,
-        tags: true,
+
         level: true,
         shortDesc: true,
         fullDesc: true,
@@ -55,9 +64,9 @@ export class CourseRepo {
     })
   }
 
-  async syncChaptersFrame(dto: CreateCourseSt2Dto) {
+  async syncChaptersFrame(courseId: string, dto: CreateCourseSt2Dto) {
     return await this.prisma.course.update({
-      where: { id: dto.courseId },
+      where: { id: courseId },
       data: {
         chapters: {
           createMany: {
@@ -158,7 +167,7 @@ export class CourseRepo {
         shortDesc: true,
         fullDesc: true,
         thumbnail: true,
-        tags: true,
+
         level: true,
         status: true,
         isFree: true,
@@ -333,5 +342,180 @@ export class CourseRepo {
     return this.prisma.course.findUnique({
       where: body,
     })
+  }
+
+  getCourseUniqueIncludeChapters(body: { id: string } | { slug: string } | { creatorId: string; id: string }) {
+    return this.prisma.course.findUnique({
+      where: body,
+      include: {
+        chapters: {
+          orderBy: { order: 'asc' },
+        },
+      },
+    })
+  }
+
+  updateCourseBaseInfo(courseId: string, creatorId: string, dto: CreateCourseSt1Dto, slug?: string) {
+    return this.prisma.course.update({
+      where: {
+        id_creatorId: {
+          id: courseId,
+          creatorId,
+        },
+      },
+      data: {
+        title: dto.title,
+        ...(slug ? { slug } : {}),
+        categoryId: dto.categoryId,
+        level: dto.level,
+        shortDesc: dto.shortDesc,
+        fullDesc: dto.fullDesc,
+        thumbnail: dto.thumbnail ?? null,
+      },
+      include: {
+        chapters: {
+          orderBy: { order: 'asc' },
+        },
+      },
+    })
+  }
+
+  private calculateNewOrder(prevOrder: number | null, nextOrder: number | null) {
+    if (prevOrder !== null && nextOrder !== null) {
+      return (prevOrder + nextOrder) / 2
+    }
+    if (prevOrder !== null) {
+      return prevOrder + 100
+    }
+    if (nextOrder !== null) {
+      return nextOrder / 2
+    }
+    return 1000
+  }
+
+  finishCreateCourse(courseId: string, payload: CreateCourseSt3Dto & { creatorId: string }) {
+    return this.prisma.course.update({
+      where: {
+        id_creatorId: {
+          id: courseId,
+          creatorId: payload.creatorId,
+        },
+      },
+      data: {
+        status: 'PUBLISHED',
+        isFree: payload.isFree,
+        price: payload.price,
+        originalPrice: payload.originalPrice,
+      },
+      include: {
+        chapters: {
+          orderBy: { order: 'asc' },
+        },
+      },
+    })
+  }
+
+  updateOrderLesson(payload: ReorderLessonDto) {
+    return this.prisma.$transaction(async (tx) => {
+      const prevLesson = payload.prevLessonId
+        ? await tx.lesson.findUnique({ where: { id: payload.prevLessonId }, select: { order: true } })
+        : null
+
+      const nextLesson = payload.nextLessonId
+        ? await tx.lesson.findUnique({ where: { id: payload.nextLessonId }, select: { order: true } })
+        : null
+
+      const newOrder = this.calculateNewOrder(prevLesson?.order ?? null, nextLesson?.order ?? null)
+
+      return await tx.lesson.update({
+        where: { id: payload.lessonId },
+        data: {
+          order: newOrder,
+          chapterId: payload.targetChapterId,
+        },
+      })
+    })
+  }
+
+  updateOrderChapters(payload: ReorderChapterDto) {
+    return this.prisma.$transaction(async (tx) => {
+      const prevChapter = payload.prevChapterId
+        ? await tx.chapter.findUnique({ where: { id: payload.prevChapterId }, select: { order: true } })
+        : null
+
+      const nextChapter = payload.nextChapterId
+        ? await tx.chapter.findUnique({ where: { id: payload.nextChapterId }, select: { order: true } })
+        : null
+
+      const newOrder = this.calculateNewOrder(prevChapter?.order ?? null, nextChapter?.order ?? null)
+
+      return await tx.chapter.update({
+        where: { id: payload.chapterId },
+        data: {
+          order: newOrder,
+        },
+      })
+    })
+  }
+
+  findLessonUnique(payload: { id: string; creatorId: string }) {
+    return this.prisma.lesson.findFirst({
+      where: {
+        id: payload.id,
+        chapter: { course: { creatorId: payload.creatorId } },
+      },
+    })
+  }
+
+  findChapterUnique(payload: { id: string; creatorId: string }) {
+    return this.prisma.chapter.findFirst({
+      where: {
+        id: payload.id,
+        course: { creatorId: payload.creatorId },
+      },
+    })
+  }
+
+  async getListCoursesManager(query: GetMyCoursesManagerQueryType, userId: string) {
+    const { page, limit, status } = query
+
+    const where = status === 'ALL' ? { creatorId: userId } : { status, creatorId: userId }
+
+    // 1. Tính toán Pagination
+    const skip = (page - 1) * limit
+    const [courses, total] = await this.prisma.$transaction([
+      this.prisma.course.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          isCompleted: true,
+          thumbnail: true,
+          price: true,
+          originalPrice: true,
+          isFree: true,
+          level: true,
+          shortDesc: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          overallAnalytics: { select: { avgRating: true, totalStudents: true, avgInterestScore: true } },
+        },
+      }),
+      this.prisma.course.count({ where }),
+    ])
+    return {
+      items: courses,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    }
   }
 }
