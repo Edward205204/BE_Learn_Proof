@@ -107,7 +107,20 @@ export class InteractionRepo {
   async findCommentById(id: string) {
     return this.prisma.discussion.findUnique({
       where: { id },
+      include: {
+        course: {
+          select: { creatorId: true },
+        },
+      },
     })
+  }
+
+  async findCourseCreatorId(courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { creatorId: true },
+    })
+    return course?.creatorId
   }
 
   async updateComment(id: string, data: any) {

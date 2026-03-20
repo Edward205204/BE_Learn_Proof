@@ -4,7 +4,7 @@ import { InteractionRepo } from './interaction.repo'
 
 @Injectable()
 export class InteractionService {
-  constructor(private readonly repo: InteractionRepo) {}
+  constructor(private readonly repo: InteractionRepo) { }
 
   async getLessonComments(courseId: string, lessonId: string, page = 1, limit = 10) {
     const lesson = await this.repo.findLessonInCourse(courseId, lessonId)
@@ -60,6 +60,11 @@ export class InteractionService {
       if (!enrollment) {
         throw new BadRequestException('Ban phai mua khoa hoc de binh luan')
       }
+    } else if (role === Role.CONTENT_MANAGER) {
+      const creatorId = await this.repo.findCourseCreatorId(courseId)
+      if (!creatorId || creatorId !== userId) {
+        throw new ForbiddenException('Ban khong co quyen binh luan tren khoa hoc nay')
+      }
     }
 
     return this.repo.createComment({
@@ -110,6 +115,10 @@ export class InteractionService {
       const enrollment = await this.repo.checkUserEnrollment(userId, discussion.courseId)
       if (!enrollment) {
         throw new BadRequestException('Ban phai mua khoa hoc de tra loi binh luan')
+      }
+    } else if (role === Role.CONTENT_MANAGER) {
+      if (!discussion.course || discussion.course.creatorId !== userId) {
+        throw new ForbiddenException('Ban khong co quyen tra loi binh luan tren khoa hoc nay')
       }
     }
 
