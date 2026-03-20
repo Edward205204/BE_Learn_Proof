@@ -70,6 +70,29 @@ export const GetCommentsResponseSchema = z.object({
   limit: z.number(),
 })
 
+export const CommentWithLessonItemSchema = CommentItemSchema.extend({
+  lesson: z
+    .object({
+      id: z.string(),
+      title: z.string(),
+      chapter: z.object({
+        course: z.object({
+          id: z.string(),
+          title: z.string(),
+        }),
+      }),
+    })
+    .optional(),
+})
+
+export const GetAllCommentsResponseSchema = z.object({
+  data: z.array(CommentWithLessonItemSchema),
+  page: z.number(),
+  limit: z.number(),
+})
+
 export type ReplyItem = z.infer<typeof ReplyItemSchema>
 export type CommentItem = z.infer<typeof CommentItemSchema>
+export type CommentWithLessonItem = z.infer<typeof CommentWithLessonItemSchema>
 export type GetCommentsResponse = z.infer<typeof GetCommentsResponseSchema>
+export type GetAllCommentsResponse = z.infer<typeof GetAllCommentsResponseSchema>
