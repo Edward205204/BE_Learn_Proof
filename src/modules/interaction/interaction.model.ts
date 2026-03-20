@@ -32,3 +32,44 @@ export const CreateReplySchema = z.object({
 export const UpdateReplySchema = z.object({
   content: z.string().min(1),
 })
+
+export const UserInteractionSchema = z.object({
+  id: z.string(),
+  fullName: z.string(),
+  avatar: z.string().nullable(),
+})
+
+export const ReplyItemSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+  discussionId: z.string(),
+  userId: z.string(),
+  isDeleted: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  user: UserInteractionSchema.optional(),
+})
+
+export const CommentItemSchema = z.object({
+  id: z.string(),
+  lessonId: z.string(),
+  courseId: z.string(),
+  userId: z.string(),
+  content: z.string(),
+  isPinned: z.boolean(),
+  isDeleted: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  user: UserInteractionSchema.optional(),
+  replies: z.array(ReplyItemSchema).optional(),
+})
+
+export const GetCommentsResponseSchema = z.object({
+  data: z.array(CommentItemSchema),
+  page: z.number(),
+  limit: z.number(),
+})
+
+export type ReplyItem = z.infer<typeof ReplyItemSchema>
+export type CommentItem = z.infer<typeof CommentItemSchema>
+export type GetCommentsResponse = z.infer<typeof GetCommentsResponseSchema>
