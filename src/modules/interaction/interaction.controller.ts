@@ -4,6 +4,8 @@ import { PaginationDto, IdParamDto, LessonParamDto, ChangePinDto } from './inter
 import { Post, Delete } from '@nestjs/common'
 import { CreateCommentDto, UpdateCommentDto } from './interaction.dto'
 import { CreateReplyDto, UpdateReplyDto } from '../interaction/interaction.dto'
+import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
+import { TokenPayload } from 'src/shared/types/jwt.type'
 
 @Controller()
 export class InteractionController {
@@ -26,27 +28,27 @@ export class InteractionController {
     return this.service.changePin(param.id, body.isPinned)
   }
   @Post('courses/:courseId/lessons/:lessonId/comments')
-  createComment(@Param() param: LessonParamDto, @Body() body: CreateCommentDto) {
-    return this.service.createComment(param.courseId, param.lessonId, body.content)
+  createComment(@Param() param: LessonParamDto, @Body() body: CreateCommentDto, @ActiveUser() user: TokenPayload) {
+    return this.service.createComment(param.courseId, param.lessonId, body.content, user.userId, user.role)
   }
   @Patch('comments/:id')
-  updateComment(@Param() param: IdParamDto, @Body() body: UpdateCommentDto) {
-    return this.service.updateCommentContent(param.id, body.content)
+  updateComment(@Param() param: IdParamDto, @Body() body: UpdateCommentDto, @ActiveUser() user: TokenPayload) {
+    return this.service.updateCommentContent(param.id, body.content, user.userId)
   }
   @Delete('comments/:id')
-  deleteComment(@Param() param: IdParamDto) {
-    return this.service.deleteComment(param.id)
+  deleteComment(@Param() param: IdParamDto, @ActiveUser() user: TokenPayload) {
+    return this.service.deleteComment(param.id, user.userId)
   }
   @Post('comments/:id/replies')
-  createReply(@Param() param: IdParamDto, @Body() body: CreateReplyDto) {
-    return this.service.createReply(param.id, body.content)
+  createReply(@Param() param: IdParamDto, @Body() body: CreateReplyDto, @ActiveUser() user: TokenPayload) {
+    return this.service.createReply(param.id, body.content, user.userId, user.role)
   }
   @Patch('replies/:id')
-  updateReply(@Param() param: IdParamDto, @Body() body: UpdateReplyDto) {
-    return this.service.updateReply(param.id, body.content)
+  updateReply(@Param() param: IdParamDto, @Body() body: UpdateReplyDto, @ActiveUser() user: TokenPayload) {
+    return this.service.updateReply(param.id, body.content, user.userId)
   }
   @Delete('replies/:id')
-  deleteReply(@Param() param: IdParamDto) {
-    return this.service.deleteReply(param.id)
+  deleteReply(@Param() param: IdParamDto, @ActiveUser() user: TokenPayload) {
+    return this.service.deleteReply(param.id, user.userId)
   }
 }

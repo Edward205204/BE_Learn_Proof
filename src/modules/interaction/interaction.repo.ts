@@ -16,6 +16,17 @@ export class InteractionRepo {
     })
   }
 
+  async checkUserEnrollment(userId: string, courseId: string) {
+    return this.prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId,
+          courseId,
+        },
+      },
+    })
+  }
+
   async findLessonComments(courseId: string, lessonId: string, page: number, limit: number) {
     return this.prisma.discussion.findMany({
       where: {
@@ -96,7 +107,20 @@ export class InteractionRepo {
   async findCommentById(id: string) {
     return this.prisma.discussion.findUnique({
       where: { id },
+      include: {
+        course: {
+          select: { creatorId: true },
+        },
+      },
     })
+  }
+
+  async findCourseCreatorId(courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { creatorId: true },
+    })
+    return course?.creatorId
   }
 
   async updateComment(id: string, data: any) {
