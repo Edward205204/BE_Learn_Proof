@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -13,95 +7,43 @@ datasource db {
   provider = "postgresql"
 }
 
-// ---
-
-// --- Enums ---
-
-enum Role {
-  LEARNER
-  CONTENT_MANAGER
-  ADMIN
-}
-
-enum CourseStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED // Chỉ được chuyển sang trạng thái này nếu đã có người mua
-}
-
-enum CourseLevel {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
-}
-
-enum LessonType {
-  VIDEO
-  TEXT
-  QUIZ // Loại 2: Bài kiểm tra độc lập (Standalone)
-}
-
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-}
-
-enum QuizType {
-  LESSON
-  CHAPTER
-}
-
-// --- Models ---
-
 model User {
-  id       String  @id @default(cuid())
-  email    String  @unique
-  password String
-  fullName String
-  avatar   String?
-  role     Role    @default(LEARNER)
-
-  // Hỗ trợ Anonymization (Vô danh hóa) khi xóa tài khoản
-  isDeleted Boolean   @default(false)
-  deletedAt DateTime?
-
-  coursesCreated Course[]          @relation("CourseCreator")
-  enrollments    Enrollment[]
-  transactions   Transaction[]
-  progress       Progress[]
-  discussions    Discussion[]
-  replies        Reply[]
-  reviews        Review[]
-  certificates   Certificate[]
-  heartbeats     LessonHeartbeat[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  refreshTokens     RefreshToken[]
-  verificationCodes VerificationCode[]
+  id                String             @id @default(cuid())
+  email             String             @unique
+  password          String
+  fullName          String
+  avatar            String?
+  role              Role               @default(LEARNER)
+  isDeleted         Boolean            @default(false)
+  deletedAt         DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  certificates      Certificate[]
+  coursesCreated    Course[]           @relation("CourseCreator")
+  discussions       Discussion[]
+  enrollments       Enrollment[]
+  heartbeats        LessonHeartbeat[]
+  progress          Progress[]
   quizAttempts      QuizAttempt[]
+  refreshTokens     RefreshToken[]
+  replies           Reply[]
+  reviews           Review[]
+  transactions      Transaction[]
+  verificationCodes VerificationCode[]
 
   @@index([email])
 }
 
-enum VerificationCodeType {
-  REGISTER
-  FORGOT_PASSWORD
-}
-
 model VerificationCode {
-  id    Int                  @id @default(autoincrement())
-  email String               @db.VarChar(500)
-  code  String               @db.VarChar(50)
-  type  VerificationCodeType
-
+  id        Int                  @id @default(autoincrement())
+  email     String               @db.VarChar(500)
+  code      String               @db.VarChar(50)
+  type      VerificationCodeType
   expiresAt DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
   userId    String?
+  user      User?                @relation(fields: [userId], references: [id])
 
   @@unique([email, code])
   @@unique([email, type])
@@ -110,12 +52,11 @@ model VerificationCode {
 }
 
 model RefreshToken {
-  token  String @unique @db.VarChar(1000)
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
+  token     String   @unique @db.VarChar(1000)
+  userId    String
   expiresAt DateTime
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([expiresAt])
 }
@@ -128,46 +69,35 @@ model Category {
 }
 
 model Course {
-  id         String      @id @default(cuid())
-  title      String
-  slug       String      @unique
-  categoryId String
-  category   Category    @relation(fields: [categoryId], references: [id])
-  level      CourseLevel @default(BEGINNER)
-
-  // Fields cho Khóa học chưa hoàn thiện (Drip Content)
-  isCompleted           Boolean @default(false) // Đã quay xong toàn bộ chưa?
-  publishedLessonsCount Int     @default(0) // Số bài hiện đang công khai
-  totalPlannedLessons   Int? // Tổng số bài dự kiến
-
-  shortDesc String  @db.Text
-  fullDesc  String  @db.Text // Context cho AI
-  thumbnail String?
-
-  status        CourseStatus @default(DRAFT)
-  isFree        Boolean      @default(true)
-  price         Float        @default(0)
-  originalPrice Float?
-
-  // Analytics Fields (Static configuration)
-  expectedDays Int? // Số ngày dự kiến hoàn thành
-
-  creatorId String
-  creator   User   @relation("CourseCreator", fields: [creatorId], references: [id])
-
-  chapters     Chapter[]
-  enrollments  Enrollment[]
-  transactions Transaction[]
-  reviews      Review[]
-  discussions  Discussion[]
-  certificates Certificate[]
-
-  // Link tới hệ thống Snapshot
-  dailySnapshots   CourseDailySnapshot[]
-  overallAnalytics CourseOverallAnalytics?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                    String                  @id @default(cuid())
+  title                 String
+  slug                  String                  @unique
+  categoryId            String
+  level                 CourseLevel             @default(BEGINNER)
+  isCompleted           Boolean                 @default(false)
+  publishedLessonsCount Int                     @default(0)
+  totalPlannedLessons   Int?
+  shortDesc             String
+  fullDesc              String
+  thumbnail             String?
+  status                CourseStatus            @default(DRAFT)
+  isFree                Boolean                 @default(true)
+  price                 Float                   @default(0)
+  originalPrice         Float?
+  expectedDays          Int?
+  creatorId             String
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  certificates          Certificate[]
+  chapters              Chapter[]
+  category              Category                @relation(fields: [categoryId], references: [id])
+  creator               User                    @relation("CourseCreator", fields: [creatorId], references: [id])
+  dailySnapshots        CourseDailySnapshot[]
+  overallAnalytics      CourseOverallAnalytics?
+  discussions           Discussion[]
+  enrollments           Enrollment[]
+  reviews               Review[]
+  transactions          Transaction[]
 
   @@unique([id, creatorId])
   @@index([creatorId])
@@ -184,51 +114,39 @@ model Chapter {
 }
 
 model Lesson {
-  id          String     @id @default(cuid())
+  id          String                   @id @default(cuid())
   title       String
-  description String?    @db.Text
-  contentAI   String?    @db.Text // Context cho AI
+  description String?
+  contentAI   String?
   type        LessonType
   order       Float
-
   videoUrl    String?
-  textContent String? @db.Text
-  duration    Int     @default(0) // Giây
-
-  chapterId String
-  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-
-  quizzes Quiz[]
-
-  progress    Progress[]
+  textContent String?
+  duration    Int                      @default(0)
+  chapterId   String
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
   discussions Discussion[]
+  chapter     Chapter                  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  analytics   LessonAnalyticsSnapshot?
   heartbeats  LessonHeartbeat[]
-
-  // Snapshot cho từng bài học
-  analytics LessonAnalyticsSnapshot?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  progress    Progress[]
+  quizzes     Quiz[]
 }
 
 model Quiz {
-  id          String  @id @default(cuid())
+  id          String        @id @default(cuid())
   title       String?
-  description String? @db.Text
-
-  type QuizType
-
-  lessonId String?
-  lesson   Lesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-
-  chapterId String?
-  chapter   Chapter? @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-
-  questions Question[]
-  attempts  QuizAttempt[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  description String?
+  lessonId    String?
+  chapterId   String?
+  createdAt   DateTime      @default(now())
+  type        QuizType
+  updatedAt   DateTime      @updatedAt
+  questions   Question[]
+  chapter     Chapter?      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  lesson      Lesson?       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  attempts    QuizAttempt[]
 
   @@index([lessonId])
   @@index([chapterId])
@@ -236,73 +154,60 @@ model Quiz {
 }
 
 model QuizAttemptAnswer {
-  id String @id @default(cuid())
-
-  attemptId String
-  attempt   QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-
+  id         String      @id @default(cuid())
+  attemptId  String
   questionId String
-  question   Question @relation(fields: [questionId], references: [id])
-
-  answerId String
-  answer   Answer @relation(fields: [answerId], references: [id])
-
-  isCorrect Boolean
+  answerId   String
+  isCorrect  Boolean
+  answer     Answer      @relation(fields: [answerId], references: [id])
+  attempt    QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question   Question    @relation(fields: [questionId], references: [id])
 }
 
 model QuizAttempt {
-  id String @id @default(cuid())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  quizId String
-  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
-
-  score   Float
-  correct Int
-  total   Int
-
-  answers QuizAttemptAnswer[]
-
-  createdAt DateTime @default(now())
+  id        String              @id @default(cuid())
+  userId    String
+  quizId    String
+  score     Float
+  correct   Int
+  total     Int
+  createdAt DateTime            @default(now())
+  quiz      Quiz                @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers   QuizAttemptAnswer[]
 
   @@index([userId])
   @@index([quizId])
 }
 
 model Question {
-  id      String @id @default(cuid())
-  content String @db.Text
-
-  quizId String
-  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
-
-  answers        Answer[]
-  attemptAnswers QuizAttemptAnswer[]
+  id             String              @id @default(cuid())
+  content        String
+  quizId         String
   createdAt      DateTime            @default(now())
+  answers        Answer[]
+  quiz           Quiz                @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  attemptAnswers QuizAttemptAnswer[]
 }
 
 model Answer {
-  id        String  @id @default(cuid())
-  content   String
-  isCorrect Boolean @default(false)
-
+  id             String              @id @default(cuid())
+  content        String
+  isCorrect      Boolean             @default(false)
   questionId     String
   question       Question            @relation(fields: [questionId], references: [id], onDelete: Cascade)
   attemptAnswers QuizAttemptAnswer[]
 }
 
 model Enrollment {
-  id       String @id @default(cuid())
-  userId   String
-  courseId String
-  user     User   @relation(fields: [userId], references: [id])
-  course   Course @relation(fields: [courseId], references: [id])
-
+  id             String    @id @default(cuid())
+  userId         String
+  courseId       String
   enrolledAt     DateTime  @default(now())
   completedAt    DateTime?
-  lastCaughtUpAt DateTime? // Cho khóa Drip Content
+  lastCaughtUpAt DateTime?
+  course         Course    @relation(fields: [courseId], references: [id])
+  user           User      @relation(fields: [userId], references: [id])
 
   @@unique([userId, courseId])
 }
@@ -313,70 +218,66 @@ model Progress {
   lessonId    String
   isCompleted Boolean  @default(false)
   lastAccess  DateTime @updatedAt
-
-  user   User   @relation(fields: [userId], references: [id])
-  lesson Lesson @relation(fields: [lessonId], references: [id])
+  lesson      Lesson   @relation(fields: [lessonId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, lessonId])
 }
 
 model LessonHeartbeat {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
   lessonId  String
   lastPoint Int
-
-  user      User     @relation(fields: [userId], references: [id])
-  lesson    Lesson   @relation(fields: [lessonId], references: [id])
   updatedAt DateTime @updatedAt
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, lessonId])
 }
 
 model Discussion {
-  id       String  @id @default(cuid())
-  content  String  @db.Text
-  isPinned Boolean @default(false)
-
-  isDeleted Boolean @default(false)
-
-  userId   String
-  courseId String
-  lessonId String
-
-  user   User   @relation(fields: [userId], references: [id])
-  course Course @relation(fields: [courseId], references: [id])
-  lesson Lesson @relation(fields: [lessonId], references: [id])
-
-  replies   Reply[]
+  id        String   @id @default(cuid())
+  content   String
+  isPinned  Boolean  @default(false)
+  userId    String
+  courseId  String
+  lessonId  String
   createdAt DateTime @default(now())
+  isDeleted Boolean  @default(false)
+  course    Course   @relation(fields: [courseId], references: [id])
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  replies   Reply[]
+
   @@index([courseId, lessonId])
-@@index([createdAt])
-@@index([isDeleted])
+  @@index([createdAt])
+  @@index([isDeleted])
 }
 
 model Reply {
   id           String     @id @default(cuid())
-  content      String     @db.Text
-  isDeleted Boolean @default(false)
+  content      String
   discussionId String
-  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   userId       String
-  user         User       @relation(fields: [userId], references: [id])
   createdAt    DateTime   @default(now())
+  isDeleted    Boolean    @default(false)
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id])
+
   @@index([discussionId])
-@@index([isDeleted])
+  @@index([isDeleted])
 }
 
 model Review {
   id        String   @id @default(cuid())
   rating    Int      @default(5)
-  comment   String?  @db.Text
+  comment   String?
   userId    String
   courseId  String
-  user      User     @relation(fields: [userId], references: [id])
-  course    Course   @relation(fields: [courseId], references: [id])
   createdAt DateTime @default(now())
+  course    Course   @relation(fields: [courseId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, courseId])
 }
@@ -388,9 +289,9 @@ model Transaction {
   amount    Float
   status    PaymentStatus @default(PENDING)
   provider  String
-  user      User          @relation(fields: [userId], references: [id])
-  course    Course        @relation(fields: [courseId], references: [id])
   createdAt DateTime      @default(now())
+  course    Course        @relation(fields: [courseId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
 }
 
 model Certificate {
@@ -400,50 +301,82 @@ model Certificate {
   issuedAt        DateTime @default(now())
   certificateHash String   @unique
   txHash          String?
-
-  user   User   @relation(fields: [userId], references: [id])
-  course Course @relation(fields: [courseId], references: [id])
+  course          Course   @relation(fields: [courseId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
 }
 
-// --- NEW: Analytics Snapshot Models (Để Dashboard mượt và bảo vệ Data) ---
-
 model CourseOverallAnalytics {
-  id       String @id @default(cuid())
-  courseId String @unique
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  totalStudents    Int   @default(0)
-  totalRevenue     Float @default(0)
-  avgRating        Float @default(0)
-  avgInterestScore Float @default(0) // Tính theo Vận tốc học
-  dropoutRate      Float @default(0)
-  completionRate   Float @default(0)
-
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(cuid())
+  courseId         String   @unique
+  totalStudents    Int      @default(0)
+  totalRevenue     Float    @default(0)
+  avgRating        Float    @default(0)
+  avgInterestScore Float    @default(0)
+  dropoutRate      Float    @default(0)
+  completionRate   Float    @default(0)
+  updatedAt        DateTime @updatedAt
+  course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model CourseDailySnapshot {
-  id       String @id @default(cuid())
-  courseId String
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
+  id             String   @id @default(cuid())
+  courseId       String
   date           DateTime @default(now())
   newEnrollments Int      @default(0)
   activeLearners Int      @default(0)
   revenueToday   Float    @default(0)
+  course         Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([courseId, date])
 }
 
 model LessonAnalyticsSnapshot {
-  id       String @id @default(cuid())
-  lessonId String @unique
-  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  lessonId     String   @unique
+  totalViews   Int      @default(0)
+  avgWatchTime Int      @default(0)
+  dropOffCount Int      @default(0)
+  quizPassRate Float?
+  updatedAt    DateTime @updatedAt
+  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
 
-  totalViews   Int    @default(0)
-  avgWatchTime Int    @default(0)
-  dropOffCount Int    @default(0) // Số người dừng học tại bài này
-  quizPassRate Float? // Nếu là bài Quiz
+enum Role {
+  LEARNER
+  CONTENT_MANAGER
+  ADMIN
+}
 
-  updatedAt DateTime @updatedAt
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum LessonType {
+  VIDEO
+  TEXT
+  QUIZ
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum QuizType {
+  LESSON
+  CHAPTER
+}
+
+enum VerificationCodeType {
+  REGISTER
+  FORGOT_PASSWORD
 }

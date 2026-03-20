@@ -12,20 +12,20 @@ export class InteractionService {
       throw new NotFoundException('Lesson khong thuoc course')
     }
 
-    const data = await this.repo.findLessonComments(courseId, lessonId, page, limit)
+    const res = await this.repo.findLessonComments(courseId, lessonId, page, limit)
 
     return {
-      data,
+      ...res,
       page,
       limit,
     }
   }
 
   async getAllComments(page = 1, limit = 10) {
-    const data = await this.repo.findAllComments(page, limit)
+    const res = await this.repo.findAllComments(page, limit)
 
     return {
-      data,
+      ...res,
       page,
       limit,
     }
@@ -48,6 +48,7 @@ export class InteractionService {
       isPinned: !comment.isPinned,
     })
   }
+
   async createComment(courseId: string, lessonId: string, content: string, userId: string, role: Role) {
     const lesson = await this.repo.findLessonInCourse(courseId, lessonId)
 
@@ -74,6 +75,7 @@ export class InteractionService {
       userId,
     })
   }
+
   async updateCommentContent(id: string, content: string, userId: string) {
     const comment = await this.repo.findCommentById(id)
 
@@ -89,6 +91,7 @@ export class InteractionService {
       content,
     })
   }
+
   async deleteComment(id: string, userId: string) {
     const comment = await this.repo.findCommentById(id)
 
@@ -104,6 +107,7 @@ export class InteractionService {
       isDeleted: true,
     })
   }
+
   async createReply(discussionId: string, content: string, userId: string, role: Role) {
     const discussion = await this.repo.findCommentById(discussionId)
 
@@ -128,6 +132,7 @@ export class InteractionService {
       userId,
     })
   }
+
   async updateReply(id: string, content: string, userId: string) {
     const reply = await this.repo.findReplyById(id)
 
@@ -143,6 +148,7 @@ export class InteractionService {
       content,
     })
   }
+
   async deleteReply(id: string, userId: string) {
     const reply = await this.repo.findReplyById(id)
 
@@ -156,6 +162,44 @@ export class InteractionService {
 
     return this.repo.updateReply(id, {
       isDeleted: true,
+    })
+  }
+
+  // --- REVIEW ---
+  async getCourseReviews(courseId: string, page = 1, limit = 10) {
+    const res = await this.repo.findCourseReviews(courseId, page, limit)
+    return {
+      ...res,
+      page,
+      limit,
+    }
+  }
+
+  async getAllReviews(page = 1, limit = 10) {
+    const res = await this.repo.findAllReviews(page, limit)
+    return {
+      ...res,
+      page,
+      limit,
+    }
+  }
+
+  async createReview(courseId: string, userId: string, rating: number, comment?: string) {
+    const enrollment = await this.repo.checkUserEnrollment(userId, courseId)
+    if (!enrollment) {
+      throw new BadRequestException('Ban phai mua khoa hoc de danh gia')
+    }
+
+    const existingReview = await this.repo.findReviewByUserAndCourse(userId, courseId)
+    if (existingReview) {
+      throw new BadRequestException('Ban da danh gia khoa hoc nay roi')
+    }
+
+    return this.repo.createReview({
+      courseId,
+      userId,
+      rating,
+      comment,
     })
   }
 }

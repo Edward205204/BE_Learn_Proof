@@ -1,22 +1,21 @@
-import { Controller, Get, Param, Query, Patch, Body } from '@nestjs/common'
+import { Controller, Get, Param, Query, Patch, Body, Post, Delete } from '@nestjs/common'
 import { InteractionService } from './interaction.service'
-import { PaginationDto, IdParamDto, LessonParamDto, ChangePinDto } from './interaction.dto'
-import { Post, Delete } from '@nestjs/common'
-import { CreateCommentDto, UpdateCommentDto } from './interaction.dto'
-import { CreateReplyDto, UpdateReplyDto } from '../interaction/interaction.dto'
+import { PaginationDto, IdParamDto, LessonParamDto, ChangePinDto, CreateReviewDto, CreateCommentDto, UpdateCommentDto, CreateReplyDto, UpdateReplyDto } from './interaction.dto'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 import { TokenPayload } from 'src/shared/types/jwt.type'
 import { ZodSerializerDto } from 'nestjs-zod'
 import {
   GetCommentsResponseSchema,
   GetAllCommentsResponseSchema,
+  GetReviewsResponseSchema,
+  ReviewItemSchema,
   CommentItemSchema,
   ReplyItemSchema,
 } from './interaction.model'
 
 @Controller()
 export class InteractionController {
-  constructor(private readonly service: InteractionService) {}
+  constructor(private readonly service: InteractionService) { }
 
   // Lấy comment theo lesson
   @Get('courses/:courseId/lessons/:lessonId/comments')
@@ -66,5 +65,24 @@ export class InteractionController {
   @ZodSerializerDto(ReplyItemSchema)
   deleteReply(@Param() param: IdParamDto, @ActiveUser() user: TokenPayload) {
     return this.service.deleteReply(param.id, user.userId)
+  }
+
+  //Review
+  @Get('courses/:courseId/reviews')
+  @ZodSerializerDto(GetReviewsResponseSchema)
+  getCourseReviews(@Param('courseId') courseId: string, @Query() query: PaginationDto) {
+    return this.service.getCourseReviews(courseId, query.page, query.limit)
+  }
+
+  @Get('reviews')
+  @ZodSerializerDto(GetReviewsResponseSchema)
+  getAllReviews(@Query() query: PaginationDto) {
+    return this.service.getAllReviews(query.page, query.limit)
+  }
+
+  @Post('courses/:courseId/reviews')
+  @ZodSerializerDto(ReviewItemSchema)
+  createReview(@Param('courseId') courseId: string, @Body() body: CreateReviewDto, @ActiveUser() user: TokenPayload) {
+    return this.service.createReview(courseId, user.userId, body.rating, body.comment)
   }
 }
