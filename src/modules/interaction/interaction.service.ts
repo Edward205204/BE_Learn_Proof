@@ -175,22 +175,16 @@ export class InteractionService {
     }
   }
 
-  async getAllReviews(page = 1, limit = 10) {
-    const res = await this.repo.findAllReviews(page, limit)
-    return {
-      ...res,
-      page,
-      limit,
-    }
-  }
-
   async createReview(courseId: string, userId: string, rating: number, comment?: string) {
-    const enrollment = await this.repo.checkUserEnrollment(userId, courseId)
+    const [enrollment, existingReview] = await Promise.all([
+      this.repo.checkUserEnrollment(userId, courseId),
+      this.repo.findReviewByUserAndCourse(userId, courseId),
+    ])
+
     if (!enrollment) {
       throw new BadRequestException('Ban phai mua khoa hoc de danh gia')
     }
 
-    const existingReview = await this.repo.findReviewByUserAndCourse(userId, courseId)
     if (existingReview) {
       throw new BadRequestException('Ban da danh gia khoa hoc nay roi')
     }

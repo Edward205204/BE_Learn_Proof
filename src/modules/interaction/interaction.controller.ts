@@ -74,12 +74,6 @@ export class InteractionController {
     return this.service.getCourseReviews(courseId, query.page, query.limit)
   }
 
-  @Get('reviews')
-  @ZodSerializerDto(GetReviewsResponseSchema)
-  getAllReviews(@Query() query: PaginationDto) {
-    return this.service.getAllReviews(query.page, query.limit)
-  }
-
   @Post('courses/:courseId/reviews')
   @ZodSerializerDto(ReviewItemSchema)
   createReview(@Param('courseId') courseId: string, @Body() body: CreateReviewDto, @ActiveUser() user: TokenPayload) {

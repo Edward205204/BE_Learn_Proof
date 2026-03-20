@@ -177,31 +177,6 @@ export class InteractionRepo {
     }
   }
 
-  async findAllReviews(page: number, limit: number) {
-    const [data, total] = await Promise.all([
-      this.prisma.review.findMany({
-        include: {
-          user: {
-            select: { id: true, fullName: true, avatar: true },
-          },
-          course: {
-            select: { id: true, title: true },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.review.count(),
-    ])
-
-    return {
-      data,
-      total,
-      totalPages: Math.ceil(total / limit),
-    }
-  }
-
   async findReviewByUserAndCourse(userId: string, courseId: string) {
     return this.prisma.review.findUnique({
       where: {
