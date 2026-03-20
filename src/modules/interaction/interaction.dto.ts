@@ -3,10 +3,18 @@ import {
   PaginationSchema,
   IdParamSchema,
   LessonParamSchema,
-    ChangePinSchema,
+  ChangePinSchema,
+  CreateCommentSchema,
+  UpdateCommentSchema,
+  CreateReplySchema,
+  UpdateReplySchema,
 } from './interaction.model'
 
+export class CreateCommentDto extends createZodDto(CreateCommentSchema) {}
+export class UpdateCommentDto extends createZodDto(UpdateCommentSchema) {}
 export class PaginationDto extends createZodDto(PaginationSchema) {}
 export class IdParamDto extends createZodDto(IdParamSchema) {}
 export class LessonParamDto extends createZodDto(LessonParamSchema) {}
 export class ChangePinDto extends createZodDto(ChangePinSchema) {}
+export class CreateReplyDto extends createZodDto(CreateReplySchema) {}
+export class UpdateReplyDto extends createZodDto(UpdateReplySchema) {}

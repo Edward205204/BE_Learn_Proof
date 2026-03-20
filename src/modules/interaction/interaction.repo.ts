@@ -16,6 +16,17 @@ export class InteractionRepo {
     })
   }
 
+  async checkUserEnrollment(userId: string, courseId: string) {
+    return this.prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId,
+          courseId,
+        },
+      },
+    })
+  }
+
   async findLessonComments(courseId: string, lessonId: string, page: number, limit: number) {
     return this.prisma.discussion.findMany({
       where: {
@@ -47,17 +58,15 @@ export class InteractionRepo {
           },
         },
       },
-      // 🔥 pin lên trước
-      orderBy: [
-        { isPinned: 'desc' },
-        { createdAt: 'desc' },
-      ],
+      // pin lên trước
+      orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
       skip: (page - 1) * limit,
       take: limit,
     })
   }
 
-  async findAllComments(page: number, limit: number) {
+  async
+  findAllComments(page: number, limit: number) {
     return this.prisma.discussion.findMany({
       where: {
         isDeleted: false,
@@ -98,7 +107,20 @@ export class InteractionRepo {
   async findCommentById(id: string) {
     return this.prisma.discussion.findUnique({
       where: { id },
+      include: {
+        course: {
+          select: { creatorId: true },
+        },
+      },
     })
+  }
+
+  async findCourseCreatorId(courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { creatorId: true },
+    })
+    return course?.creatorId
   }
 
   async updateComment(id: string, data: any) {
@@ -107,4 +129,26 @@ export class InteractionRepo {
       data,
     })
   }
+  async createComment(data: any) {
+    return this.prisma.discussion.create({
+      data,
+    })
+  }
+  async createReply(data: any) {
+    return this.prisma.reply.create({
+      data,
+    })
+  }
+  async findReplyById(id: string) {
+    return this.prisma.reply.findUnique({
+      where: { id },
+    })
+  }
+  async updateReply(id: string, data: any) {
+    return this.prisma.reply.update({
+      where: { id },
+      data,
+    })
+  }
+  
 }

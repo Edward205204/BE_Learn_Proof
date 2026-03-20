@@ -338,7 +338,7 @@ model Discussion {
   content  String  @db.Text
   isPinned Boolean @default(false)
 
- isDeleted Boolean @default(false)
+  isDeleted Boolean @default(false)
 
   userId   String
   courseId String
