@@ -29,7 +29,7 @@ export class InteractionController {
   }
   @Post('courses/:courseId/lessons/:lessonId/comments')
   createComment(@Param() param: LessonParamDto, @Body() body: CreateCommentDto, @ActiveUser() user: TokenPayload) {
-    return this.service.createComment(param.courseId, param.lessonId, body.content, user.userId)
+    return this.service.createComment(param.courseId, param.lessonId, body.content, user.userId, user.role)
   }
   @Patch('comments/:id')
   updateComment(@Param() param: IdParamDto, @Body() body: UpdateCommentDto, @ActiveUser() user: TokenPayload) {
@@ -41,7 +41,7 @@ export class InteractionController {
   }
   @Post('comments/:id/replies')
   createReply(@Param() param: IdParamDto, @Body() body: CreateReplyDto, @ActiveUser() user: TokenPayload) {
-    return this.service.createReply(param.id, body.content, user.userId)
+    return this.service.createReply(param.id, body.content, user.userId, user.role)
   }
   @Patch('replies/:id')
   updateReply(@Param() param: IdParamDto, @Body() body: UpdateReplyDto, @ActiveUser() user: TokenPayload) {

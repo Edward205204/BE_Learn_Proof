@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common'
+import { Role } from 'src/generated/prisma/enums'
 import { InteractionRepo } from './interaction.repo'
 
 @Injectable()
@@ -47,16 +48,18 @@ export class InteractionService {
       isPinned: !comment.isPinned,
     })
   }
-  async createComment(courseId: string, lessonId: string, content: string, userId: string) {
+  async createComment(courseId: string, lessonId: string, content: string, userId: string, role: Role) {
     const lesson = await this.repo.findLessonInCourse(courseId, lessonId)
 
     if (!lesson) {
       throw new NotFoundException('Lesson khong thuoc course')
     }
 
-    const enrollment = await this.repo.checkUserEnrollment(userId, courseId)
-    if (!enrollment) {
-      throw new BadRequestException('Ban phai mua khoa hoc de binh luan')
+    if (role === Role.LEARNER) {
+      const enrollment = await this.repo.checkUserEnrollment(userId, courseId)
+      if (!enrollment) {
+        throw new BadRequestException('Ban phai mua khoa hoc de binh luan')
+      }
     }
 
     return this.repo.createComment({
@@ -96,16 +99,18 @@ export class InteractionService {
       isDeleted: true,
     })
   }
-  async createReply(discussionId: string, content: string, userId: string) {
+  async createReply(discussionId: string, content: string, userId: string, role: Role) {
     const discussion = await this.repo.findCommentById(discussionId)
 
     if (!discussion) {
       throw new NotFoundException('Comment khong ton tai')
     }
 
-    const enrollment = await this.repo.checkUserEnrollment(userId, discussion.courseId)
-    if (!enrollment) {
-      throw new BadRequestException('Ban phai mua khoa hoc de tra loi binh luan')
+    if (role === Role.LEARNER) {
+      const enrollment = await this.repo.checkUserEnrollment(userId, discussion.courseId)
+      if (!enrollment) {
+        throw new BadRequestException('Ban phai mua khoa hoc de tra loi binh luan')
+      }
     }
 
     return this.repo.createReply({
