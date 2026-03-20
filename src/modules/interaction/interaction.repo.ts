@@ -16,6 +16,17 @@ export class InteractionRepo {
     })
   }
 
+  async checkUserEnrollment(userId: string, courseId: string) {
+    return this.prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId,
+          courseId,
+        },
+      },
+    })
+  }
+
   async findLessonComments(courseId: string, lessonId: string, page: number, limit: number) {
     return this.prisma.discussion.findMany({
       where: {
