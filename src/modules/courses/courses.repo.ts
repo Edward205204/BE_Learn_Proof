@@ -402,7 +402,6 @@ export class CourseRepo {
         },
       },
       data: {
-        status: 'PUBLISHED',
         isFree: payload.isFree,
         price: payload.price,
         originalPrice: payload.originalPrice,

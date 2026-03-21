@@ -183,17 +183,24 @@ model Chapter {
   quizzes  Quiz[]
 }
 
-model Lesson {
-  id          String     @id @default(cuid())
-  title       String
-  description String?    @db.Text
-  contentAI   String?    @db.Text // Context cho AI
-  type        LessonType
-  order       Float
+enum VideoProvider {
+  YOUTUBE
+  BUNNY
+  SELF_HOSTED
+}
 
-  videoUrl    String?
-  textContent String? @db.Text
-  duration    Int     @default(0) // Giây
+model Lesson {
+  id        String     @id @default(cuid())
+  title     String
+  shortDesc String?    @db.Text
+  fullDesc  String?    @db.Text // Context cho AI
+  type      LessonType
+  order     Float
+
+  videoId     String?
+  provider    VideoProvider?
+  textContent String?        @db.Text
+  duration    Int?
 
   chapterId String
   chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
@@ -338,7 +345,7 @@ model Discussion {
   content  String  @db.Text
   isPinned Boolean @default(false)
 
- isDeleted Boolean @default(false)
+  isDeleted Boolean @default(false)
 
   userId   String
   courseId String
@@ -350,22 +357,24 @@ model Discussion {
 
   replies   Reply[]
   createdAt DateTime @default(now())
+
   @@index([courseId, lessonId])
-@@index([createdAt])
-@@index([isDeleted])
+  @@index([createdAt])
+  @@index([isDeleted])
 }
 
 model Reply {
   id           String     @id @default(cuid())
   content      String     @db.Text
-  isDeleted Boolean @default(false)
+  isDeleted    Boolean    @default(false)
   discussionId String
   discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   userId       String
   user         User       @relation(fields: [userId], references: [id])
   createdAt    DateTime   @default(now())
+
   @@index([discussionId])
-@@index([isDeleted])
+  @@index([isDeleted])
 }
 
 model Review {
