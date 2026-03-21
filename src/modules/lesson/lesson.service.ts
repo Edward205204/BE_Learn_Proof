@@ -62,11 +62,7 @@ export class LessonService {
       textContent: null,
     })
 
-    if (quizData) {
-      await this.attachQuizToLesson(lesson.id, quizData, userId)
-    }
-
-    return lesson
+    return this.withOptionalQuiz(lesson, quizData, userId)
   }
 
   private async createTextLesson(body: CreateLessonBodyType, order: number, userId: string) {
@@ -85,27 +81,33 @@ export class LessonService {
       textContent: textContent ?? null,
     })
 
-    if (quizData) {
-      await this.attachQuizToLesson(lesson.id, quizData, userId)
-    }
-
-    return lesson
+    return this.withOptionalQuiz(lesson, quizData, userId)
   }
 
-  private async attachQuizToLesson(
-    lessonId: string,
-    quizData: { title?: string; description?: string },
+  private async withOptionalQuiz<T>(
+    lesson: T,
+    quizData: { title?: string; description?: string } | undefined,
     userId: string,
   ) {
-    return this.quizService.createQuiz(
-      {
-        type: 'LESSON',
-        lessonId,
-        title: quizData.title,
-        description: quizData.description,
-      },
-      userId,
-    )
+    if (!quizData) return { lesson, quizWarning: null }
+
+    try {
+      await this.quizService.createQuiz(
+        {
+          type: 'LESSON',
+          lessonId: (lesson as { id: string }).id,
+          title: quizData.title,
+          description: quizData.description,
+        },
+        userId,
+      )
+      return { lesson, quizWarning: null }
+    } catch {
+      return {
+        lesson,
+        quizWarning: 'Tạo bài học thành công nhưng quá trình sử lý quiz có vấn đề, bạn có thể thêm lại sau',
+      }
+    }
   }
 
   private extractYoutubeId(provider: VideoProviderEnumTS, videoId?: string): string | null {
