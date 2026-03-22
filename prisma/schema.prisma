@@ -55,15 +55,12 @@ enum QuizType {
 // --- Models ---
 
 model User {
-  id       String  @id @default(cuid())
-  email    String  @unique
-  password String
-  fullName String
-  avatar   String?
-  role     Role    @default(LEARNER)
-
-  // Hỗ trợ Anonymization (Vô danh hóa) khi xóa tài khoản
-  isDeleted Boolean   @default(false)
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  fullName  String
+  avatar    String?
+  role      Role      @default(LEARNER)
   deletedAt DateTime?
 
   coursesCreated Course[]          @relation("CourseCreator")
@@ -84,6 +81,7 @@ model User {
   quizAttempts      QuizAttempt[]
 
   @@index([email])
+  @@index([deletedAt])
 }
 
 enum VerificationCodeType {
@@ -170,7 +168,10 @@ model Course {
   updatedAt DateTime @updatedAt
 
   @@unique([id, creatorId])
-  @@index([creatorId])
+  @@index([status, createdAt])
+  @@index([creatorId, createdAt])
+  @@index([creatorId, status, createdAt])
+  @@index([categoryId])
 }
 
 model Chapter {
@@ -181,6 +182,8 @@ model Chapter {
   course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons  Lesson[]
   quizzes  Quiz[]
+
+  @@index([courseId, order])
 }
 
 enum VideoProvider {
@@ -216,6 +219,8 @@ model Lesson {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([chapterId, order])
 }
 
 model Quiz {
@@ -239,7 +244,7 @@ model Quiz {
 
   @@index([lessonId])
   @@index([chapterId])
-  @@index([type])
+  @@index([chapterId, type])
 }
 
 model QuizAttemptAnswer {
@@ -361,6 +366,7 @@ model Discussion {
   @@index([courseId, lessonId])
   @@index([createdAt])
   @@index([isDeleted])
+  @@index([isDeleted, createdAt])
 }
 
 model Reply {
@@ -375,6 +381,7 @@ model Reply {
 
   @@index([discussionId])
   @@index([isDeleted])
+  @@index([discussionId, isDeleted, createdAt])
 }
 
 model Review {
