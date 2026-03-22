@@ -6,25 +6,20 @@ export const VideoProviderEnum = z.enum(['YOUTUBE', 'BUNNY', 'SELF_HOSTED'])
 export type LessonTypeEnumTS = z.infer<typeof LessonTypeEnum>
 export type VideoProviderEnumTS = z.infer<typeof VideoProviderEnum>
 
-const CreateQuizInsideLessonSchema = z.object({
-  type: QuizTypeEnum,
+const AnswerSchema = z.object({
+  content: z.string().min(1, 'Phải có nội dung đáp án'),
+  isCorrect: z.boolean(),
+})
+
+const QuestionSchema = z.object({
+  content: z.string().min(1, 'Phải có nội dung câu hỏi'),
+  answers: z.array(AnswerSchema).min(2, 'Phải có ít nhất 2 đáp án'),
+})
+
+const QuizDataSchema = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
-  questions: z
-    .array(
-      z.object({
-        content: z.string().min(1, 'Phải có nội dung câu hỏi'),
-        answers: z
-          .array(
-            z.object({
-              content: z.string().min(1, 'Phải có nội dung đáp án'),
-              isCorrect: z.boolean(),
-            }),
-          )
-          .min(2, 'Phải có ít nhất 2 đáp án'),
-      }),
-    )
-    .min(1, 'Phải có ít nhất 1 câu hỏi'),
+  questions: z.array(QuestionSchema).min(1, 'Phải có ít nhất 1 câu hỏi'),
 })
 
 export const CreateLessonSchema = z
@@ -38,7 +33,7 @@ export const CreateLessonSchema = z
     provider: VideoProviderEnum.optional(),
     duration: z.coerce.number().optional(),
     textContent: z.string().optional(),
-    quizData: CreateQuizInsideLessonSchema.optional(),
+    quizData: QuizDataSchema.optional(),
   })
   .refine(
     (data) => {
@@ -63,3 +58,4 @@ export const CreateLessonSchema = z
   )
 
 export type CreateLessonBodyType = z.infer<typeof CreateLessonSchema>
+export type QuizDataType = z.infer<typeof QuizDataSchema>

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotImplementedException } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { CreateLessonBodyType, LessonTypeEnum, VideoProviderEnumTS } from './lesson.model'
 import { LessonRepo } from './lesson.repo'
 import { QuizService } from '../quiz/quiz.service'
@@ -21,11 +21,11 @@ export class LessonService {
 
     switch (type) {
       case LessonTypeEnum.enum.VIDEO:
-        return this.createVideoLesson(body, order, userId)
+        return this.createVideoLesson(body, order)
       case LessonTypeEnum.enum.TEXT:
-        return this.createTextLesson(body, order, userId)
+        return this.createTextLesson(body, order)
       case LessonTypeEnum.enum.QUIZ:
-        throw new NotImplementedException('Quiz lesson is not supported yet')
+        return this.createQuizLesson(body, order)
     }
   }
 
@@ -45,7 +45,7 @@ export class LessonService {
     return lastOrder + 1
   }
 
-  private async createVideoLesson(body: CreateLessonBodyType, order: number, userId: string) {
+  private async createVideoLesson(body: CreateLessonBodyType, order: number) {
     const { title, shortDesc, fullDesc, chapterId, videoId, provider, duration, quizData } = body
     const resolvedVideoId = this.extractYoutubeId(provider ?? 'YOUTUBE', videoId)
 
@@ -62,10 +62,10 @@ export class LessonService {
       textContent: null,
     })
 
-    return this.withOptionalQuiz(lesson, quizData, userId)
+    return this.withOptionalQuiz(lesson, quizData)
   }
 
-  private async createTextLesson(body: CreateLessonBodyType, order: number, userId: string) {
+  private async createTextLesson(body: CreateLessonBodyType, order: number) {
     const { title, shortDesc, fullDesc, chapterId, textContent, quizData } = body
 
     const lesson = await this.lessonRepo.createLesson({
@@ -81,33 +81,43 @@ export class LessonService {
       textContent: textContent ?? null,
     })
 
-    return this.withOptionalQuiz(lesson, quizData, userId)
+    return this.withOptionalQuiz(lesson, quizData)
   }
 
-  private async withOptionalQuiz<T>(
+  private async withOptionalQuiz<T extends { id: string }>(
     lesson: T,
     quizData: { title?: string; description?: string } | undefined,
-    userId: string,
   ) {
     if (!quizData) return { lesson, quizWarning: null }
 
     try {
-      await this.quizService.createQuiz(
-        {
-          type: 'LESSON',
-          lessonId: (lesson as { id: string }).id,
-          title: quizData.title,
-          description: quizData.description,
-        },
-        userId,
-      )
+      await this.quizService.createQuizForLesson(lesson.id, quizData)
       return { lesson, quizWarning: null }
     } catch {
       return {
         lesson,
-        quizWarning: 'Tạo bài học thành công nhưng quá trình sử lý quiz có vấn đề, bạn có thể thêm lại sau',
+        quizWarning: 'Tạo bài học thành công nhưng quá trình xử lý quiz có vấn đề, bạn có thể thêm lại sau.',
       }
     }
+  }
+
+  private createQuizLesson(body: CreateLessonBodyType, order: number) {
+    const { title, shortDesc, fullDesc, chapterId, quizData } = body
+
+    if (!quizData) {
+      throw new BadRequestException('Chưa có dữ liệu câu hỏi cho bài kiểm tra.')
+    }
+
+    return this.lessonRepo.createLessonWithQuiz(
+      {
+        title,
+        shortDesc: shortDesc ?? null,
+        fullDesc: fullDesc ?? null,
+        order,
+        chapterId,
+      },
+      quizData,
+    )
   }
 
   private extractYoutubeId(provider: VideoProviderEnumTS, videoId?: string): string | null {
