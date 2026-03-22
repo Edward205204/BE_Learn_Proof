@@ -68,7 +68,7 @@ export const CurriculumLessonSchema = z.object({
   title: z.string(),
   order: z.number(),
   type: z.enum(['VIDEO', 'TEXT', 'QUIZ']),
-  duration: z.number().int(), // giây
+  duration: z.number().nullable(), // giây
 })
 
 export const CurriculumChapterSchema = z.object({
