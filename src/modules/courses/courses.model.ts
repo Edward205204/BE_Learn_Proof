@@ -19,6 +19,12 @@ export const GetCourseDetailQuery = z
   })
   .strict()
 
+export const QueryCourseDetailById = z
+  .object({
+    id: z.string(),
+  })
+  .strict()
+
 export const CourseItemResponseSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -60,15 +66,15 @@ export const GetCoursesResponseSchema = z.object({
 export const CurriculumLessonSchema = z.object({
   id: z.string(),
   title: z.string(),
-  order: z.number().int(),
+  order: z.number(),
   type: z.enum(['VIDEO', 'TEXT', 'QUIZ']),
-  duration: z.number().int(), // giây
+  duration: z.number().nullable(), // giây
 })
 
 export const CurriculumChapterSchema = z.object({
   id: z.string(),
   title: z.string(),
-  order: z.number().int(),
+  order: z.number(),
   lessons: z.array(CurriculumLessonSchema),
 })
 
@@ -292,6 +298,30 @@ export const CreateCourseSt3DtoSchema = z.object({
   originalPrice: z.number().nullable(),
 })
 export type CreateCourseSt3Dto = z.infer<typeof CreateCourseSt3DtoSchema>
+
+export const GetCourseDetailManagerResponseSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  slug: z.string(),
+  shortDesc: z.string(),
+  fullDesc: z.string(),
+  thumbnail: z.string().nullable(),
+  level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']),
+  isFree: z.boolean(),
+  price: z.number(),
+  originalPrice: z.number().nullable(),
+  publishedLessonsCount: z.number().int(),
+  totalPlannedLessons: z.number().int().nullable(),
+  expectedDays: z.number().int().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  category: z.object({
+    name: z.string(),
+    slug: z.string(),
+  }),
+  chapters: z.array(CurriculumChapterSchema),
+})
 
 // ----
 

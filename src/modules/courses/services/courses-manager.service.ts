@@ -68,6 +68,12 @@ export class CoursesManagerService {
     return course
   }
 
+  async getCourseDetailManager(courseId: string, creatorId: string) {
+    const course = await this.courseRepo.getCourseDetailManager({ creatorId, id: courseId })
+    if (!course) throw new CourseNotFoundException()
+    return course
+  }
+
   async updateCourseBaseInfo(courseId: string, body: CreateCourseSt1Dto, creatorId: string) {
     const course = await this.courseRepo.getCourseUnique({ creatorId, id: courseId })
     if (!course) throw new CourseNotFoundException()

@@ -9,6 +9,7 @@ import {
   GetCoursesQueryDTO,
   GetMyCoursesManagerQueryDTO,
   GetSearchSuggestionsQueryDTO,
+  QueryCourseDetailByIdDTO,
   UpdateCourseBaseInfoDto,
 } from './courses.dto'
 import { IsPublic } from 'src/shared/decorators/auth.decorator'
@@ -23,6 +24,7 @@ import {
   HomeSectionsResponseSchema,
   ReorderLessonDto,
   ReorderChapterDto,
+  GetCourseDetailManagerResponseSchema,
 } from './courses.model'
 import { ZodSerializerDto } from 'nestjs-zod'
 import { CoursesManagerService } from './services/courses-manager.service'
@@ -71,13 +73,6 @@ export class CourseController {
     return this.courseService.getCategories()
   }
 
-  @Get(':slug')
-  @IsPublic()
-  @ZodSerializerDto(CourseDetailResponseSchema)
-  getCourseDetail(@Param() params: GetCourseDetailQueryDTO) {
-    return this.courseService.getCourseDetail(params.slug)
-  }
-
   // ---
   // phải implement logic check id trước khi thao tác
 
@@ -101,12 +96,6 @@ export class CourseController {
   @ZodSerializerDto(CreateCourseFullResponseSchema)
   publishCourse(@Param('id') id: string, @Body() body: CreateCourseSt3Dto, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.publishCourse(id, body, user.userId)
-  }
-  // lấy data cơ bản của khóa học và chapters để edit
-  @Get('base-info/:id')
-  @ZodSerializerDto(CreateCourseFullResponseSchema)
-  getCourseBaseInfo(@Param() param: GetCourseParamByIdDTO, @ActiveUser() user: TokenPayload) {
-    return this.courseManagerService.getCourseBaseInfo(param.id, user.userId)
   }
 
   @Patch('base-info/:id')
@@ -133,5 +122,25 @@ export class CourseController {
   // @ZodSerializerDto(GetSearchSuggestionsResponseSchema)
   getMyCoursesManager(@Query() query: GetMyCoursesManagerQueryDTO, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.getMyCoursesManager(query, user.userId)
+  }
+
+  @Get('manager/course-detail/:id')
+  @ZodSerializerDto(GetCourseDetailManagerResponseSchema)
+  getCourseDetailManager(@Param() params: QueryCourseDetailByIdDTO, @ActiveUser() user: TokenPayload) {
+    return this.courseManagerService.getCourseDetailManager(params.id, user.userId)
+  }
+
+  @Get(':slug')
+  @IsPublic()
+  @ZodSerializerDto(CourseDetailResponseSchema)
+  getCourseDetail(@Param() params: GetCourseDetailQueryDTO) {
+    return this.courseService.getCourseDetail(params.slug)
+  }
+
+  // lấy data cơ bản của khóa học và chapters để edit
+  @Get('base-info/:id')
+  @ZodSerializerDto(CreateCourseFullResponseSchema)
+  getCourseBaseInfo(@Param() param: GetCourseParamByIdDTO, @ActiveUser() user: TokenPayload) {
+    return this.courseManagerService.getCourseBaseInfo(param.id, user.userId)
   }
 }

@@ -402,7 +402,6 @@ export class CourseRepo {
         },
       },
       data: {
-        status: 'PUBLISHED',
         isFree: payload.isFree,
         price: payload.price,
         originalPrice: payload.originalPrice,
@@ -517,5 +516,54 @@ export class CourseRepo {
         totalPages: Math.ceil(total / limit),
       },
     }
+  }
+
+  getCourseDetailManager(body: { creatorId: string; id: string }) {
+    return this.prisma.course.findUnique({
+      where: body,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        shortDesc: true,
+        fullDesc: true,
+        thumbnail: true,
+
+        level: true,
+        status: true,
+        isFree: true,
+        price: true,
+        originalPrice: true,
+        publishedLessonsCount: true,
+        totalPlannedLessons: true,
+        expectedDays: true,
+        createdAt: true,
+        updatedAt: true,
+        category: {
+          select: {
+            name: true,
+            slug: true,
+          },
+        },
+        chapters: {
+          orderBy: { order: 'asc' },
+          select: {
+            id: true,
+            title: true,
+            order: true,
+            lessons: {
+              orderBy: { order: 'asc' },
+              select: {
+                id: true,
+                title: true,
+                order: true,
+                type: true,
+                duration: true,
+              },
+            },
+          },
+        },
+      },
+    })
   }
 }

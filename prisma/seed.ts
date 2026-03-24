@@ -1,5 +1,5 @@
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient, Role, CourseLevel, CourseStatus, LessonType } from 'src/generated/prisma/client'
+import { PrismaClient, Role, CourseLevel, CourseStatus, LessonType, VideoProvider } from 'src/generated/prisma/client'
 import envConfig from 'src/shared/config'
 import { Pool } from 'pg'
 import { hash } from 'bcrypt'
@@ -78,7 +78,6 @@ async function main() {
         categoryId: randomCategory.id,
         creatorId: instructor.id,
         thumbnail: `https://picsum.photos/seed/${i + 100}/800/450`, // Ảnh ngẫu nhiên
-
         // Tạo Analytics giả lập cho từng khóa
         overallAnalytics: {
           create: {
@@ -90,7 +89,6 @@ async function main() {
             completionRate: Math.floor(Math.random() * 40 + 10),
           },
         },
-
         // Mỗi khóa tạo sẵn 1 Chapter và 2 Lessons để test luồng học
         chapters: {
           create: {
@@ -100,7 +98,9 @@ async function main() {
               create: [
                 {
                   title: 'Bài 1: Lộ trình học tập',
+                  videoId: 'lQCRGJtCpVo',
                   type: LessonType.VIDEO,
+                  provider: VideoProvider.YOUTUBE,
                   order: 1,
                   duration: 300,
                   analytics: { create: { totalViews: 1000, avgWatchTime: 200, dropOffCount: 10 } },

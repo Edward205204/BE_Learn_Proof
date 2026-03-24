@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { QuizType } from 'src/generated/prisma/enums';
+import { QuizType } from 'src/generated/prisma/enums'
 import { PrismaService } from 'src/shared/services/prisma.service'
 
 @Injectable()
@@ -36,6 +36,38 @@ export class QuizRepo {
   createQuiz(data: { type: QuizType; title?: string; description?: string; lessonId?: string; chapterId?: string }) {
     return this.prisma.quiz.create({
       data,
+    })
+  }
+
+  createQuizWithQuestions(data: {
+    type: QuizType
+    lessonId: string
+    title?: string
+    description?: string
+    questions: { content: string; answers: { content: string; isCorrect: boolean }[] }[]
+  }) {
+    return this.prisma.quiz.create({
+      data: {
+        type: data.type,
+        lessonId: data.lessonId,
+        title: data.title,
+        description: data.description,
+        questions: {
+          create: data.questions.map((q) => ({
+            content: q.content,
+            answers: {
+              create: q.answers,
+            },
+          })),
+        },
+      },
+      include: {
+        questions: {
+          include: {
+            answers: true,
+          },
+        },
+      },
     })
   }
 

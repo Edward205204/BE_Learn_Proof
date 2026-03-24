@@ -7,10 +7,10 @@ import { SharedModule } from './shared/shared.module'
 import { CoursesModule } from './modules/courses/courses.module'
 import { QuizModule } from './modules/quiz/quiz.module';
 import { InteractionModule } from './modules/interaction/interaction.module';
-
+import { MediaModule } from './modules/media/media.module';
 
 @Module({
-  imports: [AuthModule, SharedModule, CoursesModule, QuizModule, InteractionModule],
+  imports: [AuthModule, SharedModule, CoursesModule, QuizModule, InteractionModule, MediaModule],
   controllers: [],
   providers: [
     {

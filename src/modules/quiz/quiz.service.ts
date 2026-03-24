@@ -56,6 +56,38 @@ export class QuizService {
     })
   }
 
+  async createQuizForLesson(lessonId: string, data: { title?: string; description?: string }) {
+    const existed = await this.quizRepo.findQuizByLesson(lessonId)
+    if (existed) throw new BadRequestException('Lesson already has a quiz')
+
+    return this.quizRepo.createQuiz({
+      type: 'LESSON',
+      lessonId,
+      title: data.title,
+      description: data.description,
+    })
+  }
+
+  async createQuizWithQuestionsForLesson(
+    lessonId: string,
+    data: {
+      title?: string
+      description?: string
+      questions: { content: string; answers: { content: string; isCorrect: boolean }[] }[]
+    },
+  ) {
+    const existed = await this.quizRepo.findQuizByLesson(lessonId)
+    if (existed) throw new BadRequestException('Lesson already has a quiz')
+
+    return this.quizRepo.createQuizWithQuestions({
+      type: 'LESSON',
+      lessonId,
+      title: data.title,
+      description: data.description,
+      questions: data.questions,
+    })
+  }
+
   async updateQuiz(quizId: string, body: UpdateQuizBodyType) {
     const quiz = await this.quizRepo.findQuizById(quizId)
     if (!quiz) throw new QuizNotFoundException()
