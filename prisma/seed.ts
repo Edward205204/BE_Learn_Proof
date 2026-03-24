@@ -1,5 +1,5 @@
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient, Role, CourseLevel, CourseStatus, LessonType } from 'src/generated/prisma/client'
+import { PrismaClient, Role, CourseLevel, CourseStatus, LessonType, VideoProvider } from 'src/generated/prisma/client'
 import envConfig from 'src/shared/config'
 import { Pool } from 'pg'
 import { hash } from 'bcrypt'
@@ -98,7 +98,9 @@ async function main() {
               create: [
                 {
                   title: 'Bài 1: Lộ trình học tập',
+                  videoId: 'lQCRGJtCpVo',
                   type: LessonType.VIDEO,
+                  provider: VideoProvider.YOUTUBE,
                   order: 1,
                   duration: 300,
                   analytics: { create: { totalViews: 1000, avgWatchTime: 200, dropOffCount: 10 } },

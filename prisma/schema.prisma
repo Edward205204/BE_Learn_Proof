@@ -8,23 +8,27 @@ datasource db {
 }
 
 model User {
-  id                String             @id @default(cuid())
-  email             String             @unique
-  password          String
-  fullName          String
-  avatar            String?
-  role              Role               @default(LEARNER)
-  isDeleted         Boolean            @default(false)
-  deletedAt         DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  certificates      Certificate[]
-  coursesCreated    Course[]           @relation("CourseCreator")
-  discussions       Discussion[]
-  enrollments       Enrollment[]
-  heartbeats        LessonHeartbeat[]
-  progress          Progress[]
-  quizAttempts      QuizAttempt[]
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  fullName  String
+  avatar    String?
+  role      Role      @default(LEARNER)
+  deletedAt DateTime?
+
+  coursesCreated Course[]          @relation("CourseCreator")
+  enrollments    Enrollment[]
+  transactions   Transaction[]
+  progress       Progress[]
+  discussions    Discussion[]
+  replies        Reply[]
+  reviews        Review[]
+  certificates   Certificate[]
+  heartbeats     LessonHeartbeat[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   refreshTokens     RefreshToken[]
   replies           Reply[]
   reviews           Review[]
@@ -32,6 +36,7 @@ model User {
   verificationCodes VerificationCode[]
 
   @@index([email])
+  @@index([deletedAt])
 }
 
 model VerificationCode {
@@ -100,7 +105,10 @@ model Course {
   transactions          Transaction[]
 
   @@unique([id, creatorId])
-  @@index([creatorId])
+  @@index([status, createdAt])
+  @@index([creatorId, createdAt])
+  @@index([creatorId, status, createdAt])
+  @@index([categoryId])
 }
 
 model Chapter {
@@ -111,27 +119,42 @@ model Chapter {
   course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons  Lesson[]
   quizzes  Quiz[]
+
+  @@index([courseId, order])
+}
+
+enum VideoProvider {
+  YOUTUBE
+  BUNNY
+  SELF_HOSTED
 }
 
 model Lesson {
-  id          String                   @id @default(cuid())
-  title       String
-  description String?
-  contentAI   String?
-  type        LessonType
-  order       Float
-  videoUrl    String?
-  textContent String?
-  duration    Int                      @default(0)
-  chapterId   String
-  createdAt   DateTime                 @default(now())
-  updatedAt   DateTime                 @updatedAt
+  id        String     @id @default(cuid())
+  title     String
+  shortDesc String?    @db.Text
+  fullDesc  String?    @db.Text // Context cho AI
+  type      LessonType
+  order     Float
+
+  videoId     String?
+  provider    VideoProvider?
+  textContent String?        @db.Text
+  duration    Int?
+
+  chapterId String
+  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  quizzes Quiz[]
+
+  progress    Progress[]
   discussions Discussion[]
-  chapter     Chapter                  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   analytics   LessonAnalyticsSnapshot?
   heartbeats  LessonHeartbeat[]
-  progress    Progress[]
-  quizzes     Quiz[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([chapterId, order])
 }
 
 model Quiz {
@@ -150,7 +173,7 @@ model Quiz {
 
   @@index([lessonId])
   @@index([chapterId])
-  @@index([type])
+  @@index([chapterId, type])
 }
 
 model QuizAttemptAnswer {
@@ -237,36 +260,42 @@ model LessonHeartbeat {
 }
 
 model Discussion {
-  id        String   @id @default(cuid())
-  content   String
-  isPinned  Boolean  @default(false)
-  userId    String
-  courseId  String
-  lessonId  String
-  createdAt DateTime @default(now())
-  isDeleted Boolean  @default(false)
-  course    Course   @relation(fields: [courseId], references: [id])
-  lesson    Lesson   @relation(fields: [lessonId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  id       String  @id @default(cuid())
+  content  String  @db.Text
+  isPinned Boolean @default(false)
+
+  isDeleted Boolean @default(false)
+
+  userId   String
+  courseId String
+  lessonId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
   replies   Reply[]
+  createdAt DateTime @default(now())
 
   @@index([courseId, lessonId])
   @@index([createdAt])
   @@index([isDeleted])
+  @@index([isDeleted, createdAt])
 }
 
 model Reply {
   id           String     @id @default(cuid())
-  content      String
+  content      String     @db.Text
+  isDeleted    Boolean    @default(false)
   discussionId String
   userId       String
   createdAt    DateTime   @default(now())
-  isDeleted    Boolean    @default(false)
   discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   user         User       @relation(fields: [userId], references: [id])
 
   @@index([discussionId])
   @@index([isDeleted])
+  @@index([discussionId, isDeleted, createdAt])
 }
 
 model Review {
