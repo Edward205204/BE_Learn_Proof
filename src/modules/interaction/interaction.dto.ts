@@ -11,6 +11,9 @@ import {
   GetCommentsResponseSchema,
   CommentItemSchema,
   ReplyItemSchema,
+  CreateReviewSchema,
+  GetReviewsResponseSchema,
+  ReviewItemSchema,
 } from './interaction.model'
 
 export class CreateCommentDto extends createZodDto(CreateCommentSchema) {}
@@ -25,3 +28,6 @@ export class UpdateReplyDto extends createZodDto(UpdateReplySchema) {}
 export class GetCommentsResponseDto extends createZodDto(GetCommentsResponseSchema) {}
 export class CommentItemDto extends createZodDto(CommentItemSchema) {}
 export class ReplyItemDto extends createZodDto(ReplyItemSchema) {}
+export class CreateReviewDto extends createZodDto(CreateReviewSchema) {}
+export class GetReviewsResponseDto extends createZodDto(GetReviewsResponseSchema) {}
+export class ReviewItemDto extends createZodDto(ReviewItemSchema) {}
