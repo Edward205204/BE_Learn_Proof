@@ -1,6 +1,6 @@
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient, Role, CourseLevel, CourseStatus, LessonType, VideoProvider } from 'src/generated/prisma/client'
-import envConfig from 'src/shared/config'
+import { PrismaClient, Role, CourseLevel, CourseStatus, LessonType, VideoProvider } from '../src/generated/prisma/client'
+import envConfig from '../src/shared/config'
 import { Pool } from 'pg'
 import { hash } from 'bcrypt'
 
@@ -440,7 +440,7 @@ async function main() {
 
   // Tạo/upsert categories từ mock data (không đụng các categories đã tạo trước)
   const mockCategoryIdMap = new Map<string, string>() // categorySlug -> id
-  for (const course of mockCourseMap.values()) {
+  for (const course of Array.from(mockCourseMap.values())) {
     if (!mockCategoryIdMap.has(course.category.slug)) {
       const cat = await prisma.category.upsert({
         where: { slug: course.category.slug },
@@ -452,7 +452,7 @@ async function main() {
   }
 
   // Tạo courses, dùng instructor.id làm creatorId
-  for (const course of mockCourseMap.values()) {
+  for (const course of Array.from(mockCourseMap.values())) {
     const categoryId = mockCategoryIdMap.get(course.category.slug)!
     await prisma.course.create({
       data: {
