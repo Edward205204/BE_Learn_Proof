@@ -25,14 +25,12 @@ model User {
   reviews        Review[]
   certificates   Certificate[]
   heartbeats     LessonHeartbeat[]
+  quizAttempts   QuizAttempt[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   refreshTokens     RefreshToken[]
-  replies           Reply[]
-  reviews           Review[]
-  transactions      Transaction[]
   verificationCodes VerificationCode[]
 
   @@index([email])
