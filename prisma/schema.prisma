@@ -13,6 +13,9 @@ model User {
   password  String
   fullName  String
   avatar    String?
+  bio       String?   @db.Text
+  headline  String?
+  website   String?
   role      Role      @default(LEARNER)
   deletedAt DateTime?
 

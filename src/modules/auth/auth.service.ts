@@ -7,7 +7,9 @@ import {
   RegisterBodyType,
   ResetPasswordBodyType,
   SendOtpBodyType,
+  UpdateProfileBodySchema,
 } from './auth.model'
+import { z } from 'zod'
 import { AuthRepo } from './auth.repo'
 import {
   EmailAlreadyExistsAndCannotSendOtpException,
@@ -75,6 +77,9 @@ export class AuthService {
         email: user.email,
         fullName: user.fullName,
         avatar: user.avatar,
+        bio: user.bio ?? null,
+        headline: user.headline ?? null,
+        website: user.website ?? null,
         role: user.role,
       },
     }
@@ -199,7 +204,34 @@ export class AuthService {
       email: user.email,
       fullName: user.fullName,
       avatar: user.avatar,
+      bio: user.bio,
+      headline: user.headline,
+      website: user.website,
       role: user.role,
+    }
+  }
+
+  async updateProfile(userId: string, data: z.infer<typeof UpdateProfileBodySchema>) {
+    const user = await this.authRepo.findUserUnique({ id: userId })
+    if (!user) throw new UserNotFoundException()
+    const updated = await this.authRepo.updateUser({
+      where: { id: userId },
+      data: {
+        ...(data.fullName !== undefined && { fullName: data.fullName }),
+        ...(data.bio !== undefined && { bio: data.bio || null }),
+        ...(data.headline !== undefined && { headline: data.headline || null }),
+        ...(data.website !== undefined && { website: data.website || null }),
+      },
+    })
+    return {
+      id: updated.id,
+      email: updated.email,
+      fullName: updated.fullName,
+      avatar: updated.avatar,
+      bio: updated.bio,
+      headline: updated.headline,
+      website: updated.website,
+      role: updated.role,
     }
   }
 }
