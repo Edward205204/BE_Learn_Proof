@@ -13,6 +13,9 @@ model User {
   password  String
   fullName  String
   avatar    String?
+  bio       String?   @db.Text
+  headline  String?
+  website   String?
   role      Role      @default(LEARNER)
   deletedAt DateTime?
 
@@ -21,6 +24,8 @@ model User {
   transactions   Transaction[]
   progress       Progress[]
   discussions    Discussion[]
+  cart           Cart?
+  wishlist       WishlistItem[]
   replies        Reply[]
   reviews        Review[]
   certificates   Certificate[]
@@ -101,6 +106,8 @@ model Course {
   enrollments           Enrollment[]
   reviews               Review[]
   transactions          Transaction[]
+  cartItems             CartItem[]
+  wishlistItems         WishlistItem[]
 
   @@unique([id, creatorId])
   @@index([status, createdAt])
@@ -149,8 +156,8 @@ model Lesson {
   discussions Discussion[]
   analytics   LessonAnalyticsSnapshot?
   heartbeats  LessonHeartbeat[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
 
   @@index([chapterId, order])
 }
@@ -366,6 +373,37 @@ model LessonAnalyticsSnapshot {
   quizPassRate Float?
   updatedAt    DateTime @updatedAt
   lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  courseId  String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([cartId, courseId])
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId])
 }
 
 enum Role {
