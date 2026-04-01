@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from 'src/shared/services/prisma.service';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
+import { PrismaService } from 'src/shared/services/prisma.service'
 
 @Injectable()
 export class CartService {
@@ -16,13 +16,13 @@ export class CartService {
           include: {
             course: {
               include: {
-                creator: { select: { fullName: true } }
-              }
-            }
-          }
-        }
-      }
-    });
+                creator: { select: { fullName: true } },
+              },
+            },
+          },
+        },
+      },
+    })
 
     if (!cart) {
       cart = await this.prisma.cart.create({
@@ -32,40 +32,37 @@ export class CartService {
             include: {
               course: {
                 include: {
-                  creator: { select: { fullName: true } }
-                }
-              }
-            }
-          }
-        }
-      });
+                  creator: { select: { fullName: true } },
+                },
+              },
+            },
+          },
+        },
+      })
     }
 
-    return cart;
+    return cart
   }
 
   async getCart(userId: string) {
-    return this.getCartWithDetails(userId);
+    return this.getCartWithDetails(userId)
   }
 
   async addToCart(userId: string, courseIdOrSlug: string) {
-    let cart = await this.prisma.cart.findUnique({ where: { userId } });
+    let cart = await this.prisma.cart.findUnique({ where: { userId } })
     if (!cart) {
-      cart = await this.prisma.cart.create({ data: { userId } });
+      cart = await this.prisma.cart.create({ data: { userId } })
     }
 
     // Check if course exists by id or slug
     const course = await this.prisma.course.findFirst({
       where: {
-        OR: [
-          { id: courseIdOrSlug },
-          { slug: courseIdOrSlug }
-        ]
-      }
-    });
+        OR: [{ id: courseIdOrSlug }, { slug: courseIdOrSlug }],
+      },
+    })
 
     if (!course) {
-      throw new NotFoundException('Course not found');
+      throw new NotFoundException('Course not found')
     }
 
     // Check if item already exists in cart
@@ -74,32 +71,32 @@ export class CartService {
         cartId_courseId: {
           cartId: cart.id,
           courseId: course.id,
-        }
-      }
-    });
+        },
+      },
+    })
 
     if (!existingItem) {
       await this.prisma.cartItem.create({
-        data: { cartId: cart.id, courseId: course.id }
-      });
+        data: { cartId: cart.id, courseId: course.id },
+      })
     }
 
-    return this.getCartWithDetails(userId);
+    return this.getCartWithDetails(userId)
   }
 
   async removeFromCart(userId: string, courseId: string) {
-    const cart = await this.prisma.cart.findUnique({ where: { userId } });
+    const cart = await this.prisma.cart.findUnique({ where: { userId } })
     if (!cart) {
-      throw new NotFoundException('Cart not found');
+      throw new NotFoundException('Cart not found')
     }
 
     await this.prisma.cartItem.deleteMany({
       where: {
         cartId: cart.id,
         courseId,
-      }
-    });
+      },
+    })
 
-    return this.getCartWithDetails(userId);
+    return this.getCartWithDetails(userId)
   }
 }

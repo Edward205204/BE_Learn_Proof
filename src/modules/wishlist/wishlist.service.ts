@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../shared/services/prisma.service';
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { PrismaService } from '../../shared/services/prisma.service'
 
 @Injectable()
 export class WishlistService {
@@ -11,26 +11,23 @@ export class WishlistService {
       include: {
         course: {
           include: {
-            creator: { select: { fullName: true } }
-          }
-        }
-      }
-    });
+            creator: { select: { fullName: true } },
+          },
+        },
+      },
+    })
   }
 
   async addToWishlist(userId: string, courseIdOrSlug: string) {
     // Check if course exists by id or slug
     const course = await this.prisma.course.findFirst({
       where: {
-        OR: [
-          { id: courseIdOrSlug },
-          { slug: courseIdOrSlug }
-        ]
-      }
-    });
+        OR: [{ id: courseIdOrSlug }, { slug: courseIdOrSlug }],
+      },
+    })
 
     if (!course) {
-      throw new NotFoundException('Course not found');
+      throw new NotFoundException('Course not found')
     }
 
     const existing = await this.prisma.wishlistItem.findUnique({
@@ -38,40 +35,37 @@ export class WishlistService {
         userId_courseId: {
           userId,
           courseId: course.id,
-        }
-      }
-    });
+        },
+      },
+    })
 
     if (!existing) {
       return this.prisma.wishlistItem.create({
         data: { userId, courseId: course.id },
-        include: { course: true }
-      });
+        include: { course: true },
+      })
     }
 
-    return existing;
+    return existing
   }
 
   async removeFromWishlist(userId: string, courseIdOrSlug: string) {
     // Check if course exists by id or slug
     const course = await this.prisma.course.findFirst({
       where: {
-        OR: [
-          { id: courseIdOrSlug },
-          { slug: courseIdOrSlug }
-        ]
-      }
-    });
+        OR: [{ id: courseIdOrSlug }, { slug: courseIdOrSlug }],
+      },
+    })
 
     if (!course) {
-      throw new NotFoundException('Course not found');
+      throw new NotFoundException('Course not found')
     }
 
     return this.prisma.wishlistItem.deleteMany({
       where: {
         userId,
-        courseId: course.id
-      }
-    });
+        courseId: course.id,
+      },
+    })
   }
 }
