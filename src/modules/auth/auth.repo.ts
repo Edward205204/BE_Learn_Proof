@@ -33,6 +33,9 @@ export class AuthRepo {
         email: true,
         fullName: true,
         avatar: true,
+        bio: true,
+        headline: true,
+        website: true,
         role: true,
       },
     })
