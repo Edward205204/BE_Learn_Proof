@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, Query, Res } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Patch, Post, Query, Res } from '@nestjs/common'
 import { Response } from 'express'
 import { AuthService } from './auth.service'
 import {
@@ -8,6 +8,7 @@ import {
   RegisterBodyDTO,
   ResetPasswordDto,
   SendOtpDTO,
+  UpdateProfileDto,
 } from './auth.dto'
 import { ZodSerializerDto } from 'nestjs-zod'
 import { AuthResDto, UserResSchema } from './auth.model'
@@ -75,6 +76,12 @@ export class AuthController {
   @ZodSerializerDto(UserResSchema)
   getMe(@ActiveUser() payload: TokenPayload) {
     return this.authService.getMe(payload)
+  }
+
+  @Patch('me')
+  @ZodSerializerDto(UserResSchema)
+  updateProfile(@ActiveUser() payload: TokenPayload, @Body() body: UpdateProfileDto) {
+    return this.authService.updateProfile(payload.userId, body)
   }
 
   @Get('google-link')

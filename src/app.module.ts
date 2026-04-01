@@ -8,9 +8,11 @@ import { CoursesModule } from './modules/courses/courses.module'
 import { QuizModule } from './modules/quiz/quiz.module';
 import { InteractionModule } from './modules/interaction/interaction.module';
 import { MediaModule } from './modules/media/media.module';
+import { CartModule } from './modules/cart/cart.module';
+import { WishlistModule } from './modules/wishlist/wishlist.module';
 
 @Module({
-  imports: [AuthModule, SharedModule, CoursesModule, QuizModule, InteractionModule, MediaModule],
+  imports: [AuthModule, SharedModule, CoursesModule, QuizModule, InteractionModule, MediaModule, CartModule, WishlistModule],
   controllers: [],
   providers: [
     {

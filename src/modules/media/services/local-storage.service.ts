@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { IStorageService } from '../interfaces/storage.interface';
+import { IStorageService } from '../storage.interface';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Stream } from 'stream';
@@ -17,10 +17,10 @@ export class LocalStorageService implements IStorageService {
   }
 
   async uploadFile(file: Buffer, filename: string, mimeType: string): Promise<string> {
-      const filePath = path.join(this.uploadDir, filename);
-      // NOTE: mimeType could be used here to save to specific folders or store metadata
-      await fs.promises.writeFile(filePath, file);
-      return filename;
+    const filePath = path.join(this.uploadDir, filename);
+    // NOTE: mimeType could be used here to save to specific folders or store metadata
+    await fs.promises.writeFile(filePath, file);
+    return filename;
   }
 
   async getFileStream(filename: string): Promise<Stream> {
