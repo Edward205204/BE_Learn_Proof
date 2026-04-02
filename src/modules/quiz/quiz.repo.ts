@@ -1,10 +1,23 @@
 import { Injectable } from '@nestjs/common'
-import { QuizType } from '@prisma/client'
+import { QuizType } from 'src/generated/prisma/enums'
 import { PrismaService } from 'src/shared/services/prisma.service'
 
 @Injectable()
 export class QuizRepo {
   constructor(private prisma: PrismaService) {}
+
+  findLessonWithAuthorId({ id, authorId }: { id: string; authorId: string }) {
+    return this.prisma.lesson.findFirst({
+      where: {
+        id,
+        chapter: {
+          course: {
+            creatorId: authorId,
+          },
+        },
+      },
+    })
+  }
 
   findQuiz(where: { id: string; lessonId: string }) {
     return this.prisma.quiz.findUnique({
@@ -145,6 +158,17 @@ export class QuizRepo {
       where: {
         chapterId,
         type: 'CHAPTER',
+      },
+    })
+  }
+
+  findChapterWithAuthorId({ id, authorId }: { id: string; authorId: string }) {
+    return this.prisma.chapter.findFirst({
+      where: {
+        id,
+        course: {
+          creatorId: authorId,
+        },
       },
     })
   }

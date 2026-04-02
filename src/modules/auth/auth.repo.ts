@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { RefreshToken, User, VerificationCode, VerificationCodeType } from '@prisma/client'
+import { RefreshToken, User, VerificationCode, VerificationCodeType } from 'src/generated/prisma/client'
 
 import { PrismaService } from 'src/shared/services/prisma.service'
 
