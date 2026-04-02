@@ -1,13 +1,10 @@
 import { Body, Controller, Post, Patch, Param } from '@nestjs/common'
+import { ApiBearerAuth } from '@nestjs/swagger'
 import { QuizService } from './quiz.service'
-import {
-  CreateQuizDto,
-  UpdateQuizDto,
-  AddQuestionDto,
-  SubmitQuizDto,
-} from './quiz.dto'
+import { CreateQuizDto, UpdateQuizDto, AddQuestionDto, SubmitQuizDto } from './quiz.dto'
 
 @Controller('quiz')
+@ApiBearerAuth('access-token')
 export class QuizController {
   constructor(private readonly quizService: QuizService) {}
 

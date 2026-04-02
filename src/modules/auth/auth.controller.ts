@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, Patch, Post, Query, Res } from '@nestjs/common'
+import { ApiBearerAuth } from '@nestjs/swagger'
 import { Response } from 'express'
 import { AuthService } from './auth.service'
 import {
@@ -73,12 +74,14 @@ export class AuthController {
   }
 
   @Get('me')
+  @ApiBearerAuth('access-token')
   @ZodSerializerDto(UserResSchema)
   getMe(@ActiveUser() payload: TokenPayload) {
     return this.authService.getMe(payload)
   }
 
   @Patch('me')
+  @ApiBearerAuth('access-token')
   @ZodSerializerDto(UserResSchema)
   updateProfile(@ActiveUser() payload: TokenPayload, @Body() body: UpdateProfileDto) {
     return this.authService.updateProfile(payload.userId, body)
