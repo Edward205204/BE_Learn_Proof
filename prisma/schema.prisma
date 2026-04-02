@@ -123,7 +123,6 @@ model Chapter {
   courseId String
   course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons  Lesson[]
-  quizzes  Quiz[]
 
   @@index([courseId, order])
 }
@@ -163,22 +162,15 @@ model Lesson {
 }
 
 model Quiz {
-  id          String        @id @default(cuid())
-  title       String?
-  description String?
-  lessonId    String?
-  chapterId   String?
-  createdAt   DateTime      @default(now())
-  type        QuizType
-  updatedAt   DateTime      @updatedAt
-  questions   Question[]
-  chapter     Chapter?      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  lesson      Lesson?       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  attempts    QuizAttempt[]
+  id        String        @id @default(cuid())
+  lessonId  String
+  lesson    Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions Question[]
+  attempts  QuizAttempt[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   @@index([lessonId])
-  @@index([chapterId])
-  @@index([chapterId, type])
 }
 
 model QuizAttemptAnswer {
