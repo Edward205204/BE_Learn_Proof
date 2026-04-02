@@ -1,4 +1,4 @@
-import { Role } from 'src/generated/prisma/enums'
+import { Role } from '@prisma/client'
 import { z } from 'zod'
 
 // ─── Seed account (thay đổi nếu reset DB) ────────────────────────────────────
@@ -78,26 +78,14 @@ export const UpdateProfileBodySchema = z.object({
     .max(255)
     .optional()
     .meta({ description: 'Tên đầy đủ mới', example: 'Nguyễn Thái Vinh' }),
-  bio: z
-    .string()
-    .trim()
-    .max(2000)
-    .nullable()
-    .optional()
-    .meta({
-      description: 'Tiểu sử / giới thiệu bản thân (tối đa 2000 ký tự)',
-      example: 'Tôi là lập trình viên yêu thích Blockchain và AI.',
-    }),
-  headline: z
-    .string()
-    .trim()
-    .max(60)
-    .nullable()
-    .optional()
-    .meta({
-      description: 'Tiêu đề nghề nghiệp ngắn (tối đa 60 ký tự)',
-      example: 'Fullstack Developer | Blockchain Enthusiast',
-    }),
+  bio: z.string().trim().max(2000).nullable().optional().meta({
+    description: 'Tiểu sử / giới thiệu bản thân (tối đa 2000 ký tự)',
+    example: 'Tôi là lập trình viên yêu thích Blockchain và AI.',
+  }),
+  headline: z.string().trim().max(60).nullable().optional().meta({
+    description: 'Tiêu đề nghề nghiệp ngắn (tối đa 60 ký tự)',
+    example: 'Fullstack Developer | Blockchain Enthusiast',
+  }),
   website: z
     .string()
     .trim()
@@ -110,18 +98,14 @@ export const UpdateProfileBodySchema = z.object({
 
 export const AuthResDto = z.object({
   tokens: z.object({
-    accessToken: z
-      .string()
-      .meta({
-        description: 'JWT Access Token (dùng để gọi các API bảo mật)',
-        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-      }),
-    refreshToken: z
-      .string()
-      .meta({
-        description: 'JWT Refresh Token (dùng để lấy Access Token mới)',
-        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-      }),
+    accessToken: z.string().meta({
+      description: 'JWT Access Token (dùng để gọi các API bảo mật)',
+      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    }),
+    refreshToken: z.string().meta({
+      description: 'JWT Refresh Token (dùng để lấy Access Token mới)',
+      example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    }),
   }),
   user: UserResSchema,
 })

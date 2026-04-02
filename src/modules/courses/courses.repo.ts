@@ -10,7 +10,7 @@ import {
   ReorderLessonDto,
 } from './courses.model'
 import { PrismaService } from 'src/shared/services/prisma.service'
-import { CourseStatus, Prisma } from 'src/generated/prisma/client'
+import { CourseStatus, Prisma } from '@prisma/client'
 
 @Injectable()
 export class CourseRepo {
@@ -20,6 +20,36 @@ export class CourseRepo {
     return this.prisma.category.findUnique({
       where: body,
       select: { id: true, name: true, slug: true },
+    })
+  }
+
+  async checkCourseExists(id: string): Promise<boolean> {
+    const course = await this.prisma.course.findUnique({
+      where: { id },
+      select: { id: true },
+    })
+    return !!course
+  }
+
+  getCourseById(id: string) {
+    return this.prisma.course.findUnique({ where: { id } })
+  }
+
+  getCourseByIdOrSlug(idOrSlug: string) {
+    return this.prisma.course.findFirst({
+      where: {
+        OR: [{ id: idOrSlug }, { slug: idOrSlug }],
+      },
+    })
+  }
+
+  getChapterById(id: string) {
+    return this.prisma.chapter.findUnique({ where: { id } })
+  }
+
+  getEnrollment(userId: string, courseId: string) {
+    return this.prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId } },
     })
   }
 

@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../../shared/services/prisma.service'
+import { CourseService } from '../courses/services/courses.service'
 
 @Injectable()
 export class WishlistService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly courseService: CourseService,
+  ) {}
 
   async getWishlist(userId: string) {
     return this.prisma.wishlistItem.findMany({
@@ -20,11 +24,7 @@ export class WishlistService {
 
   async addToWishlist(userId: string, courseIdOrSlug: string) {
     // Check if course exists by id or slug
-    const course = await this.prisma.course.findFirst({
-      where: {
-        OR: [{ id: courseIdOrSlug }, { slug: courseIdOrSlug }],
-      },
-    })
+    const course = await this.courseService.getCourseByIdOrSlug(courseIdOrSlug)
 
     if (!course) {
       throw new NotFoundException('Course not found')
@@ -51,11 +51,7 @@ export class WishlistService {
 
   async removeFromWishlist(userId: string, courseIdOrSlug: string) {
     // Check if course exists by id or slug
-    const course = await this.prisma.course.findFirst({
-      where: {
-        OR: [{ id: courseIdOrSlug }, { slug: courseIdOrSlug }],
-      },
-    })
+    const course = await this.courseService.getCourseByIdOrSlug(courseIdOrSlug)
 
     if (!course) {
       throw new NotFoundException('Course not found')

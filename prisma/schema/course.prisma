@@ -1,0 +1,108 @@
+model Category {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  slug    String   @unique
+  courses Course[]
+}
+
+model Course {
+  id                    String                  @id @default(cuid())
+  title                 String
+  slug                  String                  @unique
+  categoryId            String
+  level                 CourseLevel             @default(BEGINNER)
+  isCompleted           Boolean                 @default(false)
+  publishedLessonsCount Int                     @default(0)
+  totalPlannedLessons   Int?
+  shortDesc             String
+  fullDesc              String
+  thumbnail             String?
+  status                CourseStatus            @default(DRAFT)
+  isFree                Boolean                 @default(true)
+  price                 Float                   @default(0)
+  originalPrice         Float?
+  expectedDays          Int?
+  creatorId             String
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  certificates          Certificate[]
+  chapters              Chapter[]
+  category              Category                @relation(fields: [categoryId], references: [id])
+  creator               User                    @relation("CourseCreator", fields: [creatorId], references: [id])
+  dailySnapshots        CourseDailySnapshot[]
+  overallAnalytics      CourseOverallAnalytics?
+  discussions           Discussion[]
+  enrollments           Enrollment[]
+  reviews               Review[]
+  transactions          Transaction[]
+  cartItems             CartItem[]
+  wishlistItems         WishlistItem[]
+
+  @@unique([id, creatorId])
+  @@index([status, createdAt])
+  @@index([creatorId, createdAt])
+  @@index([creatorId, status, createdAt])
+  @@index([categoryId])
+}
+
+model Chapter {
+  id       String   @id @default(cuid())
+  title    String
+  order    Float
+  courseId String
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons  Lesson[]
+  quizzes  Quiz[]
+
+  @@index([courseId, order])
+}
+
+model Enrollment {
+  id             String    @id @default(cuid())
+  userId         String
+  courseId       String
+  enrolledAt     DateTime  @default(now())
+  completedAt    DateTime?
+  lastCaughtUpAt DateTime?
+  course         Course    @relation(fields: [courseId], references: [id])
+  user           User      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, courseId])
+}
+
+model Progress {
+  id          String   @id @default(cuid())
+  userId      String
+  lessonId    String
+  isCompleted Boolean  @default(false)
+  lastAccess  DateTime @updatedAt
+  lesson      Lesson   @relation(fields: [lessonId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, lessonId])
+}
+
+model CourseOverallAnalytics {
+  id               String   @id @default(cuid())
+  courseId         String   @unique
+  totalStudents    Int      @default(0)
+  totalRevenue     Float    @default(0)
+  avgRating        Float    @default(0)
+  avgInterestScore Float    @default(0)
+  dropoutRate      Float    @default(0)
+  completionRate   Float    @default(0)
+  updatedAt        DateTime @updatedAt
+  course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model CourseDailySnapshot {
+  id             String   @id @default(cuid())
+  courseId       String
+  date           DateTime @default(now())
+  newEnrollments Int      @default(0)
+  activeLearners Int      @default(0)
+  revenueToday   Float    @default(0)
+  course         Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, date])
+}

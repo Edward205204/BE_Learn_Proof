@@ -15,7 +15,7 @@ import {
   CourseNotDraftException,
   CourseNotFoundException,
 } from '../error.model'
-import { CourseStatus } from 'src/generated/prisma/enums'
+import { CourseStatus } from '@prisma/client'
 
 @Injectable()
 export class CoursesManagerService {

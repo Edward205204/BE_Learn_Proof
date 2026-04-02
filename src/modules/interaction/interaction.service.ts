@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common'
-import { Role } from 'src/generated/prisma/enums'
+import { Role } from '@prisma/client'
 import { InteractionRepo } from './interaction.repo'
 
 @Injectable()

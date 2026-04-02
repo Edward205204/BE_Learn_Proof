@@ -8,5 +8,6 @@ import { CoursesManagerService } from './services/courses-manager.service'
 @Module({
   providers: [CourseService, CourseRepo, LearningCoursesService, CoursesManagerService],
   controllers: [CourseController],
+  exports: [CourseService],
 })
 export class CoursesModule {}

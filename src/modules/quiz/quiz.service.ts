@@ -1,11 +1,18 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
+import { Injectable, BadRequestException, Inject, forwardRef } from '@nestjs/common'
 import { QuizRepo } from './quiz.repo'
 import { QuizNotFoundException, LessonNotFoundException, QuestionNotFoundException } from './quiz.error'
 import { CreateQuizBodyType, UpdateQuizBodyType, AddQuestionBodyType, SubmitQuizBodyType } from './quiz.model'
+import { CourseService } from '../courses/services/courses.service'
+import { LessonService } from '../lesson/lesson.service'
 
 @Injectable()
 export class QuizService {
-  constructor(private readonly quizRepo: QuizRepo) {}
+  constructor(
+    private readonly quizRepo: QuizRepo,
+    private readonly courseService: CourseService,
+    @Inject(forwardRef(() => LessonService))
+    private readonly lessonService: LessonService,
+  ) {}
 
   async createQuiz(body: CreateQuizBodyType, userId: string) {
     const { type, lessonId, chapterId, title, description } = body
@@ -14,11 +21,11 @@ export class QuizService {
     if (type === 'LESSON') {
       if (!lessonId) throw new BadRequestException('lessonId is required')
 
-      const lesson = await this.quizRepo.findLessonWithAuthorId({
-        id: lessonId,
-        authorId: userId,
-      })
+      const lesson = await this.lessonService.getLessonById(lessonId)
       if (!lesson) throw new LessonNotFoundException()
+
+      const chapter = await this.courseService.findChapterUnique({ id: lesson.chapterId, creatorId: userId })
+      if (!chapter) throw new LessonNotFoundException()
 
       // ❗ tránh tạo duplicate quiz
       const existed = await this.quizRepo.findQuizByLesson(lessonId)
@@ -28,9 +35,9 @@ export class QuizService {
     if (type === 'CHAPTER') {
       if (!chapterId) throw new BadRequestException('chapterId is required')
 
-      const chapter = await this.quizRepo.findChapterWithAuthorId({
+      const chapter = await this.courseService.findChapterUnique({
         id: chapterId,
-        authorId: userId,
+        creatorId: userId,
       })
       if (!chapter) throw new BadRequestException('Chapter not found')
 

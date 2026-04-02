@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { PrismaService } from 'src/shared/services/prisma.service'
+import { CourseService } from '../courses/services/courses.service'
 
 @Injectable()
 export class CartService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly courseService: CourseService,
+  ) {}
 
   /**
    * Helper method to return cart with necessary course info
@@ -55,11 +59,7 @@ export class CartService {
     }
 
     // Check if course exists by id or slug
-    const course = await this.prisma.course.findFirst({
-      where: {
-        OR: [{ id: courseIdOrSlug }, { slug: courseIdOrSlug }],
-      },
-    })
+    const course = await this.courseService.getCourseByIdOrSlug(courseIdOrSlug)
 
     if (!course) {
       throw new NotFoundException('Course not found')
