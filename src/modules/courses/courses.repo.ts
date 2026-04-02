@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common'
+import { TransactionHost } from '@nestjs-cls/transactional'
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 import { z } from 'zod'
 import {
   CreateCourseSt1Dto,
@@ -9,22 +11,21 @@ import {
   ReorderChapterDto,
   ReorderLessonDto,
 } from './courses.model'
-import { PrismaService } from 'src/shared/services/prisma.service'
 import { CourseStatus, Prisma } from 'src/generated/prisma/client'
 
 @Injectable()
 export class CourseRepo {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma>) {}
 
   findCategoryUnique(body: { id: string } | { slug: string }) {
-    return this.prisma.category.findUnique({
+    return this.txHost.tx.category.findUnique({
       where: body,
       select: { id: true, name: true, slug: true },
     })
   }
 
   createCourseSt1(dto: CreateCourseSt1Dto, slug: string, creatorId: string) {
-    return this.prisma.course.create({
+    return this.txHost.tx.course.create({
       data: {
         title: dto.title,
         slug,
@@ -65,7 +66,7 @@ export class CourseRepo {
   }
 
   async syncChaptersFrame(courseId: string, dto: CreateCourseSt2Dto) {
-    return await this.prisma.course.update({
+    return await this.txHost.tx.course.update({
       where: { id: courseId },
       data: {
         chapters: {
@@ -119,8 +120,8 @@ export class CourseRepo {
     }
 
     // 4. Transaction — lấy đồng thời items và total count
-    const [courses, total] = await this.prisma.$transaction([
-      this.prisma.course.findMany({
+    const [courses, total] = await this.txHost.tx.$transaction([
+      this.txHost.tx.course.findMany({
         where,
         skip,
         take: limit,
@@ -139,7 +140,7 @@ export class CourseRepo {
           overallAnalytics: { select: { avgRating: true, totalStudents: true } },
         },
       }),
-      this.prisma.course.count({ where }),
+      this.txHost.tx.course.count({ where }),
     ])
 
     return {
@@ -153,8 +154,8 @@ export class CourseRepo {
     }
   }
 
-  async getCourseDetail(slug: string) {
-    return this.prisma.course.findUnique({
+  getCourseDetail(slug: string) {
+    return this.txHost.tx.course.findUnique({
       where: {
         slug,
         status: CourseStatus.PUBLISHED,
@@ -264,28 +265,28 @@ export class CourseRepo {
 
     const [trending, topSelling, newest, topRated] = await Promise.all([
       // Top 5 — Interest Score cao nhất (Vận tốc học)
-      this.prisma.course.findMany({
+      this.txHost.tx.course.findMany({
         where: { status: CourseStatus.PUBLISHED },
         orderBy: { overallAnalytics: { avgInterestScore: 'desc' } },
         take: 5,
         select: baseSelect,
       }),
       // Top 10 — Nhiều học viên nhất
-      this.prisma.course.findMany({
+      this.txHost.tx.course.findMany({
         where: { status: CourseStatus.PUBLISHED },
         orderBy: { overallAnalytics: { totalStudents: 'desc' } },
         take: 10,
         select: baseSelect,
       }),
       // 5 — Mới nhất
-      this.prisma.course.findMany({
+      this.txHost.tx.course.findMany({
         where: { status: CourseStatus.PUBLISHED },
         orderBy: { createdAt: 'desc' },
         take: 5,
         select: baseSelect,
       }),
       // Top 5 — Rating cao nhất
-      this.prisma.course.findMany({
+      this.txHost.tx.course.findMany({
         where: { status: CourseStatus.PUBLISHED },
         orderBy: { overallAnalytics: { avgRating: 'desc' } },
         take: 5,
@@ -297,7 +298,7 @@ export class CourseRepo {
   }
 
   getCategories() {
-    return this.prisma.category.findMany({
+    return this.txHost.tx.category.findMany({
       select: {
         id: true,
         name: true,
@@ -313,7 +314,7 @@ export class CourseRepo {
   }
 
   getSearchSuggestions(q: string) {
-    return this.prisma.course.findMany({
+    return this.txHost.tx.course.findMany({
       where: {
         status: 'PUBLISHED',
         title: { contains: q, mode: 'insensitive' },
@@ -329,7 +330,7 @@ export class CourseRepo {
   }
 
   getAllSlugs() {
-    return this.prisma.course
+    return this.txHost.tx.course
       .findMany({
         where: { status: 'PUBLISHED' },
         select: { slug: true },
@@ -339,13 +340,13 @@ export class CourseRepo {
   }
 
   getCourseUnique(body: { id: string } | { slug: string } | { creatorId: string; id: string }) {
-    return this.prisma.course.findUnique({
+    return this.txHost.tx.course.findUnique({
       where: body,
     })
   }
 
   getCourseUniqueIncludeChapters(body: { id: string } | { slug: string } | { creatorId: string; id: string }) {
-    return this.prisma.course.findUnique({
+    return this.txHost.tx.course.findUnique({
       where: body,
       include: {
         chapters: {
@@ -356,7 +357,7 @@ export class CourseRepo {
   }
 
   updateCourseBaseInfo(courseId: string, creatorId: string, dto: CreateCourseSt1Dto, slug?: string) {
-    return this.prisma.course.update({
+    return this.txHost.tx.course.update({
       where: {
         id_creatorId: {
           id: courseId,
@@ -394,7 +395,7 @@ export class CourseRepo {
   }
 
   finishCreateCourse(courseId: string, payload: CreateCourseSt3Dto & { creatorId: string }) {
-    return this.prisma.course.update({
+    return this.txHost.tx.course.update({
       where: {
         id_creatorId: {
           id: courseId,
@@ -415,7 +416,7 @@ export class CourseRepo {
   }
 
   updateOrderLesson(payload: ReorderLessonDto) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.txHost.tx.$transaction(async (tx) => {
       const prevLesson = payload.prevLessonId
         ? await tx.lesson.findUnique({ where: { id: payload.prevLessonId }, select: { order: true } })
         : null
@@ -437,7 +438,7 @@ export class CourseRepo {
   }
 
   updateOrderChapters(payload: ReorderChapterDto) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.txHost.tx.$transaction(async (tx) => {
       const prevChapter = payload.prevChapterId
         ? await tx.chapter.findUnique({ where: { id: payload.prevChapterId }, select: { order: true } })
         : null
@@ -458,7 +459,7 @@ export class CourseRepo {
   }
 
   findLessonUnique(payload: { id: string; creatorId: string }) {
-    return this.prisma.lesson.findFirst({
+    return this.txHost.tx.lesson.findFirst({
       where: {
         id: payload.id,
         chapter: { course: { creatorId: payload.creatorId } },
@@ -467,7 +468,7 @@ export class CourseRepo {
   }
 
   findChapterUnique(payload: { id: string; creatorId: string }) {
-    return this.prisma.chapter.findFirst({
+    return this.txHost.tx.chapter.findFirst({
       where: {
         id: payload.id,
         course: { creatorId: payload.creatorId },
@@ -482,8 +483,8 @@ export class CourseRepo {
 
     // 1. Tính toán Pagination
     const skip = (page - 1) * limit
-    const [courses, total] = await this.prisma.$transaction([
-      this.prisma.course.findMany({
+    const [courses, total] = await this.txHost.tx.$transaction([
+      this.txHost.tx.course.findMany({
         where,
         skip,
         take: limit,
@@ -505,7 +506,7 @@ export class CourseRepo {
           overallAnalytics: { select: { avgRating: true, totalStudents: true, avgInterestScore: true } },
         },
       }),
-      this.prisma.course.count({ where }),
+      this.txHost.tx.course.count({ where }),
     ])
     return {
       items: courses,
@@ -519,7 +520,7 @@ export class CourseRepo {
   }
 
   getCourseDetailManager(body: { creatorId: string; id: string }) {
-    return this.prisma.course.findUnique({
+    return this.txHost.tx.course.findUnique({
       where: body,
       select: {
         id: true,

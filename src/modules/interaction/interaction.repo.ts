@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common'
-import { PrismaService } from 'src/shared/services/prisma.service'
+import { TransactionHost } from '@nestjs-cls/transactional'
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 
 @Injectable()
 export class InteractionRepo {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma>) {}
 
-  async findLessonInCourse(courseId: string, lessonId: string) {
-    return this.prisma.lesson.findFirst({
+  findLessonInCourse(courseId: string, lessonId: string) {
+    return this.txHost.tx.lesson.findFirst({
       where: {
         id: lessonId,
         chapter: {
@@ -16,8 +17,8 @@ export class InteractionRepo {
     })
   }
 
-  async checkUserEnrollment(userId: string, courseId: string) {
-    return this.prisma.enrollment.findUnique({
+  checkUserEnrollment(userId: string, courseId: string) {
+    return this.txHost.tx.enrollment.findUnique({
       where: {
         userId_courseId: {
           userId,
@@ -34,7 +35,7 @@ export class InteractionRepo {
       isDeleted: false,
     }
     const [data, total] = await Promise.all([
-      this.prisma.discussion.findMany({
+      this.txHost.tx.discussion.findMany({
         where,
         include: {
           user: {
@@ -52,7 +53,7 @@ export class InteractionRepo {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      this.prisma.discussion.count({ where }),
+      this.txHost.tx.discussion.count({ where }),
     ])
 
     return {
@@ -65,7 +66,7 @@ export class InteractionRepo {
   async findAllComments(page: number, limit: number) {
     const where = { isDeleted: false }
     const [data, total] = await Promise.all([
-      this.prisma.discussion.findMany({
+      this.txHost.tx.discussion.findMany({
         where,
         include: {
           user: {
@@ -96,7 +97,7 @@ export class InteractionRepo {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      this.prisma.discussion.count({ where }),
+      this.txHost.tx.discussion.count({ where }),
     ])
 
     return {
@@ -106,8 +107,8 @@ export class InteractionRepo {
     }
   }
 
-  async findCommentById(id: string) {
-    return this.prisma.discussion.findUnique({
+  findCommentById(id: string) {
+    return this.txHost.tx.discussion.findUnique({
       where: { id },
       include: {
         course: {
@@ -118,36 +119,36 @@ export class InteractionRepo {
   }
 
   async findCourseCreatorId(courseId: string) {
-    const course = await this.prisma.course.findUnique({
+    const course = await this.txHost.tx.course.findUnique({
       where: { id: courseId },
       select: { creatorId: true },
     })
     return course?.creatorId
   }
 
-  async updateComment(id: string, data: any) {
-    return this.prisma.discussion.update({
+  updateComment(id: string, data: any) {
+    return this.txHost.tx.discussion.update({
       where: { id },
       data,
     })
   }
-  async createComment(data: any) {
-    return this.prisma.discussion.create({
+  createComment(data: any) {
+    return this.txHost.tx.discussion.create({
       data,
     })
   }
-  async createReply(data: any) {
-    return this.prisma.reply.create({
+  createReply(data: any) {
+    return this.txHost.tx.reply.create({
       data,
     })
   }
-  async findReplyById(id: string) {
-    return this.prisma.reply.findUnique({
+  findReplyById(id: string) {
+    return this.txHost.tx.reply.findUnique({
       where: { id },
     })
   }
-  async updateReply(id: string, data: any) {
-    return this.prisma.reply.update({
+  updateReply(id: string, data: any) {
+    return this.txHost.tx.reply.update({
       where: { id },
       data,
     })
@@ -156,7 +157,7 @@ export class InteractionRepo {
   async findCourseReviews(courseId: string, page: number, limit: number) {
     const where = { courseId }
     const [data, total] = await Promise.all([
-      this.prisma.review.findMany({
+      this.txHost.tx.review.findMany({
         where,
         include: {
           user: {
@@ -167,7 +168,7 @@ export class InteractionRepo {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      this.prisma.review.count({ where }),
+      this.txHost.tx.review.count({ where }),
     ])
 
     return {
@@ -177,8 +178,8 @@ export class InteractionRepo {
     }
   }
 
-  async findReviewByUserAndCourse(userId: string, courseId: string) {
-    return this.prisma.review.findUnique({
+  findReviewByUserAndCourse(userId: string, courseId: string) {
+    return this.txHost.tx.review.findUnique({
       where: {
         userId_courseId: {
           userId,
@@ -188,8 +189,8 @@ export class InteractionRepo {
     })
   }
 
-  async createReview(data: any) {
-    return this.prisma.review.create({
+  createReview(data: any) {
+    return this.txHost.tx.review.create({
       data,
     })
   }

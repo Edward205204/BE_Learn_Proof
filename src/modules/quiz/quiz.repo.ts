@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common'
+import { TransactionHost } from '@nestjs-cls/transactional'
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 import { QuizType } from 'src/generated/prisma/enums'
-import { PrismaService } from 'src/shared/services/prisma.service'
 
 @Injectable()
 export class QuizRepo {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma>) {}
 
   findLessonWithAuthorId({ id, authorId }: { id: string; authorId: string }) {
-    return this.prisma.lesson.findFirst({
+    return this.txHost.tx.lesson.findFirst({
       where: {
         id,
         chapter: {
@@ -20,13 +21,13 @@ export class QuizRepo {
   }
 
   findQuiz(where: { id: string; lessonId: string }) {
-    return this.prisma.quiz.findUnique({
+    return this.txHost.tx.quiz.findUnique({
       where,
     })
   }
 
   findQuizByLesson(lessonId: string) {
-    return this.prisma.quiz.findFirst({
+    return this.txHost.tx.quiz.findFirst({
       where: {
         lessonId,
       },
@@ -34,7 +35,7 @@ export class QuizRepo {
   }
 
   createQuiz(data: { type: QuizType; title?: string; description?: string; lessonId?: string; chapterId?: string }) {
-    return this.prisma.quiz.create({
+    return this.txHost.tx.quiz.create({
       data,
     })
   }
@@ -46,7 +47,7 @@ export class QuizRepo {
     description?: string
     questions: { content: string; answers: { content: string; isCorrect: boolean }[] }[]
   }) {
-    return this.prisma.quiz.create({
+    return this.txHost.tx.quiz.create({
       data: {
         type: data.type,
         lessonId: data.lessonId,
@@ -81,20 +82,20 @@ export class QuizRepo {
       description?: string
     }
   }) {
-    return this.prisma.quiz.update({
+    return this.txHost.tx.quiz.update({
       where,
       data,
     })
   }
 
   deleteQuiz(where: { id: string }) {
-    return this.prisma.quiz.delete({
+    return this.txHost.tx.quiz.delete({
       where,
     })
   }
 
   getQuizDetail(quizId: string) {
-    return this.prisma.quiz.findUnique({
+    return this.txHost.tx.quiz.findUnique({
       where: { id: quizId },
       include: {
         questions: {
@@ -107,7 +108,7 @@ export class QuizRepo {
   }
 
   createQuestion(data: { quizId: string; content: string; answers: { content: string; isCorrect: boolean }[] }) {
-    return this.prisma.question.create({
+    return this.txHost.tx.question.create({
       data: {
         content: data.content,
         quizId: data.quizId,
@@ -122,7 +123,7 @@ export class QuizRepo {
   }
 
   findQuestion(where: { id: string }) {
-    return this.prisma.question.findUnique({
+    return this.txHost.tx.question.findUnique({
       where,
     })
   }
@@ -136,25 +137,25 @@ export class QuizRepo {
       content?: string
     }
   }) {
-    return this.prisma.question.update({
+    return this.txHost.tx.question.update({
       where,
       data,
     })
   }
 
   deleteQuestion(where: { id: string }) {
-    return this.prisma.question.delete({
+    return this.txHost.tx.question.delete({
       where,
     })
   }
   findQuizById(id: string) {
-    return this.prisma.quiz.findUnique({
+    return this.txHost.tx.quiz.findUnique({
       where: { id },
     })
   }
 
   findQuizByChapter(chapterId: string) {
-    return this.prisma.quiz.findFirst({
+    return this.txHost.tx.quiz.findFirst({
       where: {
         chapterId,
         type: 'CHAPTER',
@@ -163,7 +164,7 @@ export class QuizRepo {
   }
 
   findChapterWithAuthorId({ id, authorId }: { id: string; authorId: string }) {
-    return this.prisma.chapter.findFirst({
+    return this.txHost.tx.chapter.findFirst({
       where: {
         id,
         course: {

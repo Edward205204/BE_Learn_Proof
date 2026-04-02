@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common'
-import { PrismaService } from 'src/shared/services/prisma.service'
+import { TransactionHost } from '@nestjs-cls/transactional'
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 import { LessonTypeEnumTS, QuizDataType, VideoProviderEnumTS } from './lesson.model'
 
 @Injectable()
 export class LessonRepo {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma>) {}
 
   findChapterWithAuthorId({ id: chapterId, authorId: userId }: { id: string; authorId: string }) {
-    return this.prisma.chapter.findFirst({
+    return this.txHost.tx.chapter.findFirst({
       where: {
         id: chapterId,
         course: {
@@ -18,7 +19,7 @@ export class LessonRepo {
   }
 
   async getLastLessonOrder(chapterId: string) {
-    const lastLesson = await this.prisma.lesson.findFirst({
+    const lastLesson = await this.txHost.tx.lesson.findFirst({
       where: {
         chapterId,
       },
@@ -45,7 +46,7 @@ export class LessonRepo {
     chapterId: string
     textContent: string | null
   }) {
-    return this.prisma.lesson.create({ data })
+    return this.txHost.tx.lesson.create({ data })
   }
 
   createLessonWithQuiz(
@@ -58,7 +59,7 @@ export class LessonRepo {
     },
     quizData: QuizDataType,
   ) {
-    return this.prisma.lesson.create({
+    return this.txHost.tx.lesson.create({
       data: {
         type: 'QUIZ',
         ...lessonData,
