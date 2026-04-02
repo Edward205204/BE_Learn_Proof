@@ -1,6 +1,11 @@
 import { Body, Controller, Post, Patch, Param } from '@nestjs/common'
 import { QuizService } from './quiz.service'
-import { CreateQuizDto, UpdateQuizDto, AddQuestionDto, SubmitQuizDto } from './quiz.dto'
+import {
+  CreateQuizDto,
+  UpdateQuizDto,
+  AddQuestionDto,
+  SubmitQuizDto,
+} from './quiz.dto'
 
 @Controller('quiz')
 export class QuizController {

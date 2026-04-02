@@ -1,8 +1,7 @@
-import { BadRequestException, Inject, Injectable, forwardRef } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { CreateLessonBodyType, LessonTypeEnum, VideoProviderEnumTS } from './lesson.model'
 import { LessonRepo } from './lesson.repo'
 import { QuizService } from '../quiz/quiz.service'
-import { CourseService } from '../courses/services/courses.service'
 
 const YOUTUBE_URL_REGEX = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/
 const YOUTUBE_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/
@@ -11,18 +10,8 @@ const YOUTUBE_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/
 export class LessonService {
   constructor(
     private readonly lessonRepo: LessonRepo,
-    @Inject(forwardRef(() => QuizService))
     private readonly quizService: QuizService,
-    private readonly courseService: CourseService,
   ) {}
-
-  checkLessonExists(id: string) {
-    return this.lessonRepo.checkLessonExists(id)
-  }
-
-  getLessonById(id: string) {
-    return this.lessonRepo.getLessonById(id)
-  }
 
   async createLesson(body: CreateLessonBodyType, userId: string) {
     const { type, chapterId } = body
@@ -41,9 +30,9 @@ export class LessonService {
   }
 
   private async validateChapterAuthor(chapterId: string, userId: string) {
-    const chapter = await this.courseService.findChapterUnique({
+    const chapter = await this.lessonRepo.findChapterWithAuthorId({
       id: chapterId,
-      creatorId: userId,
+      authorId: userId,
     })
     if (!chapter) {
       throw new BadRequestException('Chapter not found or you are not the author of this chapter')

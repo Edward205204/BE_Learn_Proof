@@ -8,7 +8,7 @@ import { AuthRepo } from './auth.repo'
 import { v4 as uuidv4 } from 'uuid'
 import { HashingService } from 'src/shared/services/hashing.service'
 import { AuthService } from './auth.service'
-import { User } from '@prisma/client'
+import { User } from 'src/generated/prisma/client'
 
 @Injectable()
 export class GoogleService {

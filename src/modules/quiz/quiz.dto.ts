@@ -1,5 +1,10 @@
 import { createZodDto } from 'nestjs-zod'
-import { CreateQuizSchema, UpdateQuizSchema, AddQuestionSchema, SubmitQuizSchema } from './quiz.model'
+import {
+  CreateQuizSchema,
+  UpdateQuizSchema,
+  AddQuestionSchema,
+  SubmitQuizSchema,
+} from './quiz.model'
 
 export class CreateQuizDto extends createZodDto(CreateQuizSchema) {}
 export class UpdateQuizDto extends createZodDto(UpdateQuizSchema) {}

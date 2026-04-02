@@ -1,18 +1,20 @@
-import { Injectable, BadRequestException, Inject, forwardRef } from '@nestjs/common'
+import { Injectable, BadRequestException } from '@nestjs/common'
 import { QuizRepo } from './quiz.repo'
-import { QuizNotFoundException, LessonNotFoundException, QuestionNotFoundException } from './quiz.error'
-import { CreateQuizBodyType, UpdateQuizBodyType, AddQuestionBodyType, SubmitQuizBodyType } from './quiz.model'
-import { CourseService } from '../courses/services/courses.service'
-import { LessonService } from '../lesson/lesson.service'
+import {
+  QuizNotFoundException,
+  LessonNotFoundException,
+  QuestionNotFoundException,
+} from './quiz.error'
+import {
+  CreateQuizBodyType,
+  UpdateQuizBodyType,
+  AddQuestionBodyType,
+  SubmitQuizBodyType,
+} from './quiz.model'
 
 @Injectable()
 export class QuizService {
-  constructor(
-    private readonly quizRepo: QuizRepo,
-    private readonly courseService: CourseService,
-    @Inject(forwardRef(() => LessonService))
-    private readonly lessonService: LessonService,
-  ) {}
+  constructor(private readonly quizRepo: QuizRepo) {}
 
   async createQuiz(body: CreateQuizBodyType, userId: string) {
     const { type, lessonId, chapterId, title, description } = body
@@ -21,11 +23,11 @@ export class QuizService {
     if (type === 'LESSON') {
       if (!lessonId) throw new BadRequestException('lessonId is required')
 
-      const lesson = await this.lessonService.getLessonById(lessonId)
+      const lesson = await this.quizRepo.findLessonWithAuthorId({
+        id: lessonId,
+        authorId: userId,
+      })
       if (!lesson) throw new LessonNotFoundException()
-
-      const chapter = await this.courseService.findChapterUnique({ id: lesson.chapterId, creatorId: userId })
-      if (!chapter) throw new LessonNotFoundException()
 
       // ❗ tránh tạo duplicate quiz
       const existed = await this.quizRepo.findQuizByLesson(lessonId)
@@ -35,9 +37,9 @@ export class QuizService {
     if (type === 'CHAPTER') {
       if (!chapterId) throw new BadRequestException('chapterId is required')
 
-      const chapter = await this.courseService.findChapterUnique({
+      const chapter = await this.quizRepo.findChapterWithAuthorId({
         id: chapterId,
-        creatorId: userId,
+        authorId: userId,
       })
       if (!chapter) throw new BadRequestException('Chapter not found')
 
@@ -138,7 +140,7 @@ export class QuizService {
       throw new BadRequestException('At least 2 answers required')
     }
 
-    const correctCount = answers.filter((a) => a.isCorrect).length
+    const correctCount = answers.filter(a => a.isCorrect).length
     if (correctCount !== 1) {
       throw new BadRequestException('Must have exactly 1 correct answer')
     }
@@ -184,8 +186,8 @@ export class QuizService {
     let correct = 0
 
     for (const question of quiz.questions) {
-      const userAnswer = answers.find((a) => a.questionId === question.id)
-      const correctAnswer = question.answers.find((a) => a.isCorrect)
+      const userAnswer = answers.find(a => a.questionId === question.id)
+      const correctAnswer = question.answers.find(a => a.isCorrect)
 
       if (userAnswer && userAnswer.answerId === correctAnswer?.id) {
         correct++

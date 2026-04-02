@@ -23,7 +23,7 @@ import {
 } from './error.model'
 import { TokenService } from 'src/shared/services/token.service'
 import { HashingService } from 'src/shared/services/hashing.service'
-import { Role, VerificationCodeType } from '@prisma/client'
+import { Role, VerificationCodeType } from 'src/generated/prisma/enums'
 import { MailService } from 'src/shared/services/mail.service'
 import { addMilliseconds } from 'date-fns'
 import ms, { StringValue } from 'ms'

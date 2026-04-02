@@ -1,26 +1,30 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from 'src/shared/services/prisma.service'
-import { CourseService } from '../courses/services/courses.service'
-import { LessonService } from '../lesson/lesson.service'
 
 @Injectable()
 export class InteractionRepo {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly courseService: CourseService,
-    private readonly lessonService: LessonService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async findLessonInCourse(courseId: string, lessonId: string) {
-    const lesson = await this.lessonService.getLessonById(lessonId)
-    if (!lesson) return null
-    const chapter = await this.courseService.getChapterById(lesson.chapterId)
-    if (!chapter || chapter.courseId !== courseId) return null
-    return lesson
+    return this.prisma.lesson.findFirst({
+      where: {
+        id: lessonId,
+        chapter: {
+          courseId,
+        },
+      },
+    })
   }
 
   async checkUserEnrollment(userId: string, courseId: string) {
-    return this.courseService.getEnrollment(userId, courseId)
+    return this.prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId,
+          courseId,
+        },
+      },
+    })
   }
 
   async findLessonComments(courseId: string, lessonId: string, page: number, limit: number) {
@@ -114,7 +118,10 @@ export class InteractionRepo {
   }
 
   async findCourseCreatorId(courseId: string) {
-    const course = await this.courseService.getCourseById(courseId)
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { creatorId: true },
+    })
     return course?.creatorId
   }
 
