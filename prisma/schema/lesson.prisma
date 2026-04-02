@@ -1,0 +1,50 @@
+model Lesson {
+  id        String     @id @default(cuid())
+  title     String
+  shortDesc String?    @db.Text
+  fullDesc  String?    @db.Text // Context cho AI
+  type      LessonType
+  order     Float
+
+  videoId     String?
+  provider    VideoProvider?
+  textContent String?        @db.Text
+  duration    Int?
+
+  chapterId String
+  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  quizzes Quiz[]
+
+  progress    Progress[]
+  discussions Discussion[]
+  analytics   LessonAnalyticsSnapshot?
+  heartbeats  LessonHeartbeat[]
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  @@index([chapterId, order])
+}
+
+model LessonHeartbeat {
+  id        String   @id @default(cuid())
+  userId    String
+  lessonId  String
+  lastPoint Int
+  updatedAt DateTime @updatedAt
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, lessonId])
+}
+
+model LessonAnalyticsSnapshot {
+  id           String   @id @default(cuid())
+  lessonId     String   @unique
+  totalViews   Int      @default(0)
+  avgWatchTime Int      @default(0)
+  dropOffCount Int      @default(0)
+  quizPassRate Float?
+  updatedAt    DateTime @updatedAt
+  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}

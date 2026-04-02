@@ -6,15 +6,16 @@ import { LessonTypeEnumTS, QuizDataType, VideoProviderEnumTS } from './lesson.mo
 export class LessonRepo {
   constructor(private readonly prisma: PrismaService) {}
 
-  findChapterWithAuthorId({ id: chapterId, authorId: userId }: { id: string; authorId: string }) {
-    return this.prisma.chapter.findFirst({
-      where: {
-        id: chapterId,
-        course: {
-          creatorId: userId,
-        },
-      },
+  async checkLessonExists(id: string): Promise<boolean> {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id },
+      select: { id: true },
     })
+    return !!lesson
+  }
+
+  getLessonById(id: string) {
+    return this.prisma.lesson.findUnique({ where: { id } })
   }
 
   async getLastLessonOrder(chapterId: string) {

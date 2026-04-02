@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common'
-import { Role } from 'src/generated/prisma/enums'
+import { Role } from '@prisma/client'
 import { InteractionRepo } from './interaction.repo'
 
 @Injectable()
 export class InteractionService {
-  constructor(private readonly repo: InteractionRepo) { }
+  constructor(private readonly repo: InteractionRepo) {}
 
   async getLessonComments(courseId: string, lessonId: string, page = 1, limit = 10) {
     const lesson = await this.repo.findLessonInCourse(courseId, lessonId)
