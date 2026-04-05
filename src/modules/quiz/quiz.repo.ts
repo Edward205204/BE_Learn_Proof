@@ -1,63 +1,26 @@
 import { Injectable } from '@nestjs/common'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { QuizType } from 'src/generated/prisma/enums'
+import { CreateQuizType, QuestionType } from './quiz.model'
+import { PrismaClient } from 'src/generated/prisma/client'
 
 @Injectable()
 export class QuizRepo {
-  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma>) {}
+  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
 
-  findLessonWithAuthorId({ id, authorId }: { id: string; authorId: string }) {
-    return this.txHost.tx.lesson.findFirst({
-      where: {
-        id,
-        chapter: {
-          course: {
-            creatorId: authorId,
-          },
-        },
-      },
-    })
-  }
-
-  findQuiz(where: { id: string; lessonId: string }) {
-    return this.txHost.tx.quiz.findUnique({
-      where,
-    })
-  }
-
-  findQuizByLesson(lessonId: string) {
-    return this.txHost.tx.quiz.findFirst({
-      where: {
-        lessonId,
-      },
-    })
-  }
-
-  createQuiz(data: { type: QuizType; title?: string; description?: string; lessonId?: string; chapterId?: string }) {
-    return this.txHost.tx.quiz.create({
-      data,
-    })
-  }
-
-  createQuizWithQuestions(data: {
-    type: QuizType
-    lessonId: string
-    title?: string
-    description?: string
-    questions: { content: string; answers: { content: string; isCorrect: boolean }[] }[]
-  }) {
+  createQuiz(body: CreateQuizType) {
     return this.txHost.tx.quiz.create({
       data: {
-        type: data.type,
-        lessonId: data.lessonId,
-        title: data.title,
-        description: data.description,
+        lessonId: body.lessonId,
         questions: {
-          create: data.questions.map((q) => ({
+          create: body.quizData.map((q) => ({
             content: q.content,
+            isEdit: false,
             answers: {
-              create: q.answers,
+              create: q.answers.map((a) => ({
+                content: a.content,
+                isCorrect: a.isCorrect,
+              })),
             },
           })),
         },
@@ -72,105 +35,180 @@ export class QuizRepo {
     })
   }
 
-  updateQuiz({
-    where,
-    data,
-  }: {
-    where: { id: string }
-    data: {
-      title?: string
-      description?: string
-    }
-  }) {
-    return this.txHost.tx.quiz.update({
-      where,
-      data,
-    })
-  }
-
-  deleteQuiz(where: { id: string }) {
-    return this.txHost.tx.quiz.delete({
-      where,
-    })
-  }
-
-  getQuizDetail(quizId: string) {
-    return this.txHost.tx.quiz.findUnique({
+  getQuizCMS(quizId: string) {
+    return this.txHost.tx.quiz.findFirst({
       where: { id: quizId },
-      include: {
+      select: {
+        id: true,
+        lessonId: true,
+        createdAt: true,
+        updatedAt: true,
+
         questions: {
-          include: {
-            answers: true,
+          select: {
+            id: true,
+            isEdit: true,
+            content: true,
+            answers: {
+              select: {
+                id: true,
+                content: true,
+                isCorrect: true,
+              },
+            },
           },
         },
       },
     })
   }
 
-  createQuestion(data: { quizId: string; content: string; answers: { content: string; isCorrect: boolean }[] }) {
+  findAnswerByQuestionId(questionId: string) {
+    return this.txHost.tx.answer.findMany({
+      where: { questionId },
+    })
+  }
+
+  findQuizAttemptByUserIdAndQuizId(userId: string, quizId: string) {
+    return this.txHost.tx.quizAttempt.findFirst({
+      where: { userId, quizId },
+    })
+  }
+
+  getQuizForUser(quizId: string) {
+    return this.txHost.tx.quiz.findFirst({
+      where: { id: quizId },
+      select: {
+        id: true,
+        lessonId: true,
+        createdAt: true,
+        updatedAt: true,
+
+        questions: {
+          where: { isEdit: false },
+          select: {
+            id: true,
+            content: true,
+            answers: {
+              select: {
+                id: true,
+                content: true,
+              },
+            },
+          },
+        },
+      },
+    })
+  }
+
+  findCorrectAnswerByQuestionId(questionId: string) {
+    return this.txHost.tx.answer.findFirst({
+      where: { questionId, isCorrect: true },
+      select: { id: true },
+    })
+  }
+
+  findCorrectQuestionList(quizId: string) {
+    return this.txHost.tx.question.findMany({
+      where: { quizId },
+      select: {
+        id: true,
+        answers: {
+          where: { isCorrect: true },
+          select: { id: true },
+        },
+      },
+    })
+  }
+
+  findQuestionEditState(questionId: string) {
+    return this.txHost.tx.question.findUnique({
+      where: { id: questionId },
+      select: { id: true, isEdit: true },
+    })
+  }
+
+  createQuestion(quizId: string, questionData: QuestionType) {
     return this.txHost.tx.question.create({
       data: {
-        content: data.content,
-        quizId: data.quizId,
+        content: questionData.content,
+        isEdit: false,
+        quizId: quizId,
         answers: {
-          create: data.answers,
+          create: questionData.answers.map((a) => ({
+            content: a.content,
+            isCorrect: a.isCorrect,
+          })),
         },
       },
-      include: {
-        answers: true,
-      },
     })
   }
 
-  findQuestion(where: { id: string }) {
-    return this.txHost.tx.question.findUnique({
-      where,
-    })
-  }
-
-  updateQuestion({
-    where,
-    data,
-  }: {
-    where: { id: string }
-    data: {
-      content?: string
-    }
-  }) {
-    return this.txHost.tx.question.update({
-      where,
-      data,
-    })
-  }
-
-  deleteQuestion(where: { id: string }) {
+  deleteQuestions(questionId: string) {
     return this.txHost.tx.question.delete({
-      where,
-    })
-  }
-  findQuizById(id: string) {
-    return this.txHost.tx.quiz.findUnique({
-      where: { id },
+      where: { id: questionId },
     })
   }
 
-  findQuizByChapter(chapterId: string) {
-    return this.txHost.tx.quiz.findFirst({
-      where: {
-        chapterId,
-        type: 'CHAPTER',
+  deleteQuiz(quizId: string) {
+    return this.txHost.tx.quiz.delete({
+      where: { id: quizId },
+    })
+  }
+
+  deleteAnswers(questionId: string, answerId: string) {
+    return this.txHost.tx.answer.delete({
+      where: { id: answerId, questionId },
+    })
+  }
+
+  createAnswer(questionId: string, content: string) {
+    return this.txHost.tx.answer.create({
+      data: {
+        content,
+        isCorrect: false,
+        questionId: questionId,
       },
     })
   }
 
-  findChapterWithAuthorId({ id, authorId }: { id: string; authorId: string }) {
-    return this.txHost.tx.chapter.findFirst({
-      where: {
-        id,
-        course: {
-          creatorId: authorId,
-        },
-      },
+  updateContentOfQuestion(questionId: string, content: string) {
+    return this.txHost.tx.question.update({
+      where: { id: questionId },
+      data: { content },
+    })
+  }
+
+  updateAnswer(answerId: string, questionId: string, content: string) {
+    return this.txHost.tx.answer.update({
+      where: { id: answerId, questionId },
+      data: { content },
+    })
+  }
+
+  updateAllAnswerIsFalse(questionId: string) {
+    return this.txHost.tx.answer.updateMany({
+      where: { questionId },
+      data: { isCorrect: false },
+    })
+  }
+
+  updateCorrectAnswer(answerId: string) {
+    return this.txHost.tx.answer.update({
+      where: { id: answerId },
+      data: { isCorrect: true },
+    })
+  }
+
+  updateIsEditOfQuestion(questionId: string, isEdit: boolean) {
+    return this.txHost.tx.question.update({
+      where: { id: questionId },
+      data: { isEdit },
+    })
+  }
+
+  createQuizAttempt(body: { userId: string; quizId: string; score: number; correct: number; total: number }) {
+    return this.txHost.tx.quizAttempt.create({
+      data: body,
     })
   }
 }

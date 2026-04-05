@@ -161,6 +161,7 @@ model Lesson {
   @@index([chapterId, order])
 }
 
+// thuộc modules quiz - start
 model Quiz {
   id        String        @id @default(cuid())
   lessonId  String
@@ -173,51 +174,60 @@ model Quiz {
   @@index([lessonId])
 }
 
-model QuizAttemptAnswer {
-  id         String      @id @default(cuid())
-  attemptId  String
-  questionId String
-  answerId   String
-  isCorrect  Boolean
-  answer     Answer      @relation(fields: [answerId], references: [id])
-  attempt    QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  question   Question    @relation(fields: [questionId], references: [id])
-}
+// tạm ẩn vì phức tạp
+// model QuizAttemptAnswer {
+//   id         String      @id @default(cuid())
+//   attemptId  String
+//   questionId String
+//   answerId   String
+//   isCorrect  Boolean
+//   answer     Answer      @relation(fields: [answerId], references: [id])
+//   attempt    QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+//   question   Question    @relation(fields: [questionId], references: [id])
+// }
 
 model QuizAttempt {
-  id        String              @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
   quizId    String
   score     Float
   correct   Int
   total     Int
-  createdAt DateTime            @default(now())
-  quiz      Quiz                @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  answers   QuizAttemptAnswer[]
+  createdAt DateTime @default(now())
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  // answers   QuizAttemptAnswer[]
+  @@index([userId, quizId])
   @@index([quizId])
 }
 
 model Question {
-  id             String              @id @default(cuid())
-  content        String
-  quizId         String
-  createdAt      DateTime            @default(now())
-  answers        Answer[]
-  quiz           Quiz                @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  attemptAnswers QuizAttemptAnswer[]
+  id        String   @id @default(cuid())
+  isEdit    Boolean  @default(false)
+  content   String
+  quizId    String
+  createdAt DateTime @default(now())
+  answers   Answer[]
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  // attemptAnswers QuizAttemptAnswer[]
+
+  @@index([quizId])
 }
 
 model Answer {
-  id             String              @id @default(cuid())
-  content        String
-  isCorrect      Boolean             @default(false)
-  questionId     String
-  question       Question            @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  attemptAnswers QuizAttemptAnswer[]
+  id         String   @id @default(cuid())
+  content    String
+  isCorrect  Boolean  @default(false)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  // attemptAnswers QuizAttemptAnswer[]
+
+  @@index([questionId])
+  @@index([id, questionId])
 }
+
+// thuộc modules quiz - end
 
 model Enrollment {
   id             String    @id @default(cuid())

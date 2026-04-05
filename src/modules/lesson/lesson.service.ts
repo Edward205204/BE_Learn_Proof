@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { CreateLessonBodyType, LessonTypeEnum, VideoProviderEnumTS } from './lesson.model'
 import { LessonRepo } from './lesson.repo'
-import { QuizService } from '../quiz/quiz.service'
+// import { QuizService } from '../quiz/quiz-cms.service'
 
 const YOUTUBE_URL_REGEX = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/
 const YOUTUBE_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/
@@ -10,7 +10,7 @@ const YOUTUBE_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/
 export class LessonService {
   constructor(
     private readonly lessonRepo: LessonRepo,
-    private readonly quizService: QuizService,
+    // private readonly quizService: QuizService,
   ) {}
 
   async createLesson(body: CreateLessonBodyType, userId: string) {
@@ -62,7 +62,7 @@ export class LessonService {
       textContent: null,
     })
 
-    return this.withOptionalQuiz(lesson, quizData)
+    // return this.withOptionalQuiz(lesson, quizData)
   }
 
   private async createTextLesson(body: CreateLessonBodyType, order: number) {
@@ -81,25 +81,25 @@ export class LessonService {
       textContent: textContent ?? null,
     })
 
-    return this.withOptionalQuiz(lesson, quizData)
+    // return this.withOptionalQuiz(lesson, quizData)
   }
 
-  private async withOptionalQuiz<T extends { id: string }>(
-    lesson: T,
-    quizData: { title?: string; description?: string } | undefined,
-  ) {
-    if (!quizData) return { lesson, quizWarning: null }
+  // private async withOptionalQuiz<T extends { id: string }>(
+  //   lesson: T,
+  //   quizData: { title?: string; description?: string } | undefined,
+  // ) {
+  //   if (!quizData) return { lesson, quizWarning: null }
 
-    try {
-      await this.quizService.createQuizForLesson(lesson.id, quizData)
-      return { lesson, quizWarning: null }
-    } catch {
-      return {
-        lesson,
-        quizWarning: 'Tạo bài học thành công nhưng quá trình xử lý quiz có vấn đề, bạn có thể thêm lại sau.',
-      }
-    }
-  }
+  //   try {
+  //     await this.quizService.createQuizForLesson(lesson.id, quizData)
+  //     return { lesson, quizWarning: null }
+  //   } catch {
+  //     return {
+  //       lesson,
+  //       quizWarning: 'Tạo bài học thành công nhưng quá trình xử lý quiz có vấn đề, bạn có thể thêm lại sau.',
+  //     }
+  //   }
+  // }
 
   private createQuizLesson(body: CreateLessonBodyType, order: number) {
     const { title, shortDesc, fullDesc, chapterId, quizData } = body
