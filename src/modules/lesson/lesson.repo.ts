@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { LessonTypeEnumTS, QuizDataType, VideoProviderEnumTS } from './lesson.model'
+import { LessonTypeEnumTS, VideoProviderEnumTS } from './lesson.model'
+import { PrismaClient } from 'src/generated/prisma/client'
 
 @Injectable()
 export class LessonRepo {
-  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma>) {}
+  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
 
   findChapterWithAuthorId({ id: chapterId, authorId: userId }: { id: string; authorId: string }) {
     return this.txHost.tx.chapter.findFirst({
@@ -18,7 +19,7 @@ export class LessonRepo {
     })
   }
 
-  async getLastLessonOrder(chapterId: string) {
+  async getLastLessonOrderInChapter(chapterId: string) {
     const lastLesson = await this.txHost.tx.lesson.findFirst({
       where: {
         chapterId,
@@ -46,53 +47,14 @@ export class LessonRepo {
     chapterId: string
     textContent: string | null
   }) {
-    return this.txHost.tx.lesson.create({ data })
-  }
-
-  createLessonWithQuiz(
-    lessonData: {
-      title: string
-      shortDesc: string | null
-      fullDesc: string | null
-      order: number
-      chapterId: string
-    },
-    quizData: QuizDataType,
-  ) {
     return this.txHost.tx.lesson.create({
-      data: {
-        type: 'QUIZ',
-        ...lessonData,
-        videoId: null,
-        provider: null,
-        duration: null,
-        textContent: null,
-        quizzes: {
-          create: {
-            type: 'LESSON',
-            title: quizData.title,
-            description: quizData.description,
-            questions: {
-              create: quizData.questions.map((q) => ({
-                content: q.content,
-                answers: {
-                  create: q.answers,
-                },
-              })),
-            },
-          },
-        },
-      },
-      include: {
-        quizzes: {
-          include: {
-            questions: {
-              include: {
-                answers: true,
-              },
-            },
-          },
-        },
+      data,
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        order: true,
+        chapterId: true,
       },
     })
   }
