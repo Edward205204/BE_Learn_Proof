@@ -381,15 +381,6 @@ export class CourseRepo {
     })
   }
 
-  findLessonUnique(payload: { id: string; creatorId: string }) {
-    return this.txHost.tx.lesson.findFirst({
-      where: {
-        id: payload.id,
-        chapter: { course: { creatorId: payload.creatorId } },
-      },
-    })
-  }
-
   findChapterUnique(payload: { id: string; creatorId: string }) {
     return this.txHost.tx.chapter.findFirst({
       where: {

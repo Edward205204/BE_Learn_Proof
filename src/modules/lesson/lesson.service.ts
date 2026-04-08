@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common'
 import { CreateLessonBodyType, ReorderLessonDto, UpdateLessonBodyType } from './lesson.model'
 import { LessonRepo } from './lesson.repo'
 import { LessonStrategyRegistry } from './strategies/lesson-strategy.registry'
-// import { QuizService } from '../quiz/quiz-cms.service'
 
 @Injectable()
 export class LessonService {
@@ -11,22 +10,9 @@ export class LessonService {
     private readonly registry: LessonStrategyRegistry,
   ) {}
 
-  // private async validateChapterAuthor(chapterId: string, userId: string) {
-  //   const chapter = await this.lessonRepo.findChapterWithAuthorId({
-  //     id: chapterId,
-  //     authorId: userId,
-  //   })
-  //   if (!chapter) {
-  //     throw new BadRequestException('Chapter not found or you are not the author of this chapter')
-  //   }
-  //   return chapter
-  // }
-
   async createLesson(body: CreateLessonBodyType) {
-    // await this.validateChapterAuthor(chapterId, userId)
-
+    // check quyền sở hữu
     const lessonStrategy = this.registry.resolve(body.type)
-
     return lessonStrategy.create(body)
   }
 
@@ -44,8 +30,7 @@ export class LessonService {
   }
 
   async reorderLesson(body: ReorderLessonDto) {
-    // const course = await this.lessonRepo.getCourseUnique({ creatorId, id: body.courseId })
-    // if (!course) throw new CourseNotFoundException()
+    // check quyền sở hữu
     const prevLesson = await this.lessonRepo.findLessonOrder(body.prevLessonId)
     const nextLesson = await this.lessonRepo.findLessonOrder(body.nextLessonId)
     const newOrder = this.calculateNewOrder(prevLesson?.order ?? null, nextLesson?.order ?? null)
@@ -55,5 +40,10 @@ export class LessonService {
 
   updateLesson(lessonId: string, body: UpdateLessonBodyType) {
     return this.lessonRepo.updateLesson(lessonId, body)
+  }
+
+  async deleteLesson(lessonId: string) {
+    // check quyền sở hữu
+    await this.lessonRepo.deleteLesson(lessonId)
   }
 }

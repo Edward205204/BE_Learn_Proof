@@ -23,7 +23,6 @@ import {
   GetCoursesResponseSchema,
   GetSearchSuggestionsResponseSchema,
   HomeSectionsResponseSchema,
-  ReorderLessonDto,
   ReorderChapterDto,
   GetCourseDetailManagerResponseSchema,
 } from './courses.model'
@@ -113,11 +112,11 @@ export class CourseController {
     return this.courseManagerService.updateCourseBaseInfo(param.id, body, user.userId)
   }
 
-  @Patch('/reorder/lessons')
-  @ApiBearerAuth('access-token')
-  async reorderLessons(@Body() body: ReorderLessonDto, @ActiveUser() user: TokenPayload) {
-    return this.courseManagerService.reorderLesson(body, user.userId)
-  }
+  // @Patch('/reorder/lessons')
+  // @ApiBearerAuth('access-token')
+  // async reorderLessons(@Body() body: ReorderLessonDto, @ActiveUser() user: TokenPayload) {
+  //   return this.courseManagerService.reorderLesson(body, user.userId)
+  // }
 
   @Patch('/reorder/chapters')
   @ApiBearerAuth('access-token')

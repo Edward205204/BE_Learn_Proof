@@ -47,6 +47,12 @@ export class LessonRepo {
     })
   }
 
+  deleteLesson(lessonId: string) {
+    return this.txHost.tx.lesson.delete({
+      where: { id: lessonId },
+    })
+  }
+
   async getLastLessonOrderInChapter(chapterId: string) {
     const lastLesson = await this.txHost.tx.lesson.findFirst({
       where: {
