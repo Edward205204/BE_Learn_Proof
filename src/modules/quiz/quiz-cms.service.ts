@@ -9,14 +9,10 @@ import {
 } from './quiz.error'
 import { Transactional } from '@nestjs-cls/transactional'
 
-// quiz modules này là sub modules của lesson  modules
-// tạo lesson rồi mới gọi quiz service để tạo quiz cho lesson đó
-// nó không cần biết là quiz của lesson hay chapter
 @Injectable()
 export class QuizCmsService {
   constructor(private readonly quizRepo: QuizRepo) {}
 
-  /** Một query tối thiểu (id + isEdit) cho mọi mutation cấp câu hỏi. */
   private async requireQuestionInEditMode(questionId: string) {
     const row = await this.quizRepo.findQuestionEditState(questionId)
     if (!row) {

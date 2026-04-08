@@ -21,6 +21,34 @@ export const VideoProviderEnum = z.enum(['YOUTUBE', 'BUNNY', 'SELF_HOSTED'])
 
 export type VideoProviderEnumTS = z.infer<typeof VideoProviderEnum>
 
+export const UpdateLessonSchema = z
+  .object({
+    type: LessonTypeEnum,
+    title: z.string().optional(),
+    shortDesc: z.string().optional(),
+    fullDesc: z.string().optional(),
+    duration: z.number().optional(),
+    textContent: z.string().optional(),
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.type !== LessonType.TEXT && data.textContent) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Chỉ bài học dạng TEXT mới được có textContent',
+        path: ['textContent'],
+      })
+    }
+
+    if (data.type === LessonType.TEXT && data.duration) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Loại TEXT không được có duration',
+        path: ['duration'],
+      })
+    }
+  })
+
 export const CreateLessonSchema = z
   .object({
     type: LessonTypeEnum,
@@ -57,3 +85,4 @@ export const CreateLessonSchema = z
   )
 
 export type CreateLessonBodyType = z.infer<typeof CreateLessonSchema>
+export type UpdateLessonBodyType = z.infer<typeof UpdateLessonSchema>

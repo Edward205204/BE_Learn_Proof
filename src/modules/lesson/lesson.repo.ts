@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { LessonTypeEnumTS, VideoProviderEnumTS } from './lesson.model'
+import { LessonTypeEnumTS, UpdateLessonBodyType, VideoProviderEnumTS } from './lesson.model'
 import { PrismaClient } from 'src/generated/prisma/client'
 
 @Injectable()
@@ -15,6 +15,20 @@ export class LessonRepo {
         course: {
           creatorId: userId,
         },
+      },
+    })
+  }
+
+  updateLesson(lessonId: string, body: UpdateLessonBodyType) {
+    return this.txHost.tx.lesson.update({
+      where: { id: lessonId },
+      data: body,
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        order: true,
+        chapterId: true,
       },
     })
   }

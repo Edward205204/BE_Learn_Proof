@@ -7,6 +7,53 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  LEARNER
+  CONTENT_MANAGER
+  ADMIN
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum LessonType {
+  VIDEO
+  TEXT
+  QUIZ
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum QuizType {
+  LESSON
+  CHAPTER
+}
+
+enum VerificationCodeType {
+  REGISTER
+  FORGOT_PASSWORD
+}
+
+enum VideoProviderEnum {
+  YOUTUBE
+  BUNNY
+  SELF_HOSTED
+}
+
+// thuộc modules user - start
 model User {
   id        String    @id @default(cuid())
   email     String    @unique
@@ -42,6 +89,9 @@ model User {
   @@index([deletedAt])
 }
 
+// thuộc modules user - end
+
+// thuộc modules auth - start
 model VerificationCode {
   id        Int                  @id @default(autoincrement())
   email     String               @db.VarChar(500)
@@ -69,6 +119,8 @@ model RefreshToken {
   @@index([expiresAt])
 }
 
+// thuộc modules auth - end
+
 model Category {
   id      String   @id @default(cuid())
   name    String   @unique
@@ -76,6 +128,7 @@ model Category {
   courses Course[]
 }
 
+// thuộc modules courses - start
 model Course {
   id                    String         @id @default(cuid())
   title                 String
@@ -127,12 +180,9 @@ model Chapter {
   @@index([courseId, order])
 }
 
-enum VideoProviderEnum {
-  YOUTUBE
-  BUNNY
-  SELF_HOSTED
-}
+// thuộc modules courses - end
 
+// thuộc modules lesson - start
 model Lesson {
   id        String     @id @default(cuid())
   title     String
@@ -160,6 +210,8 @@ model Lesson {
 
   @@index([chapterId, order])
 }
+
+// thuộc modules lesson - end
 
 // thuộc modules quiz - start
 model Quiz {
@@ -406,44 +458,4 @@ model WishlistItem {
   createdAt DateTime @default(now())
 
   @@unique([userId, courseId])
-}
-
-enum Role {
-  LEARNER
-  CONTENT_MANAGER
-  ADMIN
-}
-
-enum CourseStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-
-enum CourseLevel {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
-}
-
-enum LessonType {
-  VIDEO
-  TEXT
-  QUIZ
-}
-
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-}
-
-enum QuizType {
-  LESSON
-  CHAPTER
-}
-
-enum VerificationCodeType {
-  REGISTER
-  FORGOT_PASSWORD
 }
