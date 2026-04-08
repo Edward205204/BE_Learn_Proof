@@ -8,14 +8,12 @@ import {
   CreateCourseSt3Dto,
   GetCoursesQuery,
   GetMyCoursesManagerQueryType,
-  ReorderChapterDto,
-  ReorderLessonDto,
 } from './courses.model'
-import { CourseStatus, Prisma } from 'src/generated/prisma/client'
+import { CourseStatus, Prisma, PrismaClient } from 'src/generated/prisma/client'
 
 @Injectable()
 export class CourseRepo {
-  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma>) {}
+  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
 
   findCategoryUnique(body: { id: string } | { slug: string }) {
     return this.txHost.tx.category.findUnique({
@@ -106,7 +104,7 @@ export class CourseRepo {
       }),
     }
 
-    const [courses, total] = await this.txHost.tx.$transaction([
+    const [courses, total] = await Promise.all([
       this.txHost.tx.course.findMany({
         where,
         skip,
@@ -126,7 +124,6 @@ export class CourseRepo {
       }),
       this.txHost.tx.course.count({ where }),
     ])
-
     return {
       items: courses,
       meta: {
@@ -350,19 +347,6 @@ export class CourseRepo {
     })
   }
 
-  private calculateNewOrder(prevOrder: number | null, nextOrder: number | null) {
-    if (prevOrder !== null && nextOrder !== null) {
-      return (prevOrder + nextOrder) / 2
-    }
-    if (prevOrder !== null) {
-      return prevOrder + 100
-    }
-    if (nextOrder !== null) {
-      return nextOrder / 2
-    }
-    return 1000
-  }
-
   finishCreateCourse(courseId: string, payload: CreateCourseSt3Dto & { creatorId: string }) {
     return this.txHost.tx.course.update({
       where: {
@@ -384,46 +368,16 @@ export class CourseRepo {
     })
   }
 
-  updateOrderLesson(payload: ReorderLessonDto) {
-    return this.txHost.tx.$transaction(async (tx) => {
-      const prevLesson = payload.prevLessonId
-        ? await tx.lesson.findUnique({ where: { id: payload.prevLessonId }, select: { order: true } })
-        : null
-
-      const nextLesson = payload.nextLessonId
-        ? await tx.lesson.findUnique({ where: { id: payload.nextLessonId }, select: { order: true } })
-        : null
-
-      const newOrder = this.calculateNewOrder(prevLesson?.order ?? null, nextLesson?.order ?? null)
-
-      return await tx.lesson.update({
-        where: { id: payload.lessonId },
-        data: {
-          order: newOrder,
-          chapterId: payload.targetChapterId,
-        },
-      })
-    })
+  findChapterOrder(chapterId: string | null) {
+    return this.txHost.tx.chapter.findUnique({ where: { id: chapterId ?? undefined }, select: { order: true } })
   }
 
-  updateOrderChapters(payload: ReorderChapterDto) {
-    return this.txHost.tx.$transaction(async (tx) => {
-      const prevChapter = payload.prevChapterId
-        ? await tx.chapter.findUnique({ where: { id: payload.prevChapterId }, select: { order: true } })
-        : null
-
-      const nextChapter = payload.nextChapterId
-        ? await tx.chapter.findUnique({ where: { id: payload.nextChapterId }, select: { order: true } })
-        : null
-
-      const newOrder = this.calculateNewOrder(prevChapter?.order ?? null, nextChapter?.order ?? null)
-
-      return await tx.chapter.update({
-        where: { id: payload.chapterId },
-        data: {
-          order: newOrder,
-        },
-      })
+  updateChapterOrder(chapterId: string, newOrder: number) {
+    return this.txHost.tx.chapter.update({
+      where: { id: chapterId },
+      data: {
+        order: newOrder,
+      },
     })
   }
 
@@ -452,7 +406,8 @@ export class CourseRepo {
 
     // 1. Tính toán Pagination
     const skip = (page - 1) * limit
-    const [courses, total] = await this.txHost.tx.$transaction([
+
+    const [courses, total] = await Promise.all([
       this.txHost.tx.course.findMany({
         where,
         skip,

@@ -84,5 +84,16 @@ export const CreateLessonSchema = z
     { message: 'Loại QUIZ thì phải có quizData', path: ['quizData'] },
   )
 
+export const ReorderLessonBodySchema = z
+  .object({
+    courseId: z.string(),
+    targetChapterId: z.string(),
+    prevLessonId: z.string().nullable(),
+    nextLessonId: z.string().nullable(),
+    lessonId: z.string(),
+  })
+  .strict()
+
 export type CreateLessonBodyType = z.infer<typeof CreateLessonSchema>
 export type UpdateLessonBodyType = z.infer<typeof UpdateLessonSchema>
+export type ReorderLessonDto = z.infer<typeof ReorderLessonBodySchema>

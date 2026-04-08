@@ -33,6 +33,20 @@ export class LessonRepo {
     })
   }
 
+  findLessonOrder(lessonId: string | null) {
+    return this.txHost.tx.lesson.findUnique({ where: { id: lessonId ?? undefined }, select: { order: true } })
+  }
+
+  updateLessonOrder(lessonId: string, newOrder: number, targetChapterId: string) {
+    return this.txHost.tx.lesson.update({
+      where: { id: lessonId },
+      data: {
+        order: newOrder,
+        chapterId: targetChapterId,
+      },
+    })
+  }
+
   async getLastLessonOrderInChapter(chapterId: string) {
     const lastLesson = await this.txHost.tx.lesson.findFirst({
       where: {
