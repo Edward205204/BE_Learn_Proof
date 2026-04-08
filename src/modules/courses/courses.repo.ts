@@ -481,4 +481,18 @@ export class CourseRepo {
       },
     })
   }
+
+  findCoursePublic(courseId: string) {
+    return this.txHost.tx.course.findFirst({
+      where: {
+        id: courseId,
+        status: CourseStatus.PUBLISHED,
+      },
+      select: {
+        id: true,
+        status: true,
+        isFree: true,
+      },
+    })
+  }
 }

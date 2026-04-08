@@ -35,4 +35,8 @@ export class CourseService {
   getAllSlugs() {
     return this.repo.getAllSlugs()
   }
+
+  findCoursePublic(courseId: string) {
+    return this.repo.findCoursePublic(courseId)
+  }
 }

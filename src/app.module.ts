@@ -14,6 +14,7 @@ import { PrismaService } from './shared/services/prisma.service'
 import { ClsModule } from 'nestjs-cls'
 import { ClsPluginTransactional } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
+import { EnrollmentModule } from './modules/enrollment/enrollment.module';
 
 @Module({
   imports: [
@@ -38,6 +39,8 @@ import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-pr
         }),
       ],
     }),
+
+    EnrollmentModule,
   ],
   controllers: [],
   providers: [
