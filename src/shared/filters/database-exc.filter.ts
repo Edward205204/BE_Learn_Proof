@@ -1,7 +1,7 @@
-import { ArgumentsHost, BadRequestException, Catch, HttpException, Logger, NotFoundException } from '@nestjs/common'
+import { ArgumentsHost, BadRequestException, Catch, HttpException, NotFoundException } from '@nestjs/common'
 import { BaseExceptionFilter } from '@nestjs/core'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
-import { isNotFoundPrismaError, isUniqueConstraintPrismaError } from '../helpers'
+import { isForeignKeyConstraintPrismaError, isNotFoundPrismaError, isUniqueConstraintPrismaError } from '../helpers'
 
 @Catch(HttpException)
 export class DatabaseExceptionFilter extends BaseExceptionFilter {
@@ -12,6 +12,11 @@ export class DatabaseExceptionFilter extends BaseExceptionFilter {
     }
     if (isUniqueConstraintPrismaError(exception)) {
       super.catch(new BadRequestException('Lỗi tranh chấp tài nguyên'), host)
+      return
+    }
+
+    if (isForeignKeyConstraintPrismaError(exception)) {
+      super.catch(new BadRequestException('Lỗi liên kết tài nguyên'), host)
       return
     }
     super.catch(exception, host)

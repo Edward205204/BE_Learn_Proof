@@ -1,105 +1,25 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from 'src/shared/services/prisma.service';
+import { Injectable } from '@nestjs/common'
+import { CartRepo } from './cart.repo'
 
 @Injectable()
 export class CartService {
-  constructor(private readonly prisma: PrismaService) {}
-
-  /**
-   * Helper method to return cart with necessary course info
-   */
-  private async getCartWithDetails(userId: string) {
-    let cart = await this.prisma.cart.findUnique({
-      where: { userId },
-      include: {
-        items: {
-          include: {
-            course: {
-              include: {
-                creator: { select: { fullName: true } }
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (!cart) {
-      cart = await this.prisma.cart.create({
-        data: { userId },
-        include: {
-          items: {
-            include: {
-              course: {
-                include: {
-                  creator: { select: { fullName: true } }
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    return cart;
-  }
+  constructor(private readonly cartRepo: CartRepo) {}
 
   async getCart(userId: string) {
-    return this.getCartWithDetails(userId);
+    await this.cartRepo.upsertCart(userId)
+    return this.cartRepo.getCartWithItems(userId)
   }
 
-  async addToCart(userId: string, courseIdOrSlug: string) {
-    let cart = await this.prisma.cart.findUnique({ where: { userId } });
-    if (!cart) {
-      cart = await this.prisma.cart.create({ data: { userId } });
-    }
-
-    // Check if course exists by id or slug
-    const course = await this.prisma.course.findFirst({
-      where: {
-        OR: [
-          { id: courseIdOrSlug },
-          { slug: courseIdOrSlug }
-        ]
-      }
-    });
-
-    if (!course) {
-      throw new NotFoundException('Course not found');
-    }
-
-    // Check if item already exists in cart
-    const existingItem = await this.prisma.cartItem.findUnique({
-      where: {
-        cartId_courseId: {
-          cartId: cart.id,
-          courseId: course.id,
-        }
-      }
-    });
-
-    if (!existingItem) {
-      await this.prisma.cartItem.create({
-        data: { cartId: cart.id, courseId: course.id }
-      });
-    }
-
-    return this.getCartWithDetails(userId);
+  async addToCart(userId: string, courseId: string) {
+    const cart = await this.cartRepo.upsertCart(userId)
+    // P2003 (foreign key) tự throw nếu courseId không tồn tại → global filter handle
+    await this.cartRepo.addItemToCart(cart.id, courseId)
+    return this.cartRepo.getCartWithItems(userId)
   }
 
   async removeFromCart(userId: string, courseId: string) {
-    const cart = await this.prisma.cart.findUnique({ where: { userId } });
-    if (!cart) {
-      throw new NotFoundException('Cart not found');
-    }
-
-    await this.prisma.cartItem.deleteMany({
-      where: {
-        cartId: cart.id,
-        courseId,
-      }
-    });
-
-    return this.getCartWithDetails(userId);
+    const cart = await this.cartRepo.upsertCart(userId)
+    await this.cartRepo.removeItemFromCart(cart.id, courseId)
+    return this.cartRepo.getCartWithItems(userId)
   }
 }
