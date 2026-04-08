@@ -5,14 +5,14 @@ import { CreateLessonBodyType, LessonType } from '../lesson.model'
 import { LessonRepo } from '../lesson.repo'
 import { BaseLessonStrategy } from './base-lesson.strategy'
 import { Transactional } from '@nestjs-cls/transactional'
+import { LessonDetailRaw, QuizLessonDetailResponse } from '../lesson.response'
 
-// lesson/strategies/quiz-lesson.strategy.ts
 @Injectable()
 export class QuizLessonStrategy implements LessonStrategy {
   constructor(
     private readonly lessonRepo: LessonRepo,
     private readonly baseLessonStrategy: BaseLessonStrategy,
-    private readonly quizService: QuizCmsService,
+    private readonly quizCmsService: QuizCmsService,
   ) {}
 
   @Transactional()
@@ -31,8 +31,21 @@ export class QuizLessonStrategy implements LessonStrategy {
       textContent: null,
     })
     if (data?.quizData) {
-      await this.quizService.createQuiz({ lessonId: lesson.id, quizData: data.quizData })
+      await this.quizCmsService.createQuiz({ lessonId: lesson.id, quizData: data.quizData })
     }
     return lesson
+  }
+
+  async get(lesson: LessonDetailRaw): Promise<QuizLessonDetailResponse> {
+    const quiz = await this.quizCmsService.getQuizByLessonId(lesson.id)
+    return {
+      id: lesson.id,
+      title: lesson.title,
+      shortDesc: lesson.shortDesc,
+      type: 'QUIZ' as const,
+      order: lesson.order,
+      chapterId: lesson.chapterId,
+      quiz,
+    }
   }
 }

@@ -92,4 +92,22 @@ export class LessonRepo {
       },
     })
   }
+
+  findLessonDetail(lessonId: string) {
+    return this.txHost.tx.lesson.findUnique({
+      where: { id: lessonId },
+      select: {
+        id: true,
+        title: true,
+        shortDesc: true,
+        type: true,
+        order: true,
+        videoId: true,
+        provider: true,
+        textContent: true,
+        duration: true,
+        chapterId: true,
+      },
+    })
+  }
 }

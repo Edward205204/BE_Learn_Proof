@@ -206,6 +206,53 @@ export class QuizRepo {
     })
   }
 
+  findQuizForLearnerByLessonId(lessonId: string) {
+    return this.txHost.tx.quiz.findFirst({
+      where: { lessonId },
+      select: {
+        id: true,
+        lessonId: true,
+        questions: {
+          where: { isEdit: false },
+          select: {
+            id: true,
+            content: true,
+            answers: {
+              select: {
+                id: true,
+                content: true,
+              },
+            },
+          },
+        },
+      },
+    })
+  }
+
+  findQuizByLessonId(lessonId: string) {
+    return this.txHost.tx.quiz.findFirst({
+      where: { lessonId },
+      select: {
+        id: true,
+        lessonId: true,
+        questions: {
+          select: {
+            id: true,
+            isEdit: true,
+            content: true,
+            answers: {
+              select: {
+                id: true,
+                content: true,
+                isCorrect: true,
+              },
+            },
+          },
+        },
+      },
+    })
+  }
+
   createQuizAttempt(body: { userId: string; quizId: string; score: number; correct: number; total: number }) {
     return this.txHost.tx.quizAttempt.create({
       data: body,

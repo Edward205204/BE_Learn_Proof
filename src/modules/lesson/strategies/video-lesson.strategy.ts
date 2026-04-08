@@ -5,6 +5,7 @@ import { CreateLessonBodyType, LessonProvider, LessonType } from '../lesson.mode
 import { BaseLessonStrategy } from './base-lesson.strategy'
 import { QuizCmsService } from 'src/modules/quiz/quiz-cms.service'
 import { Transactional } from '@nestjs-cls/transactional'
+import { LessonDetailRaw, VideoLessonDetailResponse } from '../lesson.response'
 
 @Injectable()
 export class VideoLessonStrategy implements LessonStrategy {
@@ -57,5 +58,26 @@ export class VideoLessonStrategy implements LessonStrategy {
     }
 
     return lesson
+  }
+
+  get(lesson: LessonDetailRaw): Promise<VideoLessonDetailResponse> {
+    return Promise.resolve({
+      id: lesson.id,
+      title: lesson.title,
+      shortDesc: lesson.shortDesc,
+      type: 'VIDEO' as const,
+      order: lesson.order,
+      chapterId: lesson.chapterId,
+      duration: lesson.duration,
+      videoUrl: this.buildVideoUrl(lesson.videoId ?? '', lesson.provider as LessonProvider),
+    })
+  }
+
+  private buildVideoUrl(videoId: string, provider: LessonProvider): string {
+    if (provider === LessonProvider.YOUTUBE) {
+      return `https://www.youtube.com/embed/${videoId}`
+    }
+    // TODO: BUNNY CDN URL khi có library ID
+    return videoId
   }
 }

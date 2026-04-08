@@ -51,6 +51,10 @@ export class QuizCmsService {
     return this.quizRepo.getQuizCMS(lessonId)
   }
 
+  getQuizByLessonId(lessonId: string) {
+    return this.quizRepo.findQuizByLessonId(lessonId)
+  }
+
   async deleteQuestionFromQuiz(questionId: string) {
     await this.requireQuestionInEditMode(questionId)
     return this.quizRepo.deleteQuestions(questionId)

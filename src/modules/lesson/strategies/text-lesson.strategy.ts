@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common'
-import { CreateLessonDto } from '../lesson.dto'
 import { LessonStrategy } from './lesson.strategy.interface'
-import { LessonType } from '../lesson.model'
+import { CreateLessonBodyType, LessonType } from '../lesson.model'
 import { LessonRepo } from '../lesson.repo'
 import { BaseLessonStrategy } from './base-lesson.strategy'
 import { QuizCmsService } from 'src/modules/quiz/quiz-cms.service'
 import { Transactional } from '@nestjs-cls/transactional'
+import { LessonDetailRaw, TextLessonDetailResponse } from '../lesson.response'
 
 @Injectable()
 export class TextLessonStrategy implements LessonStrategy {
@@ -16,10 +16,9 @@ export class TextLessonStrategy implements LessonStrategy {
   ) {}
 
   @Transactional()
-  async create(data: CreateLessonDto) {
+  async create(data: CreateLessonBodyType) {
     const order = await this.baseLessonStrategy.getNextOrder(data.chapterId)
 
-    // zod đã check kiểu trước đó
     const textContent = data.textContent as string
 
     const lesson = await this.lessonRepo.createLesson({
@@ -40,5 +39,17 @@ export class TextLessonStrategy implements LessonStrategy {
     }
 
     return lesson
+  }
+
+  get(lesson: LessonDetailRaw): Promise<TextLessonDetailResponse> {
+    return Promise.resolve({
+      id: lesson.id,
+      title: lesson.title,
+      shortDesc: lesson.shortDesc,
+      type: 'TEXT' as const,
+      order: lesson.order,
+      chapterId: lesson.chapterId,
+      textContent: lesson.textContent ?? '',
+    })
   }
 }

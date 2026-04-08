@@ -10,6 +10,10 @@ export class QuizLearnerService {
     return this.quizRepo.getQuizForUser(quizId)
   }
 
+  getQuizForLesson(lessonId: string) {
+    return this.quizRepo.findQuizForLearnerByLessonId(lessonId)
+  }
+
   checkAnswer(questionId: string) {
     // này là cho dạng review kiến thức, làm câu nào biết đáp án câu đó, ko lưu lại bài làm vào db
     return this.quizRepo.findCorrectAnswerByQuestionId(questionId)

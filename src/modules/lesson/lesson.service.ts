@@ -1,13 +1,17 @@
 import { Injectable } from '@nestjs/common'
 import { CreateLessonBodyType, ReorderLessonDto, UpdateLessonBodyType } from './lesson.model'
+import { LessonType } from 'src/generated/prisma/enums'
 import { LessonRepo } from './lesson.repo'
 import { LessonStrategyRegistry } from './strategies/lesson-strategy.registry'
+import { LessonNotFoundException } from './error.model'
+import { QuizLearnerService } from '../quiz/quiz-learner.service'
 
 @Injectable()
 export class LessonService {
   constructor(
     private readonly lessonRepo: LessonRepo,
     private readonly registry: LessonStrategyRegistry,
+    private readonly quizLearnerService: QuizLearnerService,
   ) {}
 
   async createLesson(body: CreateLessonBodyType) {
@@ -45,5 +49,34 @@ export class LessonService {
   async deleteLesson(lessonId: string) {
     // check quyền sở hữu
     await this.lessonRepo.deleteLesson(lessonId)
+  }
+
+  async getLessonDetail(lessonId: string) {
+    const lesson = await this.lessonRepo.findLessonDetail(lessonId)
+    if (!lesson) throw new LessonNotFoundException()
+
+    const strategy = this.registry.resolve(lesson.type)
+    return strategy.get(lesson)
+  }
+
+  async getLessonForLearner(lessonId: string) {
+    const lesson = await this.lessonRepo.findLessonDetail(lessonId)
+    if (!lesson) throw new LessonNotFoundException()
+
+    if (lesson.type === LessonType.QUIZ) {
+      const quiz = await this.quizLearnerService.getQuizForLesson(lesson.id)
+      return {
+        id: lesson.id,
+        title: lesson.title,
+        shortDesc: lesson.shortDesc,
+        type: 'QUIZ' as const,
+        order: lesson.order,
+        chapterId: lesson.chapterId,
+        quiz,
+      }
+    }
+
+    const strategy = this.registry.resolve(lesson.type)
+    return strategy.get(lesson)
   }
 }
