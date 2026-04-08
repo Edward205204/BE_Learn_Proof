@@ -86,47 +86,32 @@ export class CourseRepo {
   // ----- Public catalog -----
 
   async getCoursesCatalog(query: z.infer<typeof GetCoursesQuery>) {
-    const { page, limit, category, level, price, rating, search, sort } = query
-
-    // 1. Tính toán Pagination
+    const { page, limit, category, level, price, search, sort } = query
     const skip = (page - 1) * limit
-
-    // 2. Multi-level Sorting — mỗi option có tie-breaker để đảm bảo thứ tự ổn định
     const sortMapping: Record<string, Prisma.CourseOrderByWithRelationInput[]> = {
-      // popular: tổng học viên ↓, nếu bằng → mới nhất lên trước
-      popular: [{ overallAnalytics: { totalStudents: 'desc' } }, { createdAt: 'desc' }],
-      // rating: điểm trung bình ↓, nếu bằng → nhiều học viên hơn lên trước
-      rating: [{ overallAnalytics: { avgRating: 'desc' } }, { overallAnalytics: { totalStudents: 'desc' } }],
-      // newest: chỉ cần 1 tầng
+      popular: [{ createdAt: 'desc' }],
+      rating: [{ createdAt: 'desc' }],
       newest: [{ createdAt: 'desc' }],
-      // price-asc/desc: nếu bằng giá → rating cao hơn lên trước
-      'price-asc': [{ price: 'asc' }, { overallAnalytics: { avgRating: 'desc' } }],
-      'price-desc': [{ price: 'desc' }, { overallAnalytics: { avgRating: 'desc' } }],
+      'price-asc': [{ price: 'asc' }, { createdAt: 'desc' }],
+      'price-desc': [{ price: 'desc' }, { createdAt: 'desc' }],
     }
 
-    // 3. Xây dựng bộ lọc (Where Clause)
     const where: Prisma.CourseWhereInput = {
       status: CourseStatus.PUBLISHED,
       ...(category && { category: { slug: category } }),
       ...(level && { level }),
-      // price: 'true' → isFree: true | price: 'false' → isFree: false
       ...(price !== undefined && { isFree: price === 'true' }),
       ...(search && {
         title: { contains: search, mode: 'insensitive' },
       }),
-      ...(rating && {
-        overallAnalytics: { avgRating: { gte: rating } },
-      }),
     }
 
-    // 4. Transaction — lấy đồng thời items và total count
     const [courses, total] = await this.txHost.tx.$transaction([
       this.txHost.tx.course.findMany({
         where,
         skip,
         take: limit,
         orderBy: sortMapping[sort ?? 'newest'],
-        // Chỉ select field cần thiết cho Product Card
         select: {
           id: true,
           title: true,
@@ -137,7 +122,6 @@ export class CourseRepo {
           level: true,
           category: { select: { name: true, slug: true } },
           creator: { select: { fullName: true, avatar: true } },
-          overallAnalytics: { select: { avgRating: true, totalStudents: true } },
         },
       }),
       this.txHost.tx.course.count({ where }),
@@ -214,14 +198,6 @@ export class CourseRepo {
             },
           },
         },
-        // --- Analytics ---
-        overallAnalytics: {
-          select: {
-            totalStudents: true,
-            avgRating: true,
-            completionRate: true,
-          },
-        },
         // --- Social Proof: 5 reviews mới nhất ---
         reviews: {
           take: 5,
@@ -258,37 +234,31 @@ export class CourseRepo {
       createdAt: true,
       category: { select: { name: true, slug: true } },
       creator: { select: { fullName: true, avatar: true } },
-      overallAnalytics: {
-        select: { avgRating: true, totalStudents: true, avgInterestScore: true },
-      },
     } as const
 
     const [trending, topSelling, newest, topRated] = await Promise.all([
-      // Top 5 — Interest Score cao nhất (Vận tốc học)
-      this.txHost.tx.course.findMany({
-        where: { status: CourseStatus.PUBLISHED },
-        orderBy: { overallAnalytics: { avgInterestScore: 'desc' } },
-        take: 5,
-        select: baseSelect,
-      }),
-      // Top 10 — Nhiều học viên nhất
-      this.txHost.tx.course.findMany({
-        where: { status: CourseStatus.PUBLISHED },
-        orderBy: { overallAnalytics: { totalStudents: 'desc' } },
-        take: 10,
-        select: baseSelect,
-      }),
-      // 5 — Mới nhất
       this.txHost.tx.course.findMany({
         where: { status: CourseStatus.PUBLISHED },
         orderBy: { createdAt: 'desc' },
         take: 5,
         select: baseSelect,
       }),
-      // Top 5 — Rating cao nhất
+
       this.txHost.tx.course.findMany({
         where: { status: CourseStatus.PUBLISHED },
-        orderBy: { overallAnalytics: { avgRating: 'desc' } },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: baseSelect,
+      }),
+      this.txHost.tx.course.findMany({
+        where: { status: CourseStatus.PUBLISHED },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: baseSelect,
+      }),
+      this.txHost.tx.course.findMany({
+        where: { status: CourseStatus.PUBLISHED },
+        orderBy: { createdAt: 'desc' },
         take: 5,
         select: baseSelect,
       }),
@@ -325,7 +295,6 @@ export class CourseRepo {
         slug: true,
         thumbnail: true,
       },
-      orderBy: { overallAnalytics: { totalStudents: 'desc' } },
     })
   }
 
@@ -503,7 +472,6 @@ export class CourseRepo {
           status: true,
           createdAt: true,
           updatedAt: true,
-          overallAnalytics: { select: { avgRating: true, totalStudents: true, avgInterestScore: true } },
         },
       }),
       this.txHost.tx.course.count({ where }),
