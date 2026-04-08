@@ -1,77 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../shared/services/prisma.service';
+import { Injectable } from '@nestjs/common'
+import { WishlistRepo } from './wishlist.repo'
 
 @Injectable()
 export class WishlistService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly wishlistRepo: WishlistRepo) {}
 
-  async getWishlist(userId: string) {
-    return this.prisma.wishlistItem.findMany({
-      where: { userId },
-      include: {
-        course: {
-          include: {
-            creator: { select: { fullName: true } }
-          }
-        }
-      }
-    });
+  getWishlist(userId: string) {
+    return this.wishlistRepo.getWishlistItems(userId)
   }
 
-  async addToWishlist(userId: string, courseIdOrSlug: string) {
-    // Check if course exists by id or slug
-    const course = await this.prisma.course.findFirst({
-      where: {
-        OR: [
-          { id: courseIdOrSlug },
-          { slug: courseIdOrSlug }
-        ]
-      }
-    });
-
-    if (!course) {
-      throw new NotFoundException('Course not found');
-    }
-
-    const existing = await this.prisma.wishlistItem.findUnique({
-      where: {
-        userId_courseId: {
-          userId,
-          courseId: course.id,
-        }
-      }
-    });
-
-    if (!existing) {
-      return this.prisma.wishlistItem.create({
-        data: { userId, courseId: course.id },
-        include: { course: true }
-      });
-    }
-
-    return existing;
+  async addToWishlist(userId: string, courseId: string) {
+    // P2003 (foreign key) tự throw nếu courseId không tồn tại → global filter handle
+    await this.wishlistRepo.addItem(userId, courseId)
+    return this.wishlistRepo.getWishlistItems(userId)
   }
 
-  async removeFromWishlist(userId: string, courseIdOrSlug: string) {
-    // Check if course exists by id or slug
-    const course = await this.prisma.course.findFirst({
-      where: {
-        OR: [
-          { id: courseIdOrSlug },
-          { slug: courseIdOrSlug }
-        ]
-      }
-    });
-
-    if (!course) {
-      throw new NotFoundException('Course not found');
-    }
-
-    return this.prisma.wishlistItem.deleteMany({
-      where: {
-        userId,
-        courseId: course.id
-      }
-    });
+  async removeFromWishlist(userId: string, courseId: string) {
+    await this.wishlistRepo.removeItem(userId, courseId)
+    return this.wishlistRepo.getWishlistItems(userId)
   }
 }
