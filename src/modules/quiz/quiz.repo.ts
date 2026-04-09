@@ -8,6 +8,42 @@ import { PrismaClient } from 'src/generated/prisma/client'
 export class QuizRepo {
   constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
 
+  // cross-read: lesson → chapter → course
+  findQuizOwner(quizId: string) {
+    return this.txHost.tx.quiz.findUnique({
+      where: { id: quizId },
+      select: {
+        lesson: { select: { chapter: { select: { course: { select: { creatorId: true } } } } } },
+      },
+    })
+  }
+
+  // cross-read: quiz → lesson → chapter → course → enrollment
+  findQuizCourseEnrollment(quizId: string, userId: string) {
+    return this.txHost.tx.quiz.findUnique({
+      where: { id: quizId },
+      select: {
+        lesson: {
+          select: {
+            chapter: {
+              select: {
+                course: {
+                  select: {
+                    enrollments: {
+                      where: { userId },
+                      select: { id: true },
+                      take: 1,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+  }
+
   createQuiz(body: CreateQuizType) {
     return this.txHost.tx.quiz.create({
       data: {
@@ -35,33 +71,6 @@ export class QuizRepo {
     })
   }
 
-  getQuizCMS(quizId: string) {
-    return this.txHost.tx.quiz.findFirst({
-      where: { id: quizId },
-      select: {
-        id: true,
-        lessonId: true,
-        createdAt: true,
-        updatedAt: true,
-
-        questions: {
-          select: {
-            id: true,
-            isEdit: true,
-            content: true,
-            answers: {
-              select: {
-                id: true,
-                content: true,
-                isCorrect: true,
-              },
-            },
-          },
-        },
-      },
-    })
-  }
-
   findAnswerByQuestionId(questionId: string) {
     return this.txHost.tx.answer.findMany({
       where: { questionId },
@@ -74,32 +83,6 @@ export class QuizRepo {
     })
   }
 
-  getQuizForUser(quizId: string) {
-    return this.txHost.tx.quiz.findFirst({
-      where: { id: quizId },
-      select: {
-        id: true,
-        lessonId: true,
-        createdAt: true,
-        updatedAt: true,
-
-        questions: {
-          where: { isEdit: false },
-          select: {
-            id: true,
-            content: true,
-            answers: {
-              select: {
-                id: true,
-                content: true,
-              },
-            },
-          },
-        },
-      },
-    })
-  }
-
   findCorrectAnswerByQuestionId(questionId: string) {
     return this.txHost.tx.answer.findFirst({
       where: { questionId, isCorrect: true },
@@ -109,7 +92,7 @@ export class QuizRepo {
 
   findCorrectQuestionList(quizId: string) {
     return this.txHost.tx.question.findMany({
-      where: { quizId },
+      where: { quizId, isEdit: false },
       select: {
         id: true,
         answers: {
@@ -192,9 +175,9 @@ export class QuizRepo {
     })
   }
 
-  updateCorrectAnswer(answerId: string) {
+  updateCorrectAnswer(answerId: string, questionId: string) {
     return this.txHost.tx.answer.update({
-      where: { id: answerId },
+      where: { id: answerId, questionId },
       data: { isCorrect: true },
     })
   }

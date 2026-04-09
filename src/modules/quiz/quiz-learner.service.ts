@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { QuizRepo } from './quiz.repo'
 import { SubmitQuizType } from './quiz.model'
 import { QuizHasNoQuestionsException } from './quiz.error'
@@ -6,33 +6,36 @@ import { QuizHasNoQuestionsException } from './quiz.error'
 @Injectable()
 export class QuizLearnerService {
   constructor(private readonly quizRepo: QuizRepo) {}
-  getQuizForUser(quizId: string) {
-    return this.quizRepo.getQuizForUser(quizId)
+
+  private async requireEnrolled(quizId: string, userId: string) {
+    const quiz = await this.quizRepo.findQuizCourseEnrollment(quizId, userId)
+    if (!quiz) throw new NotFoundException('Quiz không tồn tại')
+    const enrollments = quiz.lesson?.chapter?.course?.enrollments
+    if (!enrollments || enrollments.length === 0) {
+      throw new ForbiddenException('Bạn chưa đăng ký khóa học này')
+    }
   }
 
   getQuizForLesson(lessonId: string) {
     return this.quizRepo.findQuizForLearnerByLessonId(lessonId)
   }
 
-  checkAnswer(questionId: string) {
-    // này là cho dạng review kiến thức, làm câu nào biết đáp án câu đó, ko lưu lại bài làm vào db
+  async checkAnswer(questionId: string, userId: string, quizId: string) {
+    await this.requireEnrolled(quizId, userId)
     return this.quizRepo.findCorrectAnswerByQuestionId(questionId)
   }
 
   async submitQuiz(userId: string, quizId: string, submission: SubmitQuizType) {
-    // 1. Lấy data đáp án đúng từ DB
+    await this.requireEnrolled(quizId, userId)
+
     const correctQuestions = await this.quizRepo.findCorrectQuestionList(quizId)
     const totalQuestions = correctQuestions.length
 
     if (totalQuestions === 0) throw new QuizHasNoQuestionsException()
 
-    // 2. Chuyển submission của user thành Map để tìm kiếm O(1) và đảm bảo tính đúng đắn theo Question
-    // Map<questionId, answerId>
     const userAnswersMap = new Map(submission.map((s) => [s.questionId, s.answerId]))
 
-    // 3. Tính toán số câu đúng
     let correctCount = 0
-
     correctQuestions.forEach((question) => {
       const userAnsId = userAnswersMap.get(question.id)
       if (userAnsId && question.answers.length > 0 && question.answers[0].id === userAnsId) {
@@ -58,7 +61,8 @@ export class QuizLearnerService {
     }
   }
 
-  getQuizResult(userId: string, quizId: string) {
+  async getQuizResult(userId: string, quizId: string) {
+    await this.requireEnrolled(quizId, userId)
     return this.quizRepo.findQuizAttemptByUserIdAndQuizId(userId, quizId)
   }
 }
