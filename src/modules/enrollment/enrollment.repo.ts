@@ -22,8 +22,6 @@ export class EnrollmentRepo {
     })
   }
 
-  // ─── Read: tự do select bất kỳ bảng nào ───────────────────────────────────
-
   // @TEMP: tạm thời query table transaction để kiểm tra xem user đã thanh toán khoa học này chưa
   checkUserPaymentCompleted(userId: string, courseId: string) {
     return this.txHost.tx.transaction.findFirst({
