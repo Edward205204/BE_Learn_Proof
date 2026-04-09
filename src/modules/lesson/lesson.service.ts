@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 import { CreateLessonBodyType, ReorderLessonDto, UpdateLessonBodyType } from './lesson.model'
 import { LessonType } from 'src/generated/prisma/enums'
 import { LessonRepo } from './lesson.repo'
 import { LessonStrategyRegistry } from './strategies/lesson-strategy.registry'
 import { LessonNotFoundException } from './error.model'
 import { QuizLearnerService } from '../quiz/quiz-learner.service'
+import { Transactional } from '@nestjs-cls/transactional'
 
 @Injectable()
 export class LessonService {
@@ -15,7 +16,6 @@ export class LessonService {
   ) {}
 
   async createLesson(body: CreateLessonBodyType) {
-    // check quyền sở hữu
     const lessonStrategy = this.registry.resolve(body.type)
     return lessonStrategy.create(body)
   }
@@ -34,12 +34,10 @@ export class LessonService {
   }
 
   async reorderLesson(body: ReorderLessonDto) {
-    // check quyền sở hữu
     const prevLesson = await this.lessonRepo.findLessonOrder(body.prevLessonId)
     const nextLesson = await this.lessonRepo.findLessonOrder(body.nextLessonId)
     const newOrder = this.calculateNewOrder(prevLesson?.order ?? null, nextLesson?.order ?? null)
-    const data = await this.lessonRepo.updateLessonOrder(body.lessonId, newOrder, body.targetChapterId)
-    return data
+    return this.lessonRepo.updateLessonOrder(body.lessonId, newOrder, body.targetChapterId)
   }
 
   updateLesson(lessonId: string, body: UpdateLessonBodyType) {
@@ -47,14 +45,12 @@ export class LessonService {
   }
 
   async deleteLesson(lessonId: string) {
-    // check quyền sở hữu
     await this.lessonRepo.deleteLesson(lessonId)
   }
 
   async getLessonDetail(lessonId: string) {
     const lesson = await this.lessonRepo.findLessonDetail(lessonId)
     if (!lesson) throw new LessonNotFoundException()
-
     const strategy = this.registry.resolve(lesson.type)
     return strategy.get(lesson)
   }
@@ -78,5 +74,16 @@ export class LessonService {
 
     const strategy = this.registry.resolve(lesson.type)
     return strategy.get(lesson)
+  }
+
+  @Transactional()
+  async markLessonComplete(userId: string, lessonId: string, courseId: string) {
+    const enrolled = await this.lessonRepo.checkEnrolled(userId, courseId)
+    if (!enrolled) throw new ForbiddenException('Bạn chưa đăng ký khóa học này')
+
+    await this.lessonRepo.upsertProgress(userId, lessonId)
+
+    const { total, completed } = await this.lessonRepo.countCourseProgress(userId, courseId)
+    return { lessonId, completed: true, courseCompleted: total > 0 && total === completed }
   }
 }

@@ -110,4 +110,29 @@ export class LessonRepo {
       },
     })
   }
+
+  upsertProgress(userId: string, lessonId: string) {
+    return this.txHost.tx.progress.upsert({
+      where: { userId_lessonId: { userId, lessonId } },
+      create: { userId, lessonId, isCompleted: true },
+      update: { isCompleted: true },
+    })
+  }
+
+  async countCourseProgress(userId: string, courseId: string) {
+    const [total, completed] = await Promise.all([
+      this.txHost.tx.lesson.count({ where: { chapter: { courseId } } }),
+      this.txHost.tx.progress.count({
+        where: { userId, isCompleted: true, lesson: { chapter: { courseId } } },
+      }),
+    ])
+    return { total, completed }
+  }
+
+  checkEnrolled(userId: string, courseId: string) {
+    return this.txHost.tx.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+      select: { id: true },
+    })
+  }
 }

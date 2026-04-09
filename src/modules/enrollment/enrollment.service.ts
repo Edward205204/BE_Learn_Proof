@@ -1,21 +1,17 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { EnrollmentRepo } from './enrollment.repo'
-import { CourseService } from '../courses/services/courses.service'
 import { Transactional } from '@nestjs-cls/transactional'
 
 @Injectable()
 export class EnrollmentService {
-  constructor(
-    private readonly enrollRepo: EnrollmentRepo,
-    private readonly courseService: CourseService,
-  ) {}
+  constructor(private readonly enrollRepo: EnrollmentRepo) {}
 
   @Transactional()
   async createEnrollment(courseId: string, userId: string) {
-    const course = await this.courseService.findCoursePublic(courseId)
-    if (!course) throw new NotFoundException('Khoa hoc khong ton tai')
+    const course = await this.enrollRepo.findCourseForEnroll(courseId)
+    if (!course) throw new NotFoundException('Khóa học không tồn tại hoặc chưa được publish')
 
-    if (course.isFree === false) {
+    if (!course.isFree) {
       const transaction = await this.enrollRepo.checkUserPaymentCompleted(userId, courseId)
       if (!transaction) throw new BadRequestException('Bạn chưa thanh toán khóa học này')
     }
@@ -23,7 +19,28 @@ export class EnrollmentService {
     return this.enrollRepo.createEnrollment(courseId, userId)
   }
 
-  getMyEnrollments(userId: string) {
-    return this.enrollRepo.getMyEnrollmentsByUserId(userId)
+  async getMyEnrollments(userId: string) {
+    const enrollments = await this.enrollRepo.getMyEnrollmentsByUserId(userId)
+
+    const progressList = await Promise.all(
+      enrollments.map((e) => this.enrollRepo.getProgressSummary(userId, e.course.id)),
+    )
+
+    return enrollments.map((enrollment, idx) => ({
+      ...enrollment,
+      ...progressList[idx],
+    }))
+  }
+
+  async getEnrollmentStatus(userId: string, courseId: string) {
+    const enrollment = await this.enrollRepo.getEnrollmentUnique(userId, courseId)
+    return !!enrollment
+  }
+
+  async markCourseCompleted(userId: string, courseId: string) {
+    const enrollment = await this.enrollRepo.getEnrollmentUnique(userId, courseId)
+    if (!enrollment) throw new ForbiddenException('Bạn chưa đăng ký khóa học này')
+    if (enrollment.completedAt) return enrollment
+    await this.enrollRepo.updateEnrollmentCompleted(userId, courseId)
   }
 }

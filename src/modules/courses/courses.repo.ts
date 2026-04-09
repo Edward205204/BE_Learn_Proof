@@ -495,4 +495,44 @@ export class CourseRepo {
       },
     })
   }
+
+  getCourseProgress(userId: string, courseId: string) {
+    return this.txHost.tx.chapter.findMany({
+      where: { courseId },
+      orderBy: { order: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        order: true,
+        lessons: {
+          orderBy: { order: 'asc' },
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            order: true,
+            duration: true,
+            progress: {
+              where: { userId },
+              select: { isCompleted: true, lastAccess: true },
+            },
+          },
+        },
+      },
+    })
+  }
+
+  async getProgressSummary(userId: string, courseId: string) {
+    const [total, completed] = await Promise.all([
+      this.txHost.tx.lesson.count({ where: { chapter: { courseId } } }),
+      this.txHost.tx.progress.count({
+        where: { userId, isCompleted: true, lesson: { chapter: { courseId } } },
+      }),
+    ])
+    return {
+      totalLessons: total,
+      completedLessons: completed,
+      progressPercent: total > 0 ? Math.round((completed / total) * 100) : 0,
+    }
+  }
 }

@@ -138,6 +138,12 @@ export class CourseController {
     return this.courseManagerService.getCourseDetailManager(params.id, user.userId)
   }
 
+  @Get(':courseId/progress')
+  @ApiBearerAuth('access-token')
+  getCourseProgress(@Param('courseId') courseId: string, @ActiveUser() user: TokenPayload) {
+    return this.courseService.getCourseProgress(user.userId, courseId)
+  }
+
   @Get(':slug')
   @IsPublic()
   @ZodSerializerDto(CourseDetailResponseSchema)

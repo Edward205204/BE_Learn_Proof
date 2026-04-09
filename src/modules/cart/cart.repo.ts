@@ -42,6 +42,20 @@ export class CartRepo {
     })
   }
 
+  findCoursePublished(courseId: string) {
+    return this.txHost.tx.course.findFirst({
+      where: { id: courseId, status: 'PUBLISHED' },
+      select: { id: true },
+    })
+  }
+
+  checkEnrolled(userId: string, courseId: string) {
+    return this.txHost.tx.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+      select: { id: true },
+    })
+  }
+
   addItemToCart(cartId: string, courseId: string) {
     return this.txHost.tx.cartItem.createMany({
       data: [{ cartId, courseId }],

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { CartRepo } from './cart.repo'
 
 @Injectable()
@@ -11,8 +11,15 @@ export class CartService {
   }
 
   async addToCart(userId: string, courseId: string) {
+    const [course, enrolled] = await Promise.all([
+      this.cartRepo.findCoursePublished(courseId),
+      this.cartRepo.checkEnrolled(userId, courseId),
+    ])
+
+    if (!course) throw new BadRequestException('Khóa học không tồn tại hoặc chưa được publish')
+    if (enrolled) throw new BadRequestException('Bạn đã sở hữu khóa học này')
+
     const cart = await this.cartRepo.upsertCart(userId)
-    // P2003 (foreign key) tự throw nếu courseId không tồn tại → global filter handle
     await this.cartRepo.addItemToCart(cart.id, courseId)
     return this.cartRepo.getCartWithItems(userId)
   }

@@ -194,4 +194,17 @@ export class InteractionRepo {
       data,
     })
   }
+
+  updateReview(id: string, data: { rating?: number; comment?: string }) {
+    return this.txHost.tx.review.update({
+      where: { id },
+      data,
+    })
+  }
+
+  deleteReview(id: string) {
+    return this.txHost.tx.review.delete({
+      where: { id },
+    })
+  }
 }

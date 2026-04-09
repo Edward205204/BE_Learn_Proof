@@ -196,4 +196,18 @@ export class InteractionService {
       comment,
     })
   }
+
+  async updateReview(courseId: string, userId: string, rating: number, comment?: string) {
+    const review = await this.repo.findReviewByUserAndCourse(userId, courseId)
+    if (!review) throw new NotFoundException('Ban chua danh gia khoa hoc nay')
+
+    return this.repo.updateReview(review.id, { rating, comment })
+  }
+
+  async deleteReview(courseId: string, userId: string) {
+    const review = await this.repo.findReviewByUserAndCourse(userId, courseId)
+    if (!review) throw new NotFoundException('Ban chua danh gia khoa hoc nay')
+
+    return this.repo.deleteReview(review.id)
+  }
 }
