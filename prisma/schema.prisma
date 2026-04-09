@@ -136,7 +136,7 @@ model Course {
   categoryId            String
   level                 CourseLevel    @default(BEGINNER)
   isCompleted           Boolean        @default(false)
-  publishedLessonsCount Int            @default(0)
+  publishedLessonsCount Int            @default(0) // @denormalized số lượng bài học đã public - cần sync
   totalPlannedLessons   Int?
   shortDesc             String
   fullDesc              String
