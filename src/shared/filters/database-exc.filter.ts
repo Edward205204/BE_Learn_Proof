@@ -1,9 +1,9 @@
-import { ArgumentsHost, BadRequestException, Catch, HttpException, NotFoundException } from '@nestjs/common'
+import { ArgumentsHost, BadRequestException, Catch, NotFoundException } from '@nestjs/common'
 import { BaseExceptionFilter } from '@nestjs/core'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
 import { isForeignKeyConstraintPrismaError, isNotFoundPrismaError, isUniqueConstraintPrismaError } from '../helpers'
 
-@Catch(HttpException)
+@Catch(PrismaClientKnownRequestError)
 export class DatabaseExceptionFilter extends BaseExceptionFilter {
   catch(exception: PrismaClientKnownRequestError, host: ArgumentsHost) {
     if (isNotFoundPrismaError(exception)) {

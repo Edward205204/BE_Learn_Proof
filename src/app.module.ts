@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common'
 import { AuthModule } from './modules/auth/auth.module'
-import { APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
 import CustomZodValidationPipe from './shared/pipes/z-validation.pipe'
 import { ZodSerializerInterceptor } from 'nestjs-zod'
+import { DatabaseExceptionFilter } from './shared/filters/database-exc.filter'
+import { HttpExceptionFilter } from './shared/filters/http-exc.filter'
+import { TransformInterceptor } from './shared/interceptor/transform.interceptor'
 import { SharedModule } from './shared/shared.module'
 import { CoursesModule } from './modules/courses/courses.module'
 import { QuizModule } from './modules/quiz/quiz.module'
@@ -14,7 +17,8 @@ import { PrismaService } from './shared/services/prisma.service'
 import { ClsModule } from 'nestjs-cls'
 import { ClsPluginTransactional } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { EnrollmentModule } from './modules/enrollment/enrollment.module';
+import { EnrollmentModule } from './modules/enrollment/enrollment.module'
+import { LessonModule } from './modules/lesson/lesson.module'
 
 @Module({
   imports: [
@@ -26,6 +30,7 @@ import { EnrollmentModule } from './modules/enrollment/enrollment.module';
     MediaModule,
     CartModule,
     WishlistModule,
+    LessonModule,
 
     ClsModule.forRoot({
       global: true,
@@ -45,12 +50,24 @@ import { EnrollmentModule } from './modules/enrollment/enrollment.module';
   controllers: [],
   providers: [
     {
+      provide: APP_FILTER,
+      useClass: DatabaseExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+    {
       provide: APP_PIPE,
       useClass: CustomZodValidationPipe,
     },
     {
       provide: APP_INTERCEPTOR,
       useClass: ZodSerializerInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor,
     },
   ],
 })

@@ -15,6 +15,6 @@ async function bootstrap() {
     },
   })
   app.enableCors({ origin: envConfig.FE_URL, credentials: true })
-  await app.listen(process.env.PORT ?? 3000)
+  await app.listen(envConfig.PORT)
 }
 bootstrap()

@@ -13,18 +13,15 @@ import { ApiBearerAuth } from '@nestjs/swagger'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { MediaService } from './services/media.service'
 import { Response } from 'express'
+import { IsPublic } from 'src/shared/decorators/auth.decorator'
 import 'multer'
 
 @Controller('media')
-@ApiBearerAuth('access-token')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
-  /**
-   * Upload general image
-   * We limit file sizes through Multer interceptor to prevent DoS attacks (Security)
-   */
   @Post('image')
+  @ApiBearerAuth('access-token')
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
@@ -36,10 +33,8 @@ export class MediaController {
     return { url: `/media/${filename}` }
   }
 
-  /**
-   * Upload Avatar Size Image
-   */
   @Post('avatar')
+  @ApiBearerAuth('access-token')
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
@@ -51,10 +46,8 @@ export class MediaController {
     return { url: `/media/${filename}` }
   }
 
-  /**
-   * Upload Avatar Thumbnail
-   */
   @Post('avatar-thumbnail')
+  @ApiBearerAuth('access-token')
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit for avatars
@@ -66,11 +59,8 @@ export class MediaController {
     return { url: `/media/${filename}` }
   }
 
-  /**
-   * Stream File Endpoint
-   * Returns a file stream for frontend usage with proper caching headers (Performance)
-   */
   @Get(':filename')
+  @IsPublic()
   async streamMedia(@Param('filename') filename: string, @Res({ passthrough: true }) res: Response) {
     const stream = await this.mediaService.getFileStream(filename)
 

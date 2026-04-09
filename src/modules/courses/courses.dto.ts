@@ -6,7 +6,6 @@ import {
   CreateCourseSt1DtoSchema,
   CreateCourseSt2DtoSchema,
   CreateCourseSt3DtoSchema,
-  ReorderLessonBodySchema,
   ReorderChapterBodySchema,
   GetMyCoursesManagerQuerySchema,
   GetCourseParamByIdSchema,
@@ -26,7 +25,6 @@ export class GetCourseParamByIdDTO extends createZodDto(GetCourseParamByIdSchema
 export class CreateCourseSt3Dto extends createZodDto(CreateCourseSt3DtoSchema) {}
 export class UpdateCourseBaseInfoDto extends createZodDto(UpdateCourseBaseInfoDtoSchema) {}
 
-export class ReorderLessonDto extends createZodDto(ReorderLessonBodySchema) {}
 export class ReorderChapterDto extends createZodDto(ReorderChapterBodySchema) {}
 
 export class GetMyCoursesManagerQueryDTO extends createZodDto(GetMyCoursesManagerQuerySchema) {}
