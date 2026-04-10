@@ -1,67 +1,80 @@
-import { Controller, Post, UseInterceptors, UploadedFile, Get, Param, Res, BadRequestException, StreamableFile } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { MediaService } from './services/media.service';
-import { Response } from 'express';
-import 'multer';
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  Get,
+  Param,
+  Res,
+  BadRequestException,
+  StreamableFile,
+} from '@nestjs/common'
+import { ApiBearerAuth } from '@nestjs/swagger'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { MediaService } from './services/media.service'
+import { Response } from 'express'
+import { IsPublic } from 'src/shared/decorators/auth.decorator'
+import 'multer'
+import { ZodSerializerDto } from 'nestjs-zod'
+import { UploadMediaResponseSchema } from './media.response'
 
 @Controller('media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
-  /**
-   * Upload general image
-   * We limit file sizes through Multer interceptor to prevent DoS attacks (Security)
-   */
   @Post('image')
-  @UseInterceptors(FileInterceptor('file', {
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
-  }))
+  @ApiBearerAuth('access-token')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    }),
+  )
+  @ZodSerializerDto(UploadMediaResponseSchema)
   async uploadImage(@UploadedFile() file: Express.Multer.File) {
-    if (!file) throw new BadRequestException('No file provided');
-    const filename = await this.mediaService.uploadImage(file);
-    return { url: `/media/${filename}` };
+    if (!file) throw new BadRequestException('No file provided')
+    const filename = await this.mediaService.uploadImage(file)
+    return { url: `/media/${filename}` }
   }
 
-  /**
-   * Upload Avatar Size Image
-   */
   @Post('avatar')
-  @UseInterceptors(FileInterceptor('file', {
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
-  }))
+  @ApiBearerAuth('access-token')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    }),
+  )
+  @ZodSerializerDto(UploadMediaResponseSchema)
   async uploadAvatar(@UploadedFile() file: Express.Multer.File) {
-    if (!file) throw new BadRequestException('No file provided');
-    const filename = await this.mediaService.uploadAvatar(file);
-    return { url: `/media/${filename}` };
+    if (!file) throw new BadRequestException('No file provided')
+    const filename = await this.mediaService.uploadAvatar(file)
+    return { url: `/media/${filename}` }
   }
 
-  /**
-   * Upload Avatar Thumbnail
-   */
   @Post('avatar-thumbnail')
-  @UseInterceptors(FileInterceptor('file', {
-    limits: { fileSize: 2 * 1024 * 1024 } // 2MB limit for avatars
-  }))
+  @ApiBearerAuth('access-token')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit for avatars
+    }),
+  )
+  @ZodSerializerDto(UploadMediaResponseSchema)
   async uploadAvatarThumbnail(@UploadedFile() file: Express.Multer.File) {
-    if (!file) throw new BadRequestException('No file provided');
-    const filename = await this.mediaService.uploadAvatarThumbnail(file);
-    return { url: `/media/${filename}` };
+    if (!file) throw new BadRequestException('No file provided')
+    const filename = await this.mediaService.uploadAvatarThumbnail(file)
+    return { url: `/media/${filename}` }
   }
 
-  /**
-   * Stream File Endpoint
-   * Returns a file stream for frontend usage with proper caching headers (Performance)
-   */
   @Get(':filename')
+  @IsPublic()
   async streamMedia(@Param('filename') filename: string, @Res({ passthrough: true }) res: Response) {
-    const stream = await this.mediaService.getFileStream(filename);
-    
+    const stream = await this.mediaService.getFileStream(filename)
+
     res.set({
       'Content-Type': 'image/webp', // We process images uniformly into WebP
       // Implemented aggressive caching headers so browsers won't re-download (Performance)
-      'Cache-Control': 'public, max-age=31536000, immutable', 
-    });
-    
-    return new StreamableFile(stream as any);
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    })
+
+    return new StreamableFile(stream as any)
   }
 }

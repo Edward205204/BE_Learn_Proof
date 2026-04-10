@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common'
+import { ApiBearerAuth } from '@nestjs/swagger'
 import { CourseService } from './services/courses.service'
 import {
   CreateCourseSt1Dto,
@@ -11,6 +12,7 @@ import {
   GetSearchSuggestionsQueryDTO,
   QueryCourseDetailByIdDTO,
   UpdateCourseBaseInfoDto,
+  RenameChapterDto,
 } from './courses.dto'
 import { IsPublic } from 'src/shared/decorators/auth.decorator'
 import {
@@ -22,10 +24,10 @@ import {
   GetCoursesResponseSchema,
   GetSearchSuggestionsResponseSchema,
   HomeSectionsResponseSchema,
-  ReorderLessonDto,
-  ReorderChapterDto,
   GetCourseDetailManagerResponseSchema,
-} from './courses.model'
+  RenameChapterResponseSchema,
+} from './courses.response'
+import { ReorderChapterDto } from './courses.model'
 import { ZodSerializerDto } from 'nestjs-zod'
 import { CoursesManagerService } from './services/courses-manager.service'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
@@ -77,12 +79,14 @@ export class CourseController {
   // phải implement logic check id trước khi thao tác
 
   @Post('create-course/st1')
+  @ApiBearerAuth('access-token')
   @ZodSerializerDto(CreateCourseSt1ResponseSchema)
   createCourse(@Body() body: CreateCourseSt1Dto, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.createCourse(body, user.userId)
   }
 
   @Patch(':id/chapters-frame')
+  @ApiBearerAuth('access-token')
   @ZodSerializerDto(CreateCourseFullResponseSchema)
   updateCourseChaptersFrame(
     @Param('id') id: string,
@@ -93,12 +97,14 @@ export class CourseController {
   }
 
   @Patch(':id/publish')
+  @ApiBearerAuth('access-token')
   @ZodSerializerDto(CreateCourseFullResponseSchema)
   publishCourse(@Param('id') id: string, @Body() body: CreateCourseSt3Dto, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.publishCourse(id, body, user.userId)
   }
 
   @Patch('base-info/:id')
+  @ApiBearerAuth('access-token')
   @ZodSerializerDto(CreateCourseFullResponseSchema)
   updateCourseBaseInfo(
     @Param() param: GetCourseParamByIdDTO,
@@ -108,26 +114,41 @@ export class CourseController {
     return this.courseManagerService.updateCourseBaseInfo(param.id, body, user.userId)
   }
 
-  @Patch('/reorder/lessons')
-  async reorderLessons(@Body() body: ReorderLessonDto, @ActiveUser() user: TokenPayload) {
-    return this.courseManagerService.reorderLesson(body, user.userId)
-  }
-
   @Patch('/reorder/chapters')
+  @ApiBearerAuth('access-token')
   async reorderChapters(@Body() body: ReorderChapterDto, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.reorderChapters(body, user.userId)
   }
 
+  @Patch('chapters/:chapterId')
+  @ApiBearerAuth('access-token')
+  @ZodSerializerDto(RenameChapterResponseSchema)
+  renameChapter(
+    @Param('chapterId') chapterId: string,
+    @Body() body: RenameChapterDto,
+    @ActiveUser() user: TokenPayload,
+  ) {
+    return this.courseManagerService.renameChapter(chapterId, body.title, user.userId)
+  }
+
   @Get('manager/my-courses')
+  @ApiBearerAuth('access-token')
   // @ZodSerializerDto(GetSearchSuggestionsResponseSchema)
   getMyCoursesManager(@Query() query: GetMyCoursesManagerQueryDTO, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.getMyCoursesManager(query, user.userId)
   }
 
   @Get('manager/course-detail/:id')
+  @ApiBearerAuth('access-token')
   @ZodSerializerDto(GetCourseDetailManagerResponseSchema)
   getCourseDetailManager(@Param() params: QueryCourseDetailByIdDTO, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.getCourseDetailManager(params.id, user.userId)
+  }
+
+  @Get(':courseId/progress')
+  @ApiBearerAuth('access-token')
+  getCourseProgress(@Param('courseId') courseId: string, @ActiveUser() user: TokenPayload) {
+    return this.courseService.getCourseProgress(user.userId, courseId)
   }
 
   @Get(':slug')
@@ -139,6 +160,7 @@ export class CourseController {
 
   // lấy data cơ bản của khóa học và chapters để edit
   @Get('base-info/:id')
+  @ApiBearerAuth('access-token')
   @ZodSerializerDto(CreateCourseFullResponseSchema)
   getCourseBaseInfo(@Param() param: GetCourseParamByIdDTO, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.getCourseBaseInfo(param.id, user.userId)

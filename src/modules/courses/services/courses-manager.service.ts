@@ -5,7 +5,6 @@ import {
   CreateCourseSt3Dto,
   GetMyCoursesManagerQueryType,
   ReorderChapterDto,
-  ReorderLessonDto,
 } from '../courses.model'
 import { CourseRepo } from '../courses.repo'
 import { SlugService } from 'src/shared/services/slug.service'
@@ -91,12 +90,17 @@ export class CoursesManagerService {
     return this.courseRepo.updateCourseBaseInfo(courseId, creatorId, body, slug)
   }
 
-  async reorderLesson(body: ReorderLessonDto, creatorId: string) {
-    const course = await this.courseRepo.getCourseUnique({ creatorId, id: body.courseId })
-    if (!course) throw new CourseNotFoundException()
-    const lesson = await this.courseRepo.findLessonUnique({ id: body.lessonId, creatorId })
-    if (!lesson) throw new CourseNotMatchException()
-    return this.courseRepo.updateOrderLesson(body)
+  private calculateNewOrder(prevOrder: number | null, nextOrder: number | null) {
+    if (prevOrder !== null && nextOrder !== null) {
+      return (prevOrder + nextOrder) / 2
+    }
+    if (prevOrder !== null) {
+      return prevOrder + 100
+    }
+    if (nextOrder !== null) {
+      return nextOrder / 2
+    }
+    return 1000
   }
 
   async reorderChapters(body: ReorderChapterDto, creatorId: string) {
@@ -105,11 +109,22 @@ export class CoursesManagerService {
 
     const chapter = await this.courseRepo.findChapterUnique({ id: body.chapterId, creatorId })
     if (!chapter) throw new CourseNotMatchException()
-    return this.courseRepo.updateOrderChapters(body)
+    // return this.courseRepo.updateOrderChapters(body)
+    const prevChapter = await this.courseRepo.findChapterOrder(body.prevChapterId)
+    const nextChapter = await this.courseRepo.findChapterOrder(body.nextChapterId)
+    const newOrder = this.calculateNewOrder(prevChapter?.order ?? null, nextChapter?.order ?? null)
+    const data = await this.courseRepo.updateChapterOrder(body.chapterId, newOrder)
+    return data
   }
 
   async getMyCoursesManager(query: GetMyCoursesManagerQueryType, userId: string) {
     const data = await this.courseRepo.getListCoursesManager(query, userId)
     return data
+  }
+
+  async renameChapter(chapterId: string, title: string, creatorId: string) {
+    const chapter = await this.courseRepo.findChapterUnique({ id: chapterId, creatorId })
+    if (!chapter) throw new CourseNotMatchException()
+    return this.courseRepo.renameChapter(chapterId, title)
   }
 }

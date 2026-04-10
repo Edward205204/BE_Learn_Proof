@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common'
-import { QuizController } from './quiz.controller'
-import { QuizService } from './quiz.service'
+import { QuizCmsService } from './quiz-cms.service'
 import { QuizRepo } from './quiz.repo'
+import { QuizLearnerService } from './quiz-learner.service'
+import { QuizController } from './quiz.controller'
 
 @Module({
+  providers: [QuizCmsService, QuizRepo, QuizLearnerService],
   controllers: [QuizController],
-  providers: [QuizService, QuizRepo],
-  exports: [QuizService],
+  exports: [QuizCmsService, QuizLearnerService],
 })
 export class QuizModule {}

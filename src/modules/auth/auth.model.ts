@@ -49,7 +49,17 @@ export const UserResSchema = z.object({
   email: z.string(),
   fullName: z.string(),
   avatar: z.string().nullable(),
+  bio: z.string().nullable(),
+  headline: z.string().nullable(),
+  website: z.string().nullable(),
   role: z.enum(Role),
+})
+
+export const UpdateProfileBodySchema = z.object({
+  fullName: z.string().trim().min(1).max(255).optional(),
+  bio: z.string().trim().max(2000).nullable().optional(),
+  headline: z.string().trim().max(60).nullable().optional(),
+  website: z.string().trim().url('URL không hợp lệ').nullable().optional().or(z.literal('')),
 })
 
 export const AuthResDto = z.object({

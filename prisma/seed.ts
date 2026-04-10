@@ -1,6 +1,14 @@
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient, Role, CourseLevel, CourseStatus, LessonType, VideoProvider } from 'src/generated/prisma/client'
-import envConfig from 'src/shared/config'
+import {
+  PrismaClient,
+  Role,
+  CourseLevel,
+  CourseStatus,
+  LessonType,
+  VideoProviderEnum,
+  PaymentStatus,
+} from '../src/generated/prisma/client'
+import envConfig from '../src/shared/config'
 import { Pool } from 'pg'
 import { hash } from 'bcrypt'
 
@@ -27,9 +35,6 @@ async function createContentManager() {
 
 async function main() {
   console.log('--- Đang xóa dữ liệu cũ ---')
-  await prisma.courseDailySnapshot.deleteMany()
-  await prisma.courseOverallAnalytics.deleteMany()
-  await prisma.lessonAnalyticsSnapshot.deleteMany()
   await prisma.answer.deleteMany()
   await prisma.question.deleteMany()
   await prisma.quiz.deleteMany()
@@ -78,17 +83,17 @@ async function main() {
         categoryId: randomCategory.id,
         creatorId: instructor.id,
         thumbnail: `https://picsum.photos/seed/${i + 100}/800/450`, // Ảnh ngẫu nhiên
-        // Tạo Analytics giả lập cho từng khóa
-        overallAnalytics: {
-          create: {
-            totalStudents: Math.floor(Math.random() * 500),
-            totalRevenue: Math.floor(Math.random() * 100000000),
-            avgRating: parseFloat((Math.random() * (5 - 3.5) + 3.5).toFixed(1)), // Rating từ 3.5 đến 5.0
-            avgInterestScore: Math.floor(Math.random() * 100),
-            dropoutRate: Math.floor(Math.random() * 20),
-            completionRate: Math.floor(Math.random() * 40 + 10),
-          },
-        },
+        // // Tạo Analytics giả lập cho từng khóa
+        // overallAnalytics: {
+        //   create: {
+        //     totalStudents: Math.floor(Math.random() * 500),
+        //     totalRevenue: Math.floor(Math.random() * 100000000),
+        //     avgRating: parseFloat((Math.random() * (5 - 3.5) + 3.5).toFixed(1)), // Rating từ 3.5 đến 5.0
+        //     avgInterestScore: Math.floor(Math.random() * 100),
+        //     dropoutRate: Math.floor(Math.random() * 20),
+        //     completionRate: Math.floor(Math.random() * 40 + 10),
+        //   },
+        // },
         // Mỗi khóa tạo sẵn 1 Chapter và 2 Lessons để test luồng học
         chapters: {
           create: {
@@ -100,10 +105,10 @@ async function main() {
                   title: 'Bài 1: Lộ trình học tập',
                   videoId: 'lQCRGJtCpVo',
                   type: LessonType.VIDEO,
-                  provider: VideoProvider.YOUTUBE,
+                  provider: VideoProviderEnum.YOUTUBE,
                   order: 1,
                   duration: 300,
-                  analytics: { create: { totalViews: 1000, avgWatchTime: 200, dropOffCount: 10 } },
+                  // analytics: { create: { totalViews: 1000, avgWatchTime: 200, dropOffCount: 10 } },
                 },
                 {
                   title: 'Bài 2: Thực hành cơ bản',
@@ -120,19 +125,19 @@ async function main() {
 
     // Tạo thêm dữ liệu biểu đồ cho 7 ngày gần nhất cho mỗi khóa học
     const today = new Date()
-    for (let day = 0; day < 7; day++) {
-      const date = new Date()
-      date.setDate(today.getDate() - day)
-      await prisma.courseDailySnapshot.create({
-        data: {
-          courseId: course.id,
-          date: date,
-          newEnrollments: Math.floor(Math.random() * 10),
-          revenueToday: Math.floor(Math.random() * 2000000),
-          activeLearners: Math.floor(Math.random() * 50),
-        },
-      })
-    }
+    // for (let day = 0; day < 7; day++) {
+    //   const date = new Date()
+    //   date.setDate(today.getDate() - day)
+    //   await prisma.courseDailySnapshot.create({
+    //     data: {
+    //       courseId: course.id,
+    //       date: date,
+    //       newEnrollments: Math.floor(Math.random() * 10),
+    //       revenueToday: Math.floor(Math.random() * 2000000),
+    //       activeLearners: Math.floor(Math.random() * 50),
+    //     },
+    //   })
+    // }
   }
 
   console.log('--- Seed 30 khóa học thành công! ---')
@@ -440,7 +445,7 @@ async function main() {
 
   // Tạo/upsert categories từ mock data (không đụng các categories đã tạo trước)
   const mockCategoryIdMap = new Map<string, string>() // categorySlug -> id
-  for (const course of mockCourseMap.values()) {
+  for (const course of Array.from(mockCourseMap.values())) {
     if (!mockCategoryIdMap.has(course.category.slug)) {
       const cat = await prisma.category.upsert({
         where: { slug: course.category.slug },
@@ -452,7 +457,7 @@ async function main() {
   }
 
   // Tạo courses, dùng instructor.id làm creatorId
-  for (const course of mockCourseMap.values()) {
+  for (const course of Array.from(mockCourseMap.values())) {
     const categoryId = mockCategoryIdMap.get(course.category.slug)!
     await prisma.course.create({
       data: {
@@ -469,15 +474,15 @@ async function main() {
         categoryId,
         creatorId: instructor.id,
         createdAt: course.createdAt,
-        overallAnalytics: course.overallAnalytics
-          ? {
-              create: {
-                avgRating: course.overallAnalytics.avgRating,
-                totalStudents: course.overallAnalytics.totalStudents,
-                avgInterestScore: course.overallAnalytics.avgInterestScore,
-              },
-            }
-          : undefined,
+        // overallAnalytics: course.overallAnalytics
+        //   ? {
+        //       create: {
+        //         avgRating: course.overallAnalytics.avgRating,
+        //         totalStudents: course.overallAnalytics.totalStudents,
+        //         avgInterestScore: course.overallAnalytics.avgInterestScore,
+        //       },
+        //     }
+        //   : undefined,
       },
     })
   }
@@ -494,3 +499,284 @@ main()
     await prisma.$disconnect()
     await pool.end()
   })
+
+async function seedRealData() {
+  console.log('--- Seed du lieu that (no loop) ---')
+
+  // USERS
+  const u1 = await prisma.user.create({ data: { email: 'an@gmail.com', password: '123', fullName: 'Nguyen Van An' } })
+  const u2 = await prisma.user.create({ data: { email: 'binh@gmail.com', password: '123', fullName: 'Tran Thi Binh' } })
+  const u3 = await prisma.user.create({ data: { email: 'cuong@gmail.com', password: '123', fullName: 'Le Van Cuong' } })
+  const u4 = await prisma.user.create({ data: { email: 'dung@gmail.com', password: '123', fullName: 'Pham Thi Dung' } })
+  const u5 = await prisma.user.create({ data: { email: 'em@gmail.com', password: '123', fullName: 'Hoang Van Em' } })
+  const u6 = await prisma.user.create({ data: { email: 'giang@gmail.com', password: '123', fullName: 'Vo Thi Giang' } })
+  const u7 = await prisma.user.create({ data: { email: 'hung@gmail.com', password: '123', fullName: 'Dang Van Hung' } })
+  const u8 = await prisma.user.create({ data: { email: 'hoa@gmail.com', password: '123', fullName: 'Bui Thi Hoa' } })
+  const u9 = await prisma.user.create({ data: { email: 'khanh@gmail.com', password: '123', fullName: 'Do Van Khanh' } })
+  const u10 = await prisma.user.create({
+    data: { email: 'linh@gmail.com', password: '123', fullName: 'Nguyen Thi Linh' },
+  })
+
+  // CATEGORY
+  const c1 = await prisma.category.create({ data: { name: 'Frontend', slug: 'frontend' } })
+  const c2 = await prisma.category.create({ data: { name: 'Backend', slug: 'backend' } })
+  const c3 = await prisma.category.create({ data: { name: 'AI', slug: 'ai' } })
+  const c4 = await prisma.category.create({ data: { name: 'Mobile', slug: 'mobile' } })
+  const c5 = await prisma.category.create({ data: { name: 'DevOps', slug: 'devops' } })
+  const c6 = await prisma.category.create({ data: { name: 'Security', slug: 'security' } })
+  const c7 = await prisma.category.create({ data: { name: 'Blockchain', slug: 'blockchain' } })
+  const c8 = await prisma.category.create({ data: { name: 'Data', slug: 'data' } })
+  const c9 = await prisma.category.create({ data: { name: 'UI/UX', slug: 'uiux' } })
+  const c10 = await prisma.category.create({ data: { name: 'Soft Skills', slug: 'soft-skills' } })
+
+  // COURSES
+  const course1 = await prisma.course.create({
+    data: {
+      title: 'React tu co ban den nang cao',
+      slug: 'react-complete',
+      shortDesc: 'Hoc React full',
+      fullDesc: 'React hooks, context, project',
+      level: CourseLevel.BEGINNER,
+      status: CourseStatus.PUBLISHED,
+      price: 299000,
+      categoryId: c1.id,
+      creatorId: u1.id,
+    },
+  })
+
+  const course2 = await prisma.course.create({
+    data: {
+      title: 'NodeJS Backend API',
+      slug: 'nodejs-api',
+      shortDesc: 'Xay dung REST API',
+      fullDesc: 'Express, JWT, Prisma',
+      level: CourseLevel.INTERMEDIATE,
+      status: CourseStatus.PUBLISHED,
+      price: 399000,
+      categoryId: c2.id,
+      creatorId: u1.id,
+    },
+  })
+
+  const course3 = await prisma.course.create({
+    data: {
+      title: 'Machine Learning co ban',
+      slug: 'ml-basic',
+      shortDesc: 'Nhap mon AI',
+      fullDesc: 'Linear regression, classification',
+      level: CourseLevel.BEGINNER,
+      status: CourseStatus.PUBLISHED,
+      price: 499000,
+      categoryId: c3.id,
+      creatorId: u2.id,
+    },
+  })
+
+  // LESSON + QUIZ (1 ví dụ chi tiết)
+  const chapter1 = await prisma.chapter.create({
+    data: {
+      title: 'Gioi thieu React',
+      order: 1,
+      courseId: course1.id,
+    },
+  })
+
+  const lesson1 = await prisma.lesson.create({
+    data: {
+      title: 'React la gi?',
+      type: LessonType.VIDEO,
+      provider: VideoProviderEnum.YOUTUBE,
+      videoId: 'abc123',
+      order: 1,
+      duration: 600,
+      chapterId: chapter1.id,
+    },
+  })
+
+  const quiz1 = await prisma.quiz.create({
+    data: { lessonId: lesson1.id },
+  })
+
+  const q1 = await prisma.question.create({
+    data: {
+      content: 'React dung de lam gi?',
+      quizId: quiz1.id,
+    },
+  })
+
+  await prisma.answer.createMany({
+    data: [
+      { content: 'Xay dung UI', isCorrect: true, questionId: q1.id },
+      { content: 'Quan ly DB', isCorrect: false, questionId: q1.id },
+      { content: 'Deploy server', isCorrect: false, questionId: q1.id },
+      { content: 'Khong dung', isCorrect: false, questionId: q1.id },
+    ],
+  })
+
+  // ENROLLMENT
+  await prisma.enrollment.create({ data: { userId: u2.id, courseId: course1.id } })
+  await prisma.enrollment.create({ data: { userId: u3.id, courseId: course2.id } })
+
+  // REVIEW
+  await prisma.review.createMany({
+    data: [
+      {
+        userId: u3.id,
+        courseId: course1.id,
+        rating: 4,
+        comment: 'Noi dung tot nhung can them vi du',
+      },
+      {
+        userId: u4.id,
+        courseId: course1.id,
+        rating: 5,
+        comment: 'Giang vien day rat de hieu',
+      },
+      {
+        userId: u5.id,
+        courseId: course2.id,
+        rating: 4,
+        comment: 'API ro rang, de ap dung',
+      },
+      {
+        userId: u6.id,
+        courseId: course2.id,
+        rating: 3,
+        comment: 'Kho doan JWT',
+      },
+      {
+        userId: u7.id,
+        courseId: course3.id,
+        rating: 5,
+        comment: 'ML giai thich de hieu',
+      },
+      {
+        userId: u8.id,
+        courseId: course3.id,
+        rating: 4,
+        comment: 'Can them bai tap',
+      },
+    ],
+  })
+
+  // DISCUSSION
+  const d1 = await prisma.discussion.create({
+    data: {
+      content: 'Bai nay hay',
+      userId: u2.id,
+      courseId: course1.id,
+      lessonId: lesson1.id,
+    },
+  })
+
+  await prisma.reply.create({
+    data: {
+      content: 'Dung roi',
+      discussionId: d1.id,
+      userId: u3.id,
+    },
+  })
+
+  // TRANSACTION
+  await prisma.transaction.createMany({
+    data: [
+      {
+        userId: u3.id,
+        courseId: course1.id,
+        amount: 299000,
+        status: PaymentStatus.COMPLETED,
+        provider: 'MOMO',
+      },
+      {
+        userId: u4.id,
+        courseId: course1.id,
+        amount: 299000,
+        status: PaymentStatus.COMPLETED,
+        provider: 'VNPAY',
+      },
+      {
+        userId: u5.id,
+        courseId: course2.id,
+        amount: 399000,
+        status: PaymentStatus.COMPLETED,
+        provider: 'ZALOPAY',
+      },
+      {
+        userId: u6.id,
+        courseId: course2.id,
+        amount: 399000,
+        status: PaymentStatus.PENDING,
+        provider: 'VNPAY',
+      },
+      {
+        userId: u7.id,
+        courseId: course3.id,
+        amount: 499000,
+        status: PaymentStatus.COMPLETED,
+        provider: 'MOMO',
+      },
+      {
+        userId: u8.id,
+        courseId: course3.id,
+        amount: 499000,
+        status: PaymentStatus.FAILED,
+        provider: 'VNPAY',
+      },
+    ],
+  })
+
+  // CERTIFICATE
+  await prisma.certificate.createMany({
+    data: [
+      {
+        userId: u3.id,
+        courseId: course1.id,
+        certificateHash: 'cert-react-2',
+      },
+      {
+        userId: u4.id,
+        courseId: course1.id,
+        certificateHash: 'cert-react-3',
+      },
+      {
+        userId: u5.id,
+        courseId: course2.id,
+        certificateHash: 'cert-node-1',
+      },
+      {
+        userId: u6.id,
+        courseId: course2.id,
+        certificateHash: 'cert-node-2',
+      },
+      {
+        userId: u7.id,
+        courseId: course3.id,
+        certificateHash: 'cert-ml-1',
+      },
+      {
+        userId: u8.id,
+        courseId: course3.id,
+        certificateHash: 'cert-ml-2',
+      },
+    ],
+  })
+
+  // CART + WISHLIST
+  const cart = await prisma.cart.create({
+    data: { userId: u3.id },
+  })
+
+  await prisma.cartItem.create({
+    data: {
+      cartId: cart.id,
+      courseId: course3.id,
+    },
+  })
+
+  await prisma.wishlistItem.create({
+    data: {
+      userId: u3.id,
+      courseId: course1.id,
+    },
+  })
+}

@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common'
-import { PrismaService } from 'src/shared/services/prisma.service'
-import { LessonTypeEnumTS, QuizDataType, VideoProviderEnumTS } from './lesson.model'
+import { TransactionHost } from '@nestjs-cls/transactional'
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
+import { LessonTypeEnumTS, UpdateLessonBodyType, VideoProviderEnumTS } from './lesson.model'
+import { PrismaClient } from 'src/generated/prisma/client'
 
 @Injectable()
 export class LessonRepo {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
 
   findChapterWithAuthorId({ id: chapterId, authorId: userId }: { id: string; authorId: string }) {
-    return this.prisma.chapter.findFirst({
+    return this.txHost.tx.chapter.findFirst({
       where: {
         id: chapterId,
         course: {
@@ -17,8 +19,42 @@ export class LessonRepo {
     })
   }
 
-  async getLastLessonOrder(chapterId: string) {
-    const lastLesson = await this.prisma.lesson.findFirst({
+  updateLesson(lessonId: string, body: UpdateLessonBodyType) {
+    return this.txHost.tx.lesson.update({
+      where: { id: lessonId },
+      data: body,
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        order: true,
+        chapterId: true,
+      },
+    })
+  }
+
+  findLessonOrder(lessonId: string | null) {
+    return this.txHost.tx.lesson.findUnique({ where: { id: lessonId ?? undefined }, select: { order: true } })
+  }
+
+  updateLessonOrder(lessonId: string, newOrder: number, targetChapterId: string) {
+    return this.txHost.tx.lesson.update({
+      where: { id: lessonId },
+      data: {
+        order: newOrder,
+        chapterId: targetChapterId,
+      },
+    })
+  }
+
+  deleteLesson(lessonId: string) {
+    return this.txHost.tx.lesson.delete({
+      where: { id: lessonId },
+    })
+  }
+
+  async getLastLessonOrderInChapter(chapterId: string) {
+    const lastLesson = await this.txHost.tx.lesson.findFirst({
       where: {
         chapterId,
       },
@@ -45,54 +81,58 @@ export class LessonRepo {
     chapterId: string
     textContent: string | null
   }) {
-    return this.prisma.lesson.create({ data })
+    return this.txHost.tx.lesson.create({
+      data,
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        order: true,
+        chapterId: true,
+      },
+    })
   }
 
-  createLessonWithQuiz(
-    lessonData: {
-      title: string
-      shortDesc: string | null
-      fullDesc: string | null
-      order: number
-      chapterId: string
-    },
-    quizData: QuizDataType,
-  ) {
-    return this.prisma.lesson.create({
-      data: {
-        type: 'QUIZ',
-        ...lessonData,
-        videoId: null,
-        provider: null,
-        duration: null,
-        textContent: null,
-        quizzes: {
-          create: {
-            type: 'LESSON',
-            title: quizData.title,
-            description: quizData.description,
-            questions: {
-              create: quizData.questions.map((q) => ({
-                content: q.content,
-                answers: {
-                  create: q.answers,
-                },
-              })),
-            },
-          },
-        },
+  findLessonDetail(lessonId: string) {
+    return this.txHost.tx.lesson.findUnique({
+      where: { id: lessonId },
+      select: {
+        id: true,
+        title: true,
+        shortDesc: true,
+        type: true,
+        order: true,
+        videoId: true,
+        provider: true,
+        textContent: true,
+        duration: true,
+        chapterId: true,
       },
-      include: {
-        quizzes: {
-          include: {
-            questions: {
-              include: {
-                answers: true,
-              },
-            },
-          },
-        },
-      },
+    })
+  }
+
+  upsertProgress(userId: string, lessonId: string) {
+    return this.txHost.tx.progress.upsert({
+      where: { userId_lessonId: { userId, lessonId } },
+      create: { userId, lessonId, isCompleted: true },
+      update: { isCompleted: true },
+    })
+  }
+
+  async countCourseProgress(userId: string, courseId: string) {
+    const [total, completed] = await Promise.all([
+      this.txHost.tx.lesson.count({ where: { chapter: { courseId } } }),
+      this.txHost.tx.progress.count({
+        where: { userId, isCompleted: true, lesson: { chapter: { courseId } } },
+      }),
+    ])
+    return { total, completed }
+  }
+
+  checkEnrolled(userId: string, courseId: string) {
+    return this.txHost.tx.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+      select: { id: true },
     })
   }
 }

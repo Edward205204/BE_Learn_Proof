@@ -1,62 +1,62 @@
 import { Injectable } from '@nestjs/common'
-import { QuizType } from 'src/generated/prisma/enums'
-import { PrismaService } from 'src/shared/services/prisma.service'
+import { TransactionHost } from '@nestjs-cls/transactional'
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
+import { CreateQuizType, QuestionType } from './quiz.model'
+import { PrismaClient } from 'src/generated/prisma/client'
 
 @Injectable()
 export class QuizRepo {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
 
-  findLessonWithAuthorId({ id, authorId }: { id: string; authorId: string }) {
-    return this.prisma.lesson.findFirst({
-      where: {
-        id,
-        chapter: {
-          course: {
-            creatorId: authorId,
+  // cross-read: lesson → chapter → course
+  findQuizOwner(quizId: string) {
+    return this.txHost.tx.quiz.findUnique({
+      where: { id: quizId },
+      select: {
+        lesson: { select: { chapter: { select: { course: { select: { creatorId: true } } } } } },
+      },
+    })
+  }
+
+  // cross-read: quiz → lesson → chapter → course → enrollment
+  findQuizCourseEnrollment(quizId: string, userId: string) {
+    return this.txHost.tx.quiz.findUnique({
+      where: { id: quizId },
+      select: {
+        lesson: {
+          select: {
+            chapter: {
+              select: {
+                course: {
+                  select: {
+                    enrollments: {
+                      where: { userId },
+                      select: { id: true },
+                      take: 1,
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
     })
   }
 
-  findQuiz(where: { id: string; lessonId: string }) {
-    return this.prisma.quiz.findUnique({
-      where,
-    })
-  }
-
-  findQuizByLesson(lessonId: string) {
-    return this.prisma.quiz.findFirst({
-      where: {
-        lessonId,
-      },
-    })
-  }
-
-  createQuiz(data: { type: QuizType; title?: string; description?: string; lessonId?: string; chapterId?: string }) {
-    return this.prisma.quiz.create({
-      data,
-    })
-  }
-
-  createQuizWithQuestions(data: {
-    type: QuizType
-    lessonId: string
-    title?: string
-    description?: string
-    questions: { content: string; answers: { content: string; isCorrect: boolean }[] }[]
-  }) {
-    return this.prisma.quiz.create({
+  createQuiz(body: CreateQuizType) {
+    return this.txHost.tx.quiz.create({
       data: {
-        type: data.type,
-        lessonId: data.lessonId,
-        title: data.title,
-        description: data.description,
+        lessonId: body.lessonId,
         questions: {
-          create: data.questions.map((q) => ({
+          create: body.quizData.map((q) => ({
             content: q.content,
+            isEdit: false,
             answers: {
-              create: q.answers,
+              create: q.answers.map((a) => ({
+                content: a.content,
+                isCorrect: a.isCorrect,
+              })),
             },
           })),
         },
@@ -71,105 +71,174 @@ export class QuizRepo {
     })
   }
 
-  updateQuiz({
-    where,
-    data,
-  }: {
-    where: { id: string }
-    data: {
-      title?: string
-      description?: string
-    }
-  }) {
-    return this.prisma.quiz.update({
-      where,
-      data,
+  findAnswerByQuestionId(questionId: string) {
+    return this.txHost.tx.answer.findMany({
+      where: { questionId },
     })
   }
 
-  deleteQuiz(where: { id: string }) {
-    return this.prisma.quiz.delete({
-      where,
+  findQuizAttemptByUserIdAndQuizId(userId: string, quizId: string) {
+    return this.txHost.tx.quizAttempt.findFirst({
+      where: { userId, quizId },
     })
   }
 
-  getQuizDetail(quizId: string) {
-    return this.prisma.quiz.findUnique({
+  findCorrectAnswerByQuestionId(questionId: string) {
+    return this.txHost.tx.answer.findFirst({
+      where: { questionId, isCorrect: true },
+      select: { id: true },
+    })
+  }
+
+  findCorrectQuestionList(quizId: string) {
+    return this.txHost.tx.question.findMany({
+      where: { quizId, isEdit: false },
+      select: {
+        id: true,
+        answers: {
+          where: { isCorrect: true },
+          select: { id: true },
+        },
+      },
+    })
+  }
+
+  findQuestionEditState(questionId: string) {
+    return this.txHost.tx.question.findUnique({
+      where: { id: questionId },
+      select: { id: true, isEdit: true },
+    })
+  }
+
+  createQuestion(quizId: string, questionData: QuestionType) {
+    return this.txHost.tx.question.create({
+      data: {
+        content: questionData.content,
+        isEdit: false,
+        quizId: quizId,
+        answers: {
+          create: questionData.answers.map((a) => ({
+            content: a.content,
+            isCorrect: a.isCorrect,
+          })),
+        },
+      },
+    })
+  }
+
+  deleteQuestions(questionId: string) {
+    return this.txHost.tx.question.delete({
+      where: { id: questionId },
+    })
+  }
+
+  deleteQuiz(quizId: string) {
+    return this.txHost.tx.quiz.delete({
       where: { id: quizId },
-      include: {
+    })
+  }
+
+  deleteAnswers(questionId: string, answerId: string) {
+    return this.txHost.tx.answer.delete({
+      where: { id: answerId, questionId },
+    })
+  }
+
+  createAnswer(questionId: string, content: string) {
+    return this.txHost.tx.answer.create({
+      data: {
+        content,
+        isCorrect: false,
+        questionId: questionId,
+      },
+    })
+  }
+
+  updateContentOfQuestion(questionId: string, content: string) {
+    return this.txHost.tx.question.update({
+      where: { id: questionId },
+      data: { content },
+    })
+  }
+
+  updateAnswer(answerId: string, questionId: string, content: string) {
+    return this.txHost.tx.answer.update({
+      where: { id: answerId, questionId },
+      data: { content },
+    })
+  }
+
+  updateAllAnswerIsFalse(questionId: string) {
+    return this.txHost.tx.answer.updateMany({
+      where: { questionId },
+      data: { isCorrect: false },
+    })
+  }
+
+  updateCorrectAnswer(answerId: string, questionId: string) {
+    return this.txHost.tx.answer.update({
+      where: { id: answerId, questionId },
+      data: { isCorrect: true },
+    })
+  }
+
+  updateIsEditOfQuestion(questionId: string, isEdit: boolean) {
+    return this.txHost.tx.question.update({
+      where: { id: questionId },
+      data: { isEdit },
+    })
+  }
+
+  findQuizForLearnerByLessonId(lessonId: string) {
+    return this.txHost.tx.quiz.findFirst({
+      where: { lessonId },
+      select: {
+        id: true,
+        lessonId: true,
         questions: {
-          include: {
-            answers: true,
+          where: { isEdit: false },
+          select: {
+            id: true,
+            content: true,
+            answers: {
+              select: {
+                id: true,
+                content: true,
+              },
+            },
           },
         },
       },
     })
   }
 
-  createQuestion(data: { quizId: string; content: string; answers: { content: string; isCorrect: boolean }[] }) {
-    return this.prisma.question.create({
-      data: {
-        content: data.content,
-        quizId: data.quizId,
-        answers: {
-          create: data.answers,
+  findQuizByLessonId(lessonId: string) {
+    return this.txHost.tx.quiz.findFirst({
+      where: { lessonId },
+      select: {
+        id: true,
+        lessonId: true,
+        questions: {
+          select: {
+            id: true,
+            isEdit: true,
+            content: true,
+            answers: {
+              select: {
+                id: true,
+                content: true,
+                isCorrect: true,
+              },
+            },
+          },
         },
       },
-      include: {
-        answers: true,
-      },
     })
   }
 
-  findQuestion(where: { id: string }) {
-    return this.prisma.question.findUnique({
-      where,
-    })
-  }
-
-  updateQuestion({
-    where,
-    data,
-  }: {
-    where: { id: string }
-    data: {
-      content?: string
-    }
-  }) {
-    return this.prisma.question.update({
-      where,
-      data,
-    })
-  }
-
-  deleteQuestion(where: { id: string }) {
-    return this.prisma.question.delete({
-      where,
-    })
-  }
-  findQuizById(id: string) {
-    return this.prisma.quiz.findUnique({
-      where: { id },
-    })
-  }
-
-  findQuizByChapter(chapterId: string) {
-    return this.prisma.quiz.findFirst({
-      where: {
-        chapterId,
-        type: 'CHAPTER',
-      },
-    })
-  }
-
-  findChapterWithAuthorId({ id, authorId }: { id: string; authorId: string }) {
-    return this.prisma.chapter.findFirst({
-      where: {
-        id,
-        course: {
-          creatorId: authorId,
-        },
-      },
+  createQuizAttempt(body: { userId: string; quizId: string; score: number; correct: number; total: number }) {
+    return this.txHost.tx.quizAttempt.create({
+      data: body,
     })
   }
 }

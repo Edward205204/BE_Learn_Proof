@@ -1,132 +1,89 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
-import { CreateLessonBodyType, LessonTypeEnum, VideoProviderEnumTS } from './lesson.model'
+import { ForbiddenException, Injectable } from '@nestjs/common'
+import { CreateLessonBodyType, ReorderLessonDto, UpdateLessonBodyType } from './lesson.model'
 import { LessonRepo } from './lesson.repo'
-import { QuizService } from '../quiz/quiz.service'
-
-const YOUTUBE_URL_REGEX = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/
-const YOUTUBE_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/
+import { LessonStrategyRegistry } from './strategies/lesson-strategy.registry'
+import { LessonNotFoundException } from './error.model'
+import { QuizLearnerService } from '../quiz/quiz-learner.service'
+import { Transactional } from '@nestjs-cls/transactional'
+import { LessonType } from 'src/generated/prisma/enums'
 
 @Injectable()
 export class LessonService {
   constructor(
     private readonly lessonRepo: LessonRepo,
-    private readonly quizService: QuizService,
+    private readonly registry: LessonStrategyRegistry,
+    private readonly quizLearnerService: QuizLearnerService,
   ) {}
 
-  async createLesson(body: CreateLessonBodyType, userId: string) {
-    const { type, chapterId } = body
+  async createLesson(body: CreateLessonBodyType) {
+    const lessonStrategy = this.registry.resolve(body.type)
+    return lessonStrategy.create(body)
+  }
 
-    await this.validateChapterAuthor(chapterId, userId)
-    const order = await this.getNextOrder(chapterId)
-
-    switch (type) {
-      case LessonTypeEnum.enum.VIDEO:
-        return this.createVideoLesson(body, order)
-      case LessonTypeEnum.enum.TEXT:
-        return this.createTextLesson(body, order)
-      case LessonTypeEnum.enum.QUIZ:
-        return this.createQuizLesson(body, order)
+  private calculateNewOrder(prevOrder: number | null, nextOrder: number | null) {
+    if (prevOrder !== null && nextOrder !== null) {
+      return (prevOrder + nextOrder) / 2
     }
-  }
-
-  private async validateChapterAuthor(chapterId: string, userId: string) {
-    const chapter = await this.lessonRepo.findChapterWithAuthorId({
-      id: chapterId,
-      authorId: userId,
-    })
-    if (!chapter) {
-      throw new BadRequestException('Chapter not found or you are not the author of this chapter')
+    if (prevOrder !== null) {
+      return prevOrder + 100
     }
-    return chapter
+    if (nextOrder !== null) {
+      return nextOrder / 2
+    }
+    return 1000
   }
 
-  private async getNextOrder(chapterId: string) {
-    const lastOrder = await this.lessonRepo.getLastLessonOrder(chapterId)
-    return lastOrder + 1
+  async reorderLesson(body: ReorderLessonDto) {
+    const prevLesson = await this.lessonRepo.findLessonOrder(body.prevLessonId)
+    const nextLesson = await this.lessonRepo.findLessonOrder(body.nextLessonId)
+    const newOrder = this.calculateNewOrder(prevLesson?.order ?? null, nextLesson?.order ?? null)
+    return this.lessonRepo.updateLessonOrder(body.lessonId, newOrder, body.targetChapterId)
   }
 
-  private async createVideoLesson(body: CreateLessonBodyType, order: number) {
-    const { title, shortDesc, fullDesc, chapterId, videoId, provider, duration, quizData } = body
-    const resolvedVideoId = this.extractYoutubeId(provider ?? 'YOUTUBE', videoId)
-
-    const lesson = await this.lessonRepo.createLesson({
-      type: 'VIDEO',
-      title,
-      shortDesc: shortDesc ?? null,
-      fullDesc: fullDesc ?? null,
-      order,
-      videoId: resolvedVideoId,
-      provider: provider ?? null,
-      duration: duration ?? null,
-      chapterId,
-      textContent: null,
-    })
-
-    return this.withOptionalQuiz(lesson, quizData)
+  updateLesson(lessonId: string, body: UpdateLessonBodyType) {
+    return this.lessonRepo.updateLesson(lessonId, body)
   }
 
-  private async createTextLesson(body: CreateLessonBodyType, order: number) {
-    const { title, shortDesc, fullDesc, chapterId, textContent, quizData } = body
-
-    const lesson = await this.lessonRepo.createLesson({
-      type: 'TEXT',
-      title,
-      shortDesc: shortDesc ?? null,
-      fullDesc: fullDesc ?? null,
-      order,
-      videoId: null,
-      provider: null,
-      duration: null,
-      chapterId,
-      textContent: textContent ?? null,
-    })
-
-    return this.withOptionalQuiz(lesson, quizData)
+  async deleteLesson(lessonId: string) {
+    await this.lessonRepo.deleteLesson(lessonId)
   }
 
-  private async withOptionalQuiz<T extends { id: string }>(
-    lesson: T,
-    quizData: { title?: string; description?: string } | undefined,
-  ) {
-    if (!quizData) return { lesson, quizWarning: null }
+  async getLessonDetail(lessonId: string) {
+    const lesson = await this.lessonRepo.findLessonDetail(lessonId)
+    if (!lesson) throw new LessonNotFoundException()
+    const strategy = this.registry.resolve(lesson.type)
+    return strategy.get(lesson)
+  }
 
-    try {
-      await this.quizService.createQuizForLesson(lesson.id, quizData)
-      return { lesson, quizWarning: null }
-    } catch {
+  async getLessonForLearner(lessonId: string) {
+    const lesson = await this.lessonRepo.findLessonDetail(lessonId)
+    if (!lesson) throw new LessonNotFoundException()
+
+    if (lesson.type === LessonType.QUIZ) {
+      const quiz = await this.quizLearnerService.getQuizForLesson(lesson.id)
       return {
-        lesson,
-        quizWarning: 'Tạo bài học thành công nhưng quá trình xử lý quiz có vấn đề, bạn có thể thêm lại sau.',
+        id: lesson.id,
+        title: lesson.title,
+        shortDesc: lesson.shortDesc,
+        type: 'QUIZ' as const,
+        order: lesson.order,
+        chapterId: lesson.chapterId,
+        quiz,
       }
     }
+
+    const strategy = this.registry.resolve(lesson.type)
+    return strategy.get(lesson)
   }
 
-  private createQuizLesson(body: CreateLessonBodyType, order: number) {
-    const { title, shortDesc, fullDesc, chapterId, quizData } = body
+  @Transactional()
+  async markLessonComplete(userId: string, lessonId: string, courseId: string) {
+    const enrolled = await this.lessonRepo.checkEnrolled(userId, courseId)
+    if (!enrolled) throw new ForbiddenException('Bạn chưa đăng ký khóa học này')
 
-    if (!quizData) {
-      throw new BadRequestException('Chưa có dữ liệu câu hỏi cho bài kiểm tra.')
-    }
+    await this.lessonRepo.upsertProgress(userId, lessonId)
 
-    return this.lessonRepo.createLessonWithQuiz(
-      {
-        title,
-        shortDesc: shortDesc ?? null,
-        fullDesc: fullDesc ?? null,
-        order,
-        chapterId,
-      },
-      quizData,
-    )
-  }
-
-  private extractYoutubeId(provider: VideoProviderEnumTS, videoId?: string): string | null {
-    if (!videoId) return null
-    if (provider !== 'YOUTUBE') return videoId
-
-    const match = videoId.match(YOUTUBE_URL_REGEX)
-    const idToValidate = match ? match[1] : videoId
-
-    return YOUTUBE_ID_REGEX.test(idToValidate) ? idToValidate : videoId
+    const { total, completed } = await this.lessonRepo.countCourseProgress(userId, courseId)
+    return { lessonId, completed: true, courseCompleted: total > 0 && total === completed }
   }
 }

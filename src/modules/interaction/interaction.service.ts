@@ -1,10 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common'
-import { Role } from 'src/generated/prisma/enums'
+
 import { InteractionRepo } from './interaction.repo'
+import { Role } from 'src/generated/prisma/enums'
 
 @Injectable()
 export class InteractionService {
-  constructor(private readonly repo: InteractionRepo) { }
+  constructor(private readonly repo: InteractionRepo) {}
 
   async getLessonComments(courseId: string, lessonId: string, page = 1, limit = 10) {
     const lesson = await this.repo.findLessonInCourse(courseId, lessonId)
@@ -195,5 +196,19 @@ export class InteractionService {
       rating,
       comment,
     })
+  }
+
+  async updateReview(courseId: string, userId: string, rating: number, comment?: string) {
+    const review = await this.repo.findReviewByUserAndCourse(userId, courseId)
+    if (!review) throw new NotFoundException('Ban chua danh gia khoa hoc nay')
+
+    return this.repo.updateReview(review.id, { rating, comment })
+  }
+
+  async deleteReview(courseId: string, userId: string) {
+    const review = await this.repo.findReviewByUserAndCourse(userId, courseId)
+    if (!review) throw new NotFoundException('Ban chua danh gia khoa hoc nay')
+
+    return this.repo.deleteReview(review.id)
   }
 }

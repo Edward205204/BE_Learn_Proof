@@ -49,7 +49,9 @@ export const CourseItemResponseSchema = z.object({
       avgRating: z.number(),
       totalStudents: z.number(),
     })
-    .nullable(),
+    .nullable()
+    .optional()
+    .default(null),
 })
 
 export const GetCoursesResponseSchema = z.object({
@@ -150,7 +152,9 @@ export const HomeCourseCardSchema = z.object({
       totalStudents: z.number(),
       avgInterestScore: z.number(),
     })
-    .nullable(),
+    .nullable()
+    .optional()
+    .default(null),
 })
 
 export const HomeSectionsResponseSchema = z.object({
@@ -323,24 +327,6 @@ export const GetCourseDetailManagerResponseSchema = z.object({
   chapters: z.array(CurriculumChapterSchema),
 })
 
-// ----
-
-// ----
-// Reorder
-// DTO cho Lesson
-export const ReorderLessonBodySchema = z
-  .object({
-    courseId: z.string(),
-    targetChapterId: z.string(),
-    // ID của bài đứng ngay phía TRÊN vị trí mới (null nếu là đầu danh sách)
-    prevLessonId: z.string().nullable(),
-    // ID của bài đứng ngay phía DƯỚI vị trí mới (null nếu là cuối danh sách)
-    nextLessonId: z.string().nullable(),
-    lessonId: z.string(),
-  })
-  .strict()
-
-// DTO cho Chapter
 export const ReorderChapterBodySchema = z
   .object({
     courseId: z.string(),
@@ -350,8 +336,21 @@ export const ReorderChapterBodySchema = z
   })
   .strict()
 
-export type ReorderLessonDto = z.infer<typeof ReorderLessonBodySchema>
 export type ReorderChapterDto = z.infer<typeof ReorderChapterBodySchema>
+
+export const RenameChapterBodySchema = z
+  .object({
+    title: z.string().min(1, 'Tên chương không được để trống').max(200),
+  })
+  .strict()
+export type RenameChapterBodyType = z.infer<typeof RenameChapterBodySchema>
+
+export const RenameChapterResponseSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  order: z.number(),
+  courseId: z.string(),
+})
 
 // ----
 export type SearchSuggestion = z.infer<typeof SearchSuggestionSchema>

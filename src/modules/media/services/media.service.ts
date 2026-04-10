@@ -1,5 +1,5 @@
 import { Injectable, Inject, BadRequestException, Logger } from '@nestjs/common';
-import { IStorageService } from '../interfaces/storage.interface';
+import { IStorageService } from '../storage.interface';
 import sharp = require('sharp');
 import { v4 as uuidv4 } from 'uuid';
 import { Stream } from 'stream';
@@ -11,7 +11,7 @@ export class MediaService {
 
   constructor(
     @Inject('IStorageService') private readonly storageService: IStorageService,
-  ) {}
+  ) { }
 
   private generateFilename(originalName: string, ext: string = '.webp'): string {
     return `${uuidv4()}${ext}`;
@@ -24,21 +24,21 @@ export class MediaService {
   async uploadImage(file: Express.Multer.File): Promise<string> {
     try {
       if (!file.mimetype.startsWith('image/')) {
-         throw new BadRequestException('File must be an image');
+        throw new BadRequestException('File must be an image');
       }
-      
+
       const filename = this.generateFilename(file.originalname);
       this.logger.log(`Processing general image: ${file.originalname}`);
 
       const optimizedBuffer = await sharp(file.buffer)
         .webp({ quality: 80, effort: 4 }) // Performance: WebP conversion
         .toBuffer();
-      
+
       return await this.storageService.uploadFile(optimizedBuffer, filename, 'image/webp');
     } catch (error) {
-       this.logger.error(`Error processing image ${file.originalname}:`, error);
-       if (error instanceof BadRequestException) throw error;
-       throw new BadRequestException('Failed to process image');
+      this.logger.error(`Error processing image ${file.originalname}:`, error);
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException('Failed to process image');
     }
   }
 
@@ -49,7 +49,7 @@ export class MediaService {
   async uploadAvatar(file: Express.Multer.File): Promise<string> {
     try {
       if (!file.mimetype.startsWith('image/')) {
-         throw new BadRequestException('File must be an image');
+        throw new BadRequestException('File must be an image');
       }
 
       const filename = this.generateFilename(file.originalname);
@@ -76,9 +76,9 @@ export class MediaService {
    * Even smaller representation of an avatar, e.g., for navbar or tight lists. Size 60x60.
    */
   async uploadAvatarThumbnail(file: Express.Multer.File): Promise<string> {
-      try {
+    try {
       if (!file.mimetype.startsWith('image/')) {
-         throw new BadRequestException('File must be an image');
+        throw new BadRequestException('File must be an image');
       }
 
       const filename = this.generateFilename(file.originalname);

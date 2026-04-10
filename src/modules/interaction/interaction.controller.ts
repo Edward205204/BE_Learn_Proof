@@ -1,6 +1,17 @@
 import { Controller, Get, Param, Query, Patch, Body, Post, Delete } from '@nestjs/common'
+import { ApiBearerAuth } from '@nestjs/swagger'
 import { InteractionService } from './interaction.service'
-import { PaginationDto, IdParamDto, LessonParamDto, ChangePinDto, CreateReviewDto, CreateCommentDto, UpdateCommentDto, CreateReplyDto, UpdateReplyDto } from './interaction.dto'
+import {
+  PaginationDto,
+  IdParamDto,
+  LessonParamDto,
+  ChangePinDto,
+  CreateReviewDto,
+  CreateCommentDto,
+  UpdateCommentDto,
+  CreateReplyDto,
+  UpdateReplyDto,
+} from './interaction.dto'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 import { TokenPayload } from 'src/shared/types/jwt.type'
 import { ZodSerializerDto } from 'nestjs-zod'
@@ -14,8 +25,9 @@ import {
 } from './interaction.model'
 
 @Controller()
+@ApiBearerAuth('access-token')
 export class InteractionController {
-  constructor(private readonly service: InteractionService) { }
+  constructor(private readonly service: InteractionService) {}
 
   // Lấy comment theo lesson
   @Get('courses/:courseId/lessons/:lessonId/comments')

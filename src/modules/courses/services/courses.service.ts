@@ -35,4 +35,16 @@ export class CourseService {
   getAllSlugs() {
     return this.repo.getAllSlugs()
   }
+
+  findCoursePublic(courseId: string) {
+    return this.repo.findCoursePublic(courseId)
+  }
+
+  getCourseProgress(userId: string, courseId: string) {
+    return this.repo.getCourseProgress(userId, courseId)
+  }
+
+  getProgressSummary(userId: string, courseId: string) {
+    return this.repo.getProgressSummary(userId, courseId)
+  }
 }

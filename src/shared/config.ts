@@ -13,6 +13,7 @@ if (!fs.existsSync(path.resolve('.env'))) {
 }
 
 const configSchema = z.object({
+  PORT: z.coerce.number().default(3000),
   APP_NAME: z.string(),
   DATABASE_URL: z.string(),
   ACCESS_TOKEN_SECRET: z.string(),
