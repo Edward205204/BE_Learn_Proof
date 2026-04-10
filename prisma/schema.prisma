@@ -64,6 +64,7 @@ model User {
   headline  String?
   website   String?
   role      Role      @default(LEARNER)
+  isBanned  Boolean   @default(false)
   deletedAt DateTime?
 
   coursesCreated Course[]          @relation("CourseCreator")
@@ -459,3 +460,17 @@ model WishlistItem {
 
   @@unique([userId, courseId])
 }
+
+// @Change thay đổi cho admin modules.Rules: Thêm bảng AuditLog để lưu vết thao tác của Admin
+model AuditLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String   // Ví dụ: UPDATE_ROLE, BAN_USER, DELETE_COURSE
+  entity    String   // Ví dụ: USER, COURSE
+  entityId  String   @map("entity_id")
+  details   Json?    // Dữ liệu chi tiết về thay đổi
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
+

@@ -8,7 +8,8 @@ import { AuthRepo } from './auth.repo'
 import { v4 as uuidv4 } from 'uuid'
 import { HashingService } from 'src/shared/services/hashing.service'
 import { AuthService } from './auth.service'
-import { User } from 'src/generated/prisma/client'
+import { User, Role } from 'src/generated/prisma/client'
+import { ADMIN_EMAILS } from './auth.util'
 
 @Injectable()
 export class GoogleService {
@@ -61,7 +62,7 @@ export class GoogleService {
       }
 
       // 3. Tìm hoặc Tạo user
-      let user: User | Pick<User, 'id' | 'email' | 'fullName' | 'avatar' | 'role'> = await this.authRepo.findUserUnique(
+      let user: User | Pick<User, 'id' | 'email' | 'fullName' | 'avatar' | 'role'> | null = await this.authRepo.findUserUnique(
         {
           email: data.email,
         },
@@ -76,12 +77,20 @@ export class GoogleService {
           fullName: data.name ?? '',
           password: hashedPassword,
           avatar: data.picture ?? '',
+          role: ADMIN_EMAILS.includes(data.email) ? Role.ADMIN : Role.LEARNER,
         })
+      }
+
+      // Tự động nâng cấp quyền Admin nếu email nằm trong danh sách
+      let role = user.role
+      if (ADMIN_EMAILS.includes(user.email) && role !== Role.ADMIN) {
+        await this.authRepo.updateUser({ where: { id: user.id }, data: { role: Role.ADMIN } })
+        role = Role.ADMIN
       }
 
       return await this.authService.generateAndSaveTokens({
         userId: user.id,
-        role: user.role,
+        role: role,
       })
     } catch (error) {
       console.error('Google Auth Error:', error)

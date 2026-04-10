@@ -28,7 +28,7 @@ import { MailService } from 'src/shared/services/mail.service'
 import { addMilliseconds } from 'date-fns'
 import ms, { StringValue } from 'ms'
 import envConfig from 'src/shared/config'
-import { generateOTP } from './auth.util'
+import { generateOTP, ADMIN_EMAILS } from './auth.util'
 import { TokenPayload } from 'src/shared/types/jwt.type'
 
 @Injectable()
@@ -65,7 +65,14 @@ export class AuthService {
     const isPasswordValid = await this.hashingService.compare(password, user.password)
     if (!isPasswordValid) throw new EmailOrPasswordInvalidException()
 
-    const { accessToken, refreshToken } = await this.generateAndSaveTokens({ userId: user.id, role: user.role })
+    // Tự động nâng cấp quyền Admin nếu email nằm trong danh sách
+    let role = user.role
+    if (ADMIN_EMAILS.includes(user.email) && role !== Role.ADMIN) {
+      await this.authRepo.updateUser({ where: { id: user.id }, data: { role: Role.ADMIN } })
+      role = Role.ADMIN
+    }
+
+    const { accessToken, refreshToken } = await this.generateAndSaveTokens({ userId: user.id, role })
 
     return {
       tokens: {
@@ -97,10 +104,13 @@ export class AuthService {
 
     const hashedPassword = await this.hashingService.hash(password)
 
+    const role = ADMIN_EMAILS.includes(email) ? Role.ADMIN : Role.LEARNER
+
     const newUser = await this.authRepo.createUser({
       email,
       fullName,
       password: hashedPassword,
+      role,
     })
     const { accessToken, refreshToken } = await this.generateAndSaveTokens({ userId: newUser.id, role: newUser.role })
     return {
@@ -234,4 +244,29 @@ export class AuthService {
       role: updated.role,
     }
   }
+
+  // --- API nội bộ dành cho Admin Module (Gắn với quy tắc Ghi DB) ---
+
+  async updateUserRole(userId: string, role: Role) {
+    const user = await this.authRepo.findUserUnique({ id: userId })
+    if (!user) throw new UserNotFoundException()
+    
+    const updated = await this.authRepo.updateUser({
+      where: { id: userId },
+      data: { role },
+    })
+    return { id: updated.id, role: updated.role }
+  }
+
+  async updateBanStatus(userId: string, isBanned: boolean) {
+    const user = await this.authRepo.findUserUnique({ id: userId })
+    if (!user) throw new UserNotFoundException()
+
+    const updated = await this.authRepo.updateUser({
+      where: { id: userId },
+      data: { isBanned },
+    })
+    return { id: updated.id, isBanned: updated.isBanned }
+  }
 }
+

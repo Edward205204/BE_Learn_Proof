@@ -20,6 +20,7 @@ const contentManager = {
   email: 'nguyentminhkhoa1@gmail.com',
   password: '123456@Aa',
 }
+
 async function createContentManager() {
   const saltRounds = 10
   const hashedPassword = await hash(contentManager.password, saltRounds)

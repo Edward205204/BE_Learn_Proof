@@ -19,6 +19,7 @@ import { ClsPluginTransactional } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 import { EnrollmentModule } from './modules/enrollment/enrollment.module'
 import { LessonModule } from './modules/lesson/lesson.module'
+import { AdminModule } from './modules/admin/admin.module'
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { LessonModule } from './modules/lesson/lesson.module'
     CartModule,
     WishlistModule,
     LessonModule,
+    AdminModule,
 
     ClsModule.forRoot({
       global: true,
