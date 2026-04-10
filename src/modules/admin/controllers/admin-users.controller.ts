@@ -5,6 +5,7 @@ import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 import { TokenPayload } from 'src/shared/types/jwt.type'
 import { Role } from 'src/generated/prisma/enums'
 import { AdminUsersService } from '../services/admin-users.service'
+import { checkAdmin } from '../admin.util'
 import { GetUsersQueryDTO, UpdateUserRoleBodyDTO, UpdateBanStatusBodyDTO } from '../admin.dto'
 import {
   AdminGetUsersResponseSchema,
@@ -18,37 +19,31 @@ import {
 export class AdminUsersController {
   constructor(private readonly adminUsersService: AdminUsersService) {}
 
-  private checkAdmin(user: TokenPayload) {
-    if (user.role !== Role.ADMIN) {
-      throw new ForbiddenException('Access denied. Administrator right is required.')
-    }
-  }
-
   @Get()
   @ZodSerializerDto(AdminGetUsersResponseSchema)
   getUsers(@Query() query: GetUsersQueryDTO, @ActiveUser() user: TokenPayload) {
-    this.checkAdmin(user)
+    checkAdmin(user)
     return this.adminUsersService.getUsers(query)
   }
 
   @Get(':id')
   @ZodSerializerDto(AdminUserDetailResponseSchema)
   getUserDetail(@Param('id') id: string, @ActiveUser() user: TokenPayload) {
-    this.checkAdmin(user)
+    checkAdmin(user)
     return this.adminUsersService.getUserDetail(id)
   }
 
   @Patch(':id/role')
   @ZodSerializerDto(AdminUpdateUserResponseSchema)
   updateUserRole(@Param('id') id: string, @Body() body: UpdateUserRoleBodyDTO, @ActiveUser() user: TokenPayload) {
-    this.checkAdmin(user)
+    checkAdmin(user)
     return this.adminUsersService.updateUserRole(id, body, user.userId)
   }
 
   @Patch(':id/ban')
   @ZodSerializerDto(AdminUpdateUserResponseSchema)
   updateBanStatus(@Param('id') id: string, @Body() body: UpdateBanStatusBodyDTO, @ActiveUser() user: TokenPayload) {
-    this.checkAdmin(user)
+    checkAdmin(user)
     return this.adminUsersService.updateBanStatus(id, body, user.userId)
   }
 }

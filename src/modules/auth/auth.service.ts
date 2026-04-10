@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 import {
   AuthResType,
   ForgotPasswordBodyType,
@@ -30,6 +30,7 @@ import ms, { StringValue } from 'ms'
 import envConfig from 'src/shared/config'
 import { generateOTP, ADMIN_EMAILS } from './auth.util'
 import { TokenPayload } from 'src/shared/types/jwt.type'
+import { SystemSettingsService } from 'src/shared/services/system-settings.service'
 
 @Injectable()
 export class AuthService {
@@ -38,6 +39,7 @@ export class AuthService {
     private readonly tokenService: TokenService,
     private readonly hashingService: HashingService,
     private readonly mailService: MailService,
+    private readonly systemSettingsService: SystemSettingsService,
   ) {}
 
   async generateAndSaveTokens(payload: { userId: string; role: Role }) {
@@ -93,6 +95,11 @@ export class AuthService {
   }
 
   async register(body: RegisterBodyType): Promise<AuthResType> {
+    const allowRegistration = await this.systemSettingsService.getSetting('ALLOW_REGISTRATION', true)
+    if (!allowRegistration) {
+      throw new ForbiddenException('Registration is currently disabled by administrator.')
+    }
+
     const { email, fullName, password, code } = body
     const user = await this.authRepo.findUserUnique({ email })
     if (user) throw new EmailAlreadyExistsException()
@@ -122,6 +129,11 @@ export class AuthService {
   }
 
   async sendOtpForRegister(body: SendOtpBodyType) {
+    const allowRegistration = await this.systemSettingsService.getSetting('ALLOW_REGISTRATION', true)
+    if (!allowRegistration) {
+      throw new ForbiddenException('Registration is currently disabled by administrator.')
+    }
+
     const { email } = body
     const user = await this.authRepo.findUserUnique({ email })
 

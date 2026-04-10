@@ -9,8 +9,9 @@ import { APP_GUARD } from '@nestjs/core'
 import { AuthenticationGuard } from 'src/shared/guards/authentication.guard'
 import { MailService } from './services/mail.service'
 import { SlugService } from './services/slug.service'
+import { SystemSettingsService } from './services/system-settings.service'
 
-const sharedServices = [PrismaService, HashingService, TokenService, MailService, SlugService]
+const sharedServices = [PrismaService, HashingService, TokenService, MailService, SlugService, SystemSettingsService]
 
 @Global()
 @Module({
