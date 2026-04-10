@@ -49,7 +49,9 @@ export const CourseItemResponseSchema = z.object({
       avgRating: z.number(),
       totalStudents: z.number(),
     })
-    .nullable(),
+    .nullable()
+    .optional()
+    .default(null),
 })
 
 export const GetCoursesResponseSchema = z.object({
@@ -150,7 +152,9 @@ export const HomeCourseCardSchema = z.object({
       totalStudents: z.number(),
       avgInterestScore: z.number(),
     })
-    .nullable(),
+    .nullable()
+    .optional()
+    .default(null),
 })
 
 export const HomeSectionsResponseSchema = z.object({
@@ -333,6 +337,20 @@ export const ReorderChapterBodySchema = z
   .strict()
 
 export type ReorderChapterDto = z.infer<typeof ReorderChapterBodySchema>
+
+export const RenameChapterBodySchema = z
+  .object({
+    title: z.string().min(1, 'Tên chương không được để trống').max(200),
+  })
+  .strict()
+export type RenameChapterBodyType = z.infer<typeof RenameChapterBodySchema>
+
+export const RenameChapterResponseSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  order: z.number(),
+  courseId: z.string(),
+})
 
 // ----
 export type SearchSuggestion = z.infer<typeof SearchSuggestionSchema>

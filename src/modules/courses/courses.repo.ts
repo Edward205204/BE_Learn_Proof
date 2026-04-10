@@ -381,6 +381,14 @@ export class CourseRepo {
     })
   }
 
+  renameChapter(chapterId: string, title: string) {
+    return this.txHost.tx.chapter.update({
+      where: { id: chapterId },
+      data: { title },
+      select: { id: true, title: true, order: true, courseId: true },
+    })
+  }
+
   findChapterUnique(payload: { id: string; creatorId: string }) {
     return this.txHost.tx.chapter.findFirst({
       where: {

@@ -121,4 +121,10 @@ export class CoursesManagerService {
     const data = await this.courseRepo.getListCoursesManager(query, userId)
     return data
   }
+
+  async renameChapter(chapterId: string, title: string, creatorId: string) {
+    const chapter = await this.courseRepo.findChapterUnique({ id: chapterId, creatorId })
+    if (!chapter) throw new CourseNotMatchException()
+    return this.courseRepo.renameChapter(chapterId, title)
+  }
 }

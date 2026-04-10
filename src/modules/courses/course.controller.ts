@@ -12,6 +12,7 @@ import {
   GetSearchSuggestionsQueryDTO,
   QueryCourseDetailByIdDTO,
   UpdateCourseBaseInfoDto,
+  RenameChapterDto,
 } from './courses.dto'
 import { IsPublic } from 'src/shared/decorators/auth.decorator'
 import {
@@ -24,6 +25,7 @@ import {
   GetSearchSuggestionsResponseSchema,
   HomeSectionsResponseSchema,
   GetCourseDetailManagerResponseSchema,
+  RenameChapterResponseSchema,
 } from './courses.response'
 import { ReorderChapterDto } from './courses.model'
 import { ZodSerializerDto } from 'nestjs-zod'
@@ -116,6 +118,17 @@ export class CourseController {
   @ApiBearerAuth('access-token')
   async reorderChapters(@Body() body: ReorderChapterDto, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.reorderChapters(body, user.userId)
+  }
+
+  @Patch('chapters/:chapterId')
+  @ApiBearerAuth('access-token')
+  @ZodSerializerDto(RenameChapterResponseSchema)
+  renameChapter(
+    @Param('chapterId') chapterId: string,
+    @Body() body: RenameChapterDto,
+    @ActiveUser() user: TokenPayload,
+  ) {
+    return this.courseManagerService.renameChapter(chapterId, body.title, user.userId)
   }
 
   @Get('manager/my-courses')

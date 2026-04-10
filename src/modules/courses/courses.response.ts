@@ -8,4 +8,5 @@ export {
   GetSearchSuggestionsResponseSchema,
   HomeSectionsResponseSchema,
   GetCourseDetailManagerResponseSchema,
+  RenameChapterResponseSchema,
 } from './courses.model'
