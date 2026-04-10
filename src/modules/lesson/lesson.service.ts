@@ -1,11 +1,11 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { CreateLessonBodyType, ReorderLessonDto, UpdateLessonBodyType } from './lesson.model'
-import { LessonType } from 'src/generated/prisma/enums'
 import { LessonRepo } from './lesson.repo'
 import { LessonStrategyRegistry } from './strategies/lesson-strategy.registry'
 import { LessonNotFoundException } from './error.model'
 import { QuizLearnerService } from '../quiz/quiz-learner.service'
 import { Transactional } from '@nestjs-cls/transactional'
+import { LessonType } from 'src/generated/prisma/enums'
 
 @Injectable()
 export class LessonService {

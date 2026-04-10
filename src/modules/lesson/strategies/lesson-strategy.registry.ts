@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
-import { LessonType } from 'src/generated/prisma/enums'
 import { LessonStrategy } from './lesson.strategy.interface'
 import { VideoLessonStrategy } from './video-lesson.strategy'
 import { TextLessonStrategy } from './text-lesson.strategy'
 import { QuizLessonStrategy } from './quiz-lesson.strategy'
+import { LessonType } from 'src/generated/prisma/enums'
 
 @Injectable()
 export class LessonStrategyRegistry {

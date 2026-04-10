@@ -1,4 +1,4 @@
-import { Role } from 'src/generated/prisma'
+import { Role } from 'src/generated/prisma/enums'
 import { z } from 'zod'
 
 const EmailSchema = z
