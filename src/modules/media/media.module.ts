@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { MediaController } from './media.controller';
-import { MediaService } from './services/media.service';
-import { LocalStorageService } from './services/local-storage.service';
+import { Module } from '@nestjs/common'
+import { MediaController } from './media.controller'
+import { MediaService } from './services/media.service'
+import { LocalStorageService } from './services/local-storage.service'
 
 @Module({
   controllers: [MediaController],

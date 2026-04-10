@@ -40,7 +40,7 @@ export class AdminUsersService {
   async updateUserRole(id: string, body: UpdateUserRoleBodyType, adminId: string) {
     // Check user exist
     const user = await this.getUserDetail(id)
-    
+
     // Gọi AuthService để thực hiện việc ghi DB (module Auth own user role)
     const result = await this.authService.updateUserRole(id, body.role)
 
@@ -52,7 +52,7 @@ export class AdminUsersService {
 
   async updateBanStatus(id: string, body: UpdateBanStatusBodyType, adminId: string) {
     const user = await this.getUserDetail(id)
-    
+
     // Gọi AuthService để thực hiện việc ghi DB
     const result = await this.authService.updateBanStatus(id, body.isBanned)
 

@@ -19,7 +19,9 @@ export const CartItemSchema = z.object({
   course: CartItemCourseSchema,
 })
 
-export const CartResponseSchema = z.object({
-  id: z.string(),
-  items: z.array(CartItemSchema),
-}).nullable()
+export const CartResponseSchema = z
+  .object({
+    id: z.string(),
+    items: z.array(CartItemSchema),
+  })
+  .nullable()

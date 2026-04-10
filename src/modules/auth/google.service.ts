@@ -62,11 +62,10 @@ export class GoogleService {
       }
 
       // 3. Tìm hoặc Tạo user
-      let user: User | Pick<User, 'id' | 'email' | 'fullName' | 'avatar' | 'role'> | null = await this.authRepo.findUserUnique(
-        {
+      let user: User | Pick<User, 'id' | 'email' | 'fullName' | 'avatar' | 'role'> | null =
+        await this.authRepo.findUserUnique({
           email: data.email,
-        },
-      )
+        })
 
       if (!user) {
         const randomPassword = uuidv4()

@@ -103,10 +103,12 @@ export const ReviewItemSchema = z.object({
   courseId: z.string(),
   createdAt: z.date(),
   user: UserInteractionSchema.optional(),
-  course: z.object({
-    id: z.string(),
-    title: z.string(),
-  }).optional(),
+  course: z
+    .object({
+      id: z.string(),
+      title: z.string(),
+    })
+    .optional(),
 })
 
 export const GetReviewsResponseSchema = z.object({

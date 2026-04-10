@@ -1,13 +1,13 @@
 import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '../src/generated/prisma/client'
 import {
-  PrismaClient,
   Role,
   CourseLevel,
   CourseStatus,
   LessonType,
   VideoProviderEnum,
   PaymentStatus,
-} from '../src/generated/prisma/client'
+} from '../src/generated/prisma/enums'
 import envConfig from '../src/shared/config'
 import { Pool } from 'pg'
 import { hash } from 'bcrypt'

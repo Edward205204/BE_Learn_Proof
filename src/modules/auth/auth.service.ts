@@ -250,7 +250,7 @@ export class AuthService {
   async updateUserRole(userId: string, role: Role) {
     const user = await this.authRepo.findUserUnique({ id: userId })
     if (!user) throw new UserNotFoundException()
-    
+
     const updated = await this.authRepo.updateUser({
       where: { id: userId },
       data: { role },
@@ -269,4 +269,3 @@ export class AuthService {
     return { id: updated.id, isBanned: updated.isBanned }
   }
 }
-

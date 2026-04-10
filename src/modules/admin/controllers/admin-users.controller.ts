@@ -40,22 +40,14 @@ export class AdminUsersController {
 
   @Patch(':id/role')
   @ZodSerializerDto(AdminUpdateUserResponseSchema)
-  updateUserRole(
-    @Param('id') id: string,
-    @Body() body: UpdateUserRoleBodyDTO,
-    @ActiveUser() user: TokenPayload,
-  ) {
+  updateUserRole(@Param('id') id: string, @Body() body: UpdateUserRoleBodyDTO, @ActiveUser() user: TokenPayload) {
     this.checkAdmin(user)
     return this.adminUsersService.updateUserRole(id, body, user.userId)
   }
 
   @Patch(':id/ban')
   @ZodSerializerDto(AdminUpdateUserResponseSchema)
-  updateBanStatus(
-    @Param('id') id: string,
-    @Body() body: UpdateBanStatusBodyDTO,
-    @ActiveUser() user: TokenPayload,
-  ) {
+  updateBanStatus(@Param('id') id: string, @Body() body: UpdateBanStatusBodyDTO, @ActiveUser() user: TokenPayload) {
     this.checkAdmin(user)
     return this.adminUsersService.updateBanStatus(id, body, user.userId)
   }
