@@ -3,9 +3,12 @@ import { ApiBearerAuth } from '@nestjs/swagger'
 import { WishlistService } from './wishlist.service'
 import { ActiveUser } from '../../shared/decorators/active-user.decorator'
 import { TokenPayload } from '../../shared/types/jwt.type'
+import { ZodSerializerDto } from 'nestjs-zod'
+import { WishlistResponseSchema } from './wishlist.response'
 
 @Controller('wishlist')
 @ApiBearerAuth('access-token')
+@ZodSerializerDto(WishlistResponseSchema)
 export class WishlistController {
   constructor(private readonly wishlistService: WishlistService) {}
 

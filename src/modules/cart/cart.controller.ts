@@ -3,9 +3,12 @@ import { ApiBearerAuth } from '@nestjs/swagger'
 import { CartService } from './cart.service'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 import { TokenPayload } from 'src/shared/types/jwt.type'
+import { ZodSerializerDto } from 'nestjs-zod'
+import { CartResponseSchema } from './cart.response'
 
 @Controller('cart')
 @ApiBearerAuth('access-token')
+@ZodSerializerDto(CartResponseSchema)
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 

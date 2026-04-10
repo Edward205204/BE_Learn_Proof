@@ -5,6 +5,13 @@ import { QuizLearnerService } from './quiz-learner.service'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 import { TokenPayload } from 'src/shared/types/jwt.type'
 import { AddQuestionDto, AddAnswerDto, EditContentDto, ChooseCorrectAnswerDto, SubmitQuizDto } from './quiz.dto'
+import { ZodSerializerDto } from 'nestjs-zod'
+import {
+  QuizBasicResponseSchema,
+  QuizSubmitResponseSchema,
+  QuizResultResponseSchema,
+  QuizCheckAnswerResponseSchema,
+} from './quiz.response'
 
 @Controller('quiz')
 @ApiBearerAuth('access-token')
@@ -17,11 +24,13 @@ export class QuizController {
   // CMS
 
   @Post(':quizId/questions')
+  @ZodSerializerDto(QuizBasicResponseSchema)
   addQuestion(@Param('quizId') quizId: string, @Body() body: AddQuestionDto, @ActiveUser() user: TokenPayload) {
     return this.quizCmsService.addQuestionForQuiz(quizId, body, user.userId)
   }
 
   @Patch(':quizId/questions/:questionId')
+  @ZodSerializerDto(QuizBasicResponseSchema)
   editQuestion(
     @Param('quizId') quizId: string,
     @Param('questionId') questionId: string,
@@ -32,6 +41,7 @@ export class QuizController {
   }
 
   @Delete(':quizId/questions/:questionId')
+  @ZodSerializerDto(QuizBasicResponseSchema)
   deleteQuestion(
     @Param('quizId') quizId: string,
     @Param('questionId') questionId: string,
@@ -41,6 +51,7 @@ export class QuizController {
   }
 
   @Post(':quizId/questions/:questionId/answers')
+  @ZodSerializerDto(QuizBasicResponseSchema)
   addAnswer(
     @Param('quizId') quizId: string,
     @Param('questionId') questionId: string,
@@ -51,6 +62,7 @@ export class QuizController {
   }
 
   @Patch(':quizId/questions/:questionId/answers/:answerId')
+  @ZodSerializerDto(QuizBasicResponseSchema)
   editAnswer(
     @Param('quizId') quizId: string,
     @Param('questionId') questionId: string,
@@ -62,6 +74,7 @@ export class QuizController {
   }
 
   @Delete(':quizId/questions/:questionId/answers/:answerId')
+  @ZodSerializerDto(QuizBasicResponseSchema)
   deleteAnswer(
     @Param('quizId') quizId: string,
     @Param('questionId') questionId: string,
@@ -72,6 +85,7 @@ export class QuizController {
   }
 
   @Patch(':quizId/questions/:questionId/correct-answer')
+  @ZodSerializerDto(QuizBasicResponseSchema)
   chooseCorrectAnswer(
     @Param('quizId') quizId: string,
     @Param('questionId') questionId: string,
@@ -82,6 +96,7 @@ export class QuizController {
   }
 
   @Patch(':quizId/questions/:questionId/finish')
+  @ZodSerializerDto(QuizBasicResponseSchema)
   finishEditQuestion(
     @Param('quizId') quizId: string,
     @Param('questionId') questionId: string,
@@ -91,6 +106,7 @@ export class QuizController {
   }
 
   @Delete(':quizId')
+  @ZodSerializerDto(QuizBasicResponseSchema)
   deleteQuiz(@Param('quizId') quizId: string, @ActiveUser() user: TokenPayload) {
     return this.quizCmsService.deleteQuiz(quizId, user.userId)
   }
@@ -98,11 +114,13 @@ export class QuizController {
   // Learner
 
   @Post(':quizId/submit')
+  @ZodSerializerDto(QuizSubmitResponseSchema)
   submitQuiz(@Param('quizId') quizId: string, @Body() body: SubmitQuizDto, @ActiveUser() user: TokenPayload) {
     return this.quizLearnerService.submitQuiz(user.userId, quizId, body.submission)
   }
 
   @Get(':quizId/check-answer/:questionId')
+  @ZodSerializerDto(QuizCheckAnswerResponseSchema)
   checkAnswer(
     @Param('quizId') quizId: string,
     @Param('questionId') questionId: string,
@@ -112,6 +130,7 @@ export class QuizController {
   }
 
   @Get(':quizId/result')
+  @ZodSerializerDto(QuizResultResponseSchema)
   getQuizResult(@Param('quizId') quizId: string, @ActiveUser() user: TokenPayload) {
     return this.quizLearnerService.getQuizResult(user.userId, quizId)
   }

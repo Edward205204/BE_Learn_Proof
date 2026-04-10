@@ -23,9 +23,9 @@ import {
   GetCoursesResponseSchema,
   GetSearchSuggestionsResponseSchema,
   HomeSectionsResponseSchema,
-  ReorderChapterDto,
   GetCourseDetailManagerResponseSchema,
-} from './courses.model'
+} from './courses.response'
+import { ReorderChapterDto } from './courses.model'
 import { ZodSerializerDto } from 'nestjs-zod'
 import { CoursesManagerService } from './services/courses-manager.service'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'

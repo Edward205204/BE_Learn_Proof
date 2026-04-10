@@ -93,3 +93,8 @@ export type QuizLessonLearnerResponse = {
 }
 
 export type LessonLearnerResponse = VideoLessonDetailResponse | TextLessonDetailResponse | QuizLessonLearnerResponse
+
+export const LessonBasicResponseSchema = z.any()
+export const LessonDetailResponseSchema = z.any()
+export const LessonLearnerResponseSchema = z.any()
+export const MarkLessonCompleteResponseSchema = z.any()

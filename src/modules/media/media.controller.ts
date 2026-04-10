@@ -15,6 +15,8 @@ import { MediaService } from './services/media.service'
 import { Response } from 'express'
 import { IsPublic } from 'src/shared/decorators/auth.decorator'
 import 'multer'
+import { ZodSerializerDto } from 'nestjs-zod'
+import { UploadMediaResponseSchema } from './media.response'
 
 @Controller('media')
 export class MediaController {
@@ -27,6 +29,7 @@ export class MediaController {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
     }),
   )
+  @ZodSerializerDto(UploadMediaResponseSchema)
   async uploadImage(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file provided')
     const filename = await this.mediaService.uploadImage(file)
@@ -40,6 +43,7 @@ export class MediaController {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
     }),
   )
+  @ZodSerializerDto(UploadMediaResponseSchema)
   async uploadAvatar(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file provided')
     const filename = await this.mediaService.uploadAvatar(file)
@@ -53,6 +57,7 @@ export class MediaController {
       limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit for avatars
     }),
   )
+  @ZodSerializerDto(UploadMediaResponseSchema)
   async uploadAvatarThumbnail(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file provided')
     const filename = await this.mediaService.uploadAvatarThumbnail(file)

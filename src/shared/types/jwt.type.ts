@@ -1,4 +1,4 @@
-import { Role } from 'src/generated/prisma/enums'
+import { Role } from 'src/generated/prisma'
 
 export interface TokenPayload {
   userId: string
