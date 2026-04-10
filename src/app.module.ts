@@ -61,13 +61,14 @@ import { LessonModule } from './modules/lesson/lesson.module'
       provide: APP_PIPE,
       useClass: CustomZodValidationPipe,
     },
+    // tạm ẩn.
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: TransformInterceptor,
+    // },
     {
       provide: APP_INTERCEPTOR,
       useClass: ZodSerializerInterceptor,
-    },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: TransformInterceptor,
     },
   ],
 })
