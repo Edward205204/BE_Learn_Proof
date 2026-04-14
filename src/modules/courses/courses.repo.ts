@@ -75,7 +75,7 @@ export class CourseRepo {
       },
       include: {
         chapters: {
-          orderBy: { order: 'asc' }, // Lấy ra luôn danh sách đã sắp xếp
+          orderBy: [{ order: 'asc' }, { id: 'asc' }], // Lấy ra luôn danh sách đã sắp xếp
         },
       },
     })
@@ -178,13 +178,13 @@ export class CourseRepo {
         },
         // --- Curriculum (KHÔNG lấy videoUrl / textContent / contentAI) ---
         chapters: {
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
           select: {
             id: true,
             title: true,
             order: true,
             lessons: {
-              orderBy: { order: 'asc' },
+              orderBy: [{ order: 'asc' }, { id: 'asc' }],
               select: {
                 id: true,
                 title: true,
@@ -316,7 +316,7 @@ export class CourseRepo {
       where: body,
       include: {
         chapters: {
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
         },
       },
     })
@@ -341,7 +341,7 @@ export class CourseRepo {
       },
       include: {
         chapters: {
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
         },
       },
     })
@@ -362,7 +362,26 @@ export class CourseRepo {
       },
       include: {
         chapters: {
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
+        },
+      },
+    })
+  }
+
+  completeCourse(courseId: string, creatorId: string) {
+    return this.txHost.tx.course.update({
+      where: {
+        id_creatorId: {
+          id: courseId,
+          creatorId,
+        },
+      },
+      data: {
+        isCompleted: true,
+      },
+      include: {
+        chapters: {
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
         },
       },
     })
@@ -457,6 +476,7 @@ export class CourseRepo {
         isFree: true,
         price: true,
         originalPrice: true,
+        isCompleted: true,
         publishedLessonsCount: true,
         totalPlannedLessons: true,
         expectedDays: true,
@@ -469,13 +489,13 @@ export class CourseRepo {
           },
         },
         chapters: {
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
           select: {
             id: true,
             title: true,
             order: true,
             lessons: {
-              orderBy: { order: 'asc' },
+              orderBy: [{ order: 'asc' }, { id: 'asc' }],
               select: {
                 id: true,
                 title: true,
@@ -507,13 +527,13 @@ export class CourseRepo {
   getCourseProgress(userId: string, courseId: string) {
     return this.txHost.tx.chapter.findMany({
       where: { courseId },
-      orderBy: { order: 'asc' },
+      orderBy: [{ order: 'asc' }, { id: 'asc' }],
       select: {
         id: true,
         title: true,
         order: true,
         lessons: {
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
           select: {
             id: true,
             title: true,
@@ -555,9 +575,25 @@ export class CourseRepo {
     })
   }
 
+  async countCoursesByCreatorAndStatus(creatorId: string, status: CourseStatus) {
+    return this.txHost.tx.course.count({
+      where: { creatorId, status },
+    })
+  }
+
   async countEnrollmentsByCourse(courseId: string) {
     return this.txHost.tx.enrollment.count({
       where: { courseId },
+    })
+  }
+
+  async countLessonsByCourse(courseId: string) {
+    return this.txHost.tx.lesson.count({
+      where: {
+        chapter: {
+          courseId,
+        },
+      },
     })
   }
 

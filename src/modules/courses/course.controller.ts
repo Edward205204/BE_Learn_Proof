@@ -105,6 +105,13 @@ export class CourseController {
     return this.courseManagerService.publishCourse(id, body, user.userId)
   }
 
+  @Patch(':courseId/complete')
+  @ApiBearerAuth('access-token')
+  @ZodSerializerDto(CreateCourseFullResponseSchema)
+  completeCourse(@Param('courseId') courseId: string, @ActiveUser() user: TokenPayload) {
+    return this.courseManagerService.completeCourse(courseId, user.userId)
+  }
+
   @Patch('base-info/:id')
   @ApiBearerAuth('access-token')
   @ZodSerializerDto(CreateCourseFullResponseSchema)
