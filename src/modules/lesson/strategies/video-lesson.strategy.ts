@@ -75,7 +75,7 @@ export class VideoLessonStrategy implements LessonStrategy {
 
   private buildVideoUrl(videoId: string, provider: LessonProvider): string {
     if (provider === LessonProvider.YOUTUBE) {
-      return `https://www.youtube.com/embed/${videoId}`
+      return `https://www.youtube.com/watch?v=${videoId}`
     }
     // TODO: BUNNY CDN URL khi có library ID
     return videoId
