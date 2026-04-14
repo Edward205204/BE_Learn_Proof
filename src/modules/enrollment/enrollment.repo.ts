@@ -9,9 +9,11 @@ export class EnrollmentRepo {
 
   // ─── Write: chỉ enrollment + transaction ───────────────────────────────────
 
-  createEnrollment(courseId: string, userId: string) {
-    return this.txHost.tx.enrollment.create({
-      data: { userId, courseId },
+  upsertEnrollment(courseId: string, userId: string) {
+    return this.txHost.tx.enrollment.upsert({
+      where: { userId_courseId: { userId, courseId } },
+      create: { userId, courseId },
+      update: {},
     })
   }
 
