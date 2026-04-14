@@ -37,6 +37,13 @@ enum PaymentStatus {
   FAILED
 }
 
+enum CertMintStatus {
+  PENDING
+  MINTING
+  COMPLETED
+  FAILED
+}
+
 enum QuizType {
   LESSON
   CHAPTER
@@ -55,8 +62,9 @@ enum VideoProviderEnum {
 
 // thuộc modules user - start
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
+  id            String    @id @default(cuid())
+  email         String    @unique
+  walletAddress String?   @unique
   password  String
   fullName  String
   avatar    String?
@@ -386,14 +394,17 @@ model Transaction {
 }
 
 model Certificate {
-  id              String   @id @default(cuid())
+  id              String         @id @default(cuid())
   userId          String
   courseId        String
-  issuedAt        DateTime @default(now())
-  certificateHash String   @unique
-  txHash          String?
-  course          Course   @relation(fields: [courseId], references: [id])
-  user            User     @relation(fields: [userId], references: [id])
+  issuedAt        DateTime       @default(now())
+  certificateHash String         @unique
+  tokenId         String?        @unique 
+  ipfsHash        String?        
+  txHash          String?        
+  status          CertMintStatus @default(PENDING) 
+  course          Course         @relation(fields: [courseId], references: [id])
+  user            User           @relation(fields: [userId], references: [id])
 }
 
 // model CourseOverallAnalytics {
