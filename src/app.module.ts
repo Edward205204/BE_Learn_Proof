@@ -19,6 +19,8 @@ import { ClsPluginTransactional } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 import { EnrollmentModule } from './modules/enrollment/enrollment.module'
 import { LessonModule } from './modules/lesson/lesson.module'
+import { BlockchainModule } from './modules/blockchain/blockchain.module'
+import { IpfsModule } from './modules/ipfs/ipfs.module'
 
 @Module({
   imports: [
@@ -46,6 +48,8 @@ import { LessonModule } from './modules/lesson/lesson.module'
     }),
 
     EnrollmentModule,
+    BlockchainModule,
+    IpfsModule,
   ],
   controllers: [],
   providers: [
