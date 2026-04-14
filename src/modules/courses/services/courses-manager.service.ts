@@ -15,7 +15,6 @@ import {
   CourseNotFoundException,
 } from '../error.model'
 import { CourseStatus } from 'src/generated/prisma/enums'
-import { EnrollmentService } from 'src/modules/enrollment/enrollment.service'
 import { UpdateCourseStatusDto } from '../courses.dto'
 
 @Injectable()
@@ -23,7 +22,6 @@ export class CoursesManagerService {
   constructor(
     private readonly courseRepo: CourseRepo,
     private readonly slugService: SlugService,
-    private readonly enrollmentService: EnrollmentService,
   ) {}
 
   async createCourse(body: CreateCourseSt1Dto, creatorId: string) {
@@ -139,7 +137,8 @@ export class CoursesManagerService {
 
     if (!course) throw new CourseNotFoundException()
 
-    const enrollCount = await this.enrollmentService.countEnrollmentsByCourse(courseId)
+    // TODO
+    const enrollCount = await this.courseRepo.countEnrollmentsByCourse(courseId)
 
     const currentStatus = course.status
     const nextStatus = body.status

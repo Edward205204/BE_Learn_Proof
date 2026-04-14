@@ -42,7 +42,4 @@ export class EnrollmentService {
     if (enrollment.completedAt) return enrollment
     await this.enrollRepo.updateEnrollmentCompleted(userId, courseId)
   }
-  async countEnrollmentsByCourse(courseId: string) {
-    return this.enrollRepo.countEnrollmentsByCourse(courseId)
-  }
 }

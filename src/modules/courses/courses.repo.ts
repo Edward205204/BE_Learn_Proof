@@ -549,9 +549,15 @@ export class CourseRepo {
       data: { status },
     })
   }
-   async countPublishedCoursesByCreator(creatorId: string) {
+  async countPublishedCoursesByCreator(creatorId: string) {
     return this.txHost.tx.course.count({
       where: { creatorId, status: CourseStatus.PUBLISHED },
+    })
+  }
+
+  async countEnrollmentsByCourse(courseId: string) {
+    return this.txHost.tx.enrollment.count({
+      where: { courseId },
     })
   }
 }
