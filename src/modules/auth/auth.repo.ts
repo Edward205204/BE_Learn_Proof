@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { RefreshToken, User, VerificationCode, VerificationCodeType } from 'src/generated/prisma/client'
+import { PrismaClient, RefreshToken, User, VerificationCode, VerificationCodeType } from 'src/generated/prisma/client'
 
 @Injectable()
 export class AuthRepo {
-  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma>) {}
+  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
 
   findUserUnique(body: { email: string } | { id: string }) {
     return this.txHost.tx.user.findUnique({

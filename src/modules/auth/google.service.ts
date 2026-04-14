@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { HashingService } from 'src/shared/services/hashing.service'
 import { AuthService } from './auth.service'
 import { User } from 'src/generated/prisma/client'
+import { StringFieldUpdateOperationsInput } from 'src/generated/prisma/models'
 
 @Injectable()
 export class GoogleService {
@@ -61,27 +62,27 @@ export class GoogleService {
       }
 
       // 3. Tìm hoặc Tạo user
-      let user: User | Pick<User, 'id' | 'email' | 'fullName' | 'avatar' | 'role'> = await this.authRepo.findUserUnique(
-        {
-          email: data.email,
-        },
-      )
+      const user = await this.authRepo.findUserUnique({
+        email: data.email,
+      })
 
-      if (!user) {
-        const randomPassword = uuidv4()
-        const hashedPassword = await this.hashingService.hash(randomPassword)
+      const finalUser =
+        user ||
+        (await (async () => {
+          const randomPassword = uuidv4()
+          const hashedPassword = await this.hashingService.hash(randomPassword)
 
-        user = await this.authRepo.createUser({
-          email: data.email,
-          fullName: data.name ?? '',
-          password: hashedPassword,
-          avatar: data.picture ?? '',
-        })
-      }
+          return await this.authRepo.createUser({
+            email: data.email as string,
+            fullName: data.name ?? '',
+            password: hashedPassword,
+            avatar: data.picture ?? '',
+          })
+        })())
 
       return await this.authService.generateAndSaveTokens({
-        userId: user.id,
-        role: user.role,
+        userId: finalUser.id,
+        role: finalUser.role,
       })
     } catch (error) {
       console.error('Google Auth Error:', error)
