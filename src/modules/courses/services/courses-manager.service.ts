@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import {
   CreateCourseSt1Dto,
   CreateCourseSt2Dto,
@@ -15,12 +15,15 @@ import {
   CourseNotFoundException,
 } from '../error.model'
 import { CourseStatus } from 'src/generated/prisma/enums'
+import { EnrollmentService } from 'src/modules/enrollment/enrollment.service'
+import { UpdateCourseStatusDto } from '../courses.dto'
 
 @Injectable()
 export class CoursesManagerService {
   constructor(
     private readonly courseRepo: CourseRepo,
     private readonly slugService: SlugService,
+    private readonly enrollmentService: EnrollmentService,
   ) {}
 
   async createCourse(body: CreateCourseSt1Dto, creatorId: string) {
@@ -126,5 +129,45 @@ export class CoursesManagerService {
     const chapter = await this.courseRepo.findChapterUnique({ id: chapterId, creatorId })
     if (!chapter) throw new CourseNotMatchException()
     return this.courseRepo.renameChapter(chapterId, title)
+  }
+
+  async updateCourseStatus(courseId: string, body: UpdateCourseStatusDto, creatorId: string) {
+    const course = await this.courseRepo.getCourseUnique({
+      id: courseId,
+      creatorId,
+    })
+
+    if (!course) throw new CourseNotFoundException()
+
+    const enrollCount = await this.enrollmentService.countEnrollmentsByCourse(courseId)
+
+    const currentStatus = course.status
+    const nextStatus = body.status
+
+    // ❌ DRAFT → ARCHIVED
+    if (currentStatus === CourseStatus.DRAFT && nextStatus === CourseStatus.ARCHIVED) {
+      throw new BadRequestException('Không thể chuyển từ DRAFT sang ARCHIVED')
+    }
+
+    // ❌ ARCHIVED → DRAFT
+    if (currentStatus === CourseStatus.ARCHIVED && nextStatus === CourseStatus.DRAFT) {
+      throw new BadRequestException('Không thể chuyển từ ARCHIVED về DRAFT')
+    }
+
+    // ❌ nếu đã có enroll → không được về DRAFT
+    if (nextStatus === CourseStatus.DRAFT && enrollCount > 0) {
+      throw new BadRequestException('Khóa học đã có người đăng ký, không thể chuyển về DRAFT')
+    }
+
+    // 🚨 RULE QUAN TRỌNG: phải có ít nhất 3 khóa published trước đó
+    if (currentStatus === CourseStatus.DRAFT && nextStatus === CourseStatus.PUBLISHED) {
+      const publishedCount = await this.courseRepo.countPublishedCoursesByCreator(creatorId)
+
+      if (publishedCount < 3) {
+        throw new BadRequestException('Bạn cần publish ít nhất 3 khóa học trước đó để mở khóa tính năng này')
+      }
+    }
+
+    return this.courseRepo.updateCourseStatus(courseId, nextStatus)
   }
 }

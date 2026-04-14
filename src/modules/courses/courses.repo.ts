@@ -543,4 +543,15 @@ export class CourseRepo {
       progressPercent: total > 0 ? Math.round((completed / total) * 100) : 0,
     }
   }
+  async updateCourseStatus(courseId: string, status: CourseStatus) {
+    return this.txHost.tx.course.update({
+      where: { id: courseId },
+      data: { status },
+    })
+  }
+   async countPublishedCoursesByCreator(creatorId: string) {
+    return this.txHost.tx.course.count({
+      where: { creatorId, status: CourseStatus.PUBLISHED },
+    })
+  }
 }

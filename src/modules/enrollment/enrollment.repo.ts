@@ -81,4 +81,9 @@ export class EnrollmentRepo {
       progressPercent: total > 0 ? Math.round((completed / total) * 100) : 0,
     }
   }
+  async countEnrollmentsByCourse(courseId: string) {
+    return this.txHost.tx.enrollment.count({
+      where: { courseId },
+    })
+  }
 }
