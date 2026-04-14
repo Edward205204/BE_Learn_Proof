@@ -13,8 +13,8 @@ import {
   QueryCourseDetailById,
   RenameChapterBodySchema,
   UpdateCourseStatusSchema,
+  DeleteChapterSchema,
 } from './courses.model'
-import { CourseStatus } from 'src/generated/prisma/enums'
 
 export class GetCoursesQueryDTO extends createZodDto(GetCoursesQuery) {}
 export class GetCourseDetailQueryDTO extends createZodDto(GetCourseDetailQuery) {}
@@ -34,3 +34,4 @@ export class RenameChapterDto extends createZodDto(RenameChapterBodySchema) {}
 
 export class GetMyCoursesManagerQueryDTO extends createZodDto(GetMyCoursesManagerQuerySchema) {}
 export class UpdateCourseStatusDto extends createZodDto(UpdateCourseStatusSchema) {}
+export class DeleteChapterDto extends createZodDto(DeleteChapterSchema) {}

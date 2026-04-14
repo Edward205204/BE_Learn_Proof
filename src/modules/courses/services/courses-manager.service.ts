@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common'
 import {
   CreateCourseSt1Dto,
   CreateCourseSt2Dto,
   CreateCourseSt3Dto,
+  DeleteChapterBodySchemaType,
   GetMyCoursesManagerQueryType,
   ReorderChapterDto,
 } from '../courses.model'
@@ -168,5 +169,21 @@ export class CoursesManagerService {
     }
 
     return this.courseRepo.updateCourseStatus(courseId, nextStatus)
+  }
+
+  async deleteChapter(body: DeleteChapterBodySchemaType & { userId: string }) {
+    const { userId, chapterId, coursesId } = body
+    const chapter = await this.courseRepo.findChapterByUserId(userId, chapterId, coursesId)
+    if (!chapter) {
+      throw new ForbiddenException('Chương không tồn tại hoặc bạn không có quyền.')
+    }
+
+    if (chapter._count.lessons > 0) {
+      throw new BadRequestException(
+        `Không thể xóa chương vì đang có ${chapter._count.lessons} bài học bên trong. Hãy xóa các bài học trước.`,
+      )
+    }
+
+    return this.courseRepo.deleteChapter(chapterId)
   }
 }

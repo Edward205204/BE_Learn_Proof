@@ -356,6 +356,13 @@ export const UpdateCourseStatusSchema = z.object({
   status: z.nativeEnum(CourseStatus),
 })
 
+export const DeleteChapterSchema = z.object({
+  chapterId: z.string(),
+  coursesId: z.string(),
+})
+
+export type DeleteChapterBodySchemaType = z.infer<typeof DeleteChapterSchema>
+
 // ----
 export type SearchSuggestion = z.infer<typeof SearchSuggestionSchema>
 export type GetSearchSuggestionsQueryType = z.infer<typeof GetSearchSuggestionsQuery>

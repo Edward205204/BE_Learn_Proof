@@ -560,4 +560,29 @@ export class CourseRepo {
       where: { courseId },
     })
   }
+
+  async findChapterByUserId(userId: string, chapterId: string, courseId: string) {
+    return this.txHost.tx.chapter.findUnique({
+      where: {
+        id: chapterId,
+        courseId: courseId,
+        course: {
+          creatorId: userId,
+        },
+      },
+      include: {
+        _count: {
+          select: {
+            lessons: true, // Trả về số lượng bài học trong chapter này
+          },
+        },
+      },
+    })
+  }
+
+  deleteChapter(chapterId: string) {
+    return this.txHost.tx.chapter.delete({
+      where: { id: chapterId },
+    })
+  }
 }
