@@ -46,7 +46,7 @@ export const ReplyItemSchema = z.object({
   userId: z.string(),
   isDeleted: z.boolean(),
   createdAt: z.date(),
-  updatedAt: z.date(),
+  updatedAt: z.date().optional(),
   user: UserInteractionSchema.optional(),
 })
 
@@ -59,7 +59,7 @@ export const CommentItemSchema = z.object({
   isPinned: z.boolean(),
   isDeleted: z.boolean(),
   createdAt: z.date(),
-  updatedAt: z.date(),
+  updatedAt: z.date().optional(),
   user: UserInteractionSchema.optional(),
   replies: z.array(ReplyItemSchema).optional(),
 })
