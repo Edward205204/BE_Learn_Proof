@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
+import { Prisma } from 'src/generated/prisma/client'
 import { EnrollmentRepo } from './enrollment.repo'
 import { Transactional } from '@nestjs-cls/transactional'
 
@@ -6,17 +7,25 @@ import { Transactional } from '@nestjs-cls/transactional'
 export class EnrollmentService {
   constructor(private readonly enrollRepo: EnrollmentRepo) {}
 
-  @Transactional()
   async createEnrollment(courseId: string, userId: string) {
     const course = await this.enrollRepo.findCourseForEnroll(courseId)
     if (!course) throw new NotFoundException('Khóa học không tồn tại hoặc chưa được publish')
 
     if (!course.isFree) {
       const transaction = await this.enrollRepo.checkUserPaymentCompleted(userId, courseId)
-      if (!transaction) throw new BadRequestException('Bạn chưa thanh toán khóa học này')
+      if (!transaction) {
+        throw new BadRequestException(`Bạn chưa thanh toán khóa học này (ID: ${courseId})`)
+      }
     }
 
-    return this.enrollRepo.createEnrollment(courseId, userId)
+    try {
+      return await this.enrollRepo.upsertEnrollment(courseId, userId)
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return this.enrollRepo.getEnrollmentUnique(userId, courseId)
+      }
+      throw error
+    }
   }
 
   async getMyEnrollments(userId: string) {

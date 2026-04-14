@@ -113,24 +113,24 @@ export const CourseDetailResponseSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   // --- Relations ---
-  category: z.object({
-    name: z.string(),
-    slug: z.string(),
-  }),
-  creator: z.object({
-    id: z.string(),
-    fullName: z.string(),
-    avatar: z.string().nullable(),
-  }),
-  chapters: z.array(CurriculumChapterSchema),
-  overallAnalytics: z
+  category: z
     .object({
-      totalStudents: z.number().int(),
-      avgRating: z.number(),
-      completionRate: z.number(),
+      name: z.string(),
+      slug: z.string(),
     })
-    .nullable(),
-  reviews: z.array(CourseReviewSchema),
+    .nullable()
+    .optional(),
+  creator: z
+    .object({
+      id: z.string(),
+      fullName: z.string(),
+      avatar: z.string().nullable(),
+    })
+    .nullable()
+    .optional(),
+  chapters: z.array(CurriculumChapterSchema).optional().default([]),
+  overallAnalytics: z.any().optional().default(null),
+  reviews: z.array(CourseReviewSchema).optional().default([]),
 })
 
 /** Card nhỏ dùng chung cho tất cả các section trên trang chủ */
