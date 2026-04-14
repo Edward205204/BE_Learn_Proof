@@ -1,3 +1,4 @@
+import { CourseStatus } from 'src/generated/prisma/enums'
 import { z } from 'zod'
 
 export const GetCoursesQuery = z
@@ -350,6 +351,9 @@ export const RenameChapterResponseSchema = z.object({
   title: z.string(),
   order: z.number(),
   courseId: z.string(),
+})
+export const UpdateCourseStatusSchema = z.object({
+  status: z.nativeEnum(CourseStatus),
 })
 
 // ----

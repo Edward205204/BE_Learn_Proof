@@ -21,7 +21,6 @@ export class EnrollmentService {
 
   async getMyEnrollments(userId: string) {
     const enrollments = await this.enrollRepo.getMyEnrollmentsByUserId(userId)
-
     const progressList = await Promise.all(
       enrollments.map((e) => this.enrollRepo.getProgressSummary(userId, e.course.id)),
     )
@@ -42,5 +41,8 @@ export class EnrollmentService {
     if (!enrollment) throw new ForbiddenException('Bạn chưa đăng ký khóa học này')
     if (enrollment.completedAt) return enrollment
     await this.enrollRepo.updateEnrollmentCompleted(userId, courseId)
+  }
+  async countEnrollmentsByCourse(courseId: string) {
+    return this.enrollRepo.countEnrollmentsByCourse(courseId)
   }
 }
