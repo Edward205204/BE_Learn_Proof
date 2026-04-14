@@ -21,7 +21,6 @@ export class EnrollmentService {
 
   async getMyEnrollments(userId: string) {
     const enrollments = await this.enrollRepo.getMyEnrollmentsByUserId(userId)
-
     const progressList = await Promise.all(
       enrollments.map((e) => this.enrollRepo.getProgressSummary(userId, e.course.id)),
     )

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import { CourseService } from './services/courses.service'
 import {
@@ -13,6 +13,8 @@ import {
   QueryCourseDetailByIdDTO,
   UpdateCourseBaseInfoDto,
   RenameChapterDto,
+  UpdateCourseStatusDto,
+  DeleteChapterDto,
 } from './courses.dto'
 import { IsPublic } from 'src/shared/decorators/auth.decorator'
 import {
@@ -164,5 +166,25 @@ export class CourseController {
   @ZodSerializerDto(CreateCourseFullResponseSchema)
   getCourseBaseInfo(@Param() param: GetCourseParamByIdDTO, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.getCourseBaseInfo(param.id, user.userId)
+  }
+  @Patch(':courseId/status')
+  @Patch(':courseId/status')
+  @ApiBearerAuth('access-token')
+  updateCourseStatus(
+    @Param('courseId') courseId: string,
+    @Body() body: UpdateCourseStatusDto,
+    @ActiveUser() user: TokenPayload,
+  ) {
+    return this.courseManagerService.updateCourseStatus(courseId, body, user.userId)
+  }
+
+  @Delete(':courseId/delete/chapter/:chapterId')
+  @ApiBearerAuth('access-token')
+  deleteChapter(@Param('courseId') param: DeleteChapterDto, @ActiveUser() user: TokenPayload) {
+    return this.courseManagerService.deleteChapter({
+      userId: user.userId,
+      coursesId: param.coursesId,
+      chapterId: param.chapterId,
+    })
   }
 }

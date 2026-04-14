@@ -543,4 +543,46 @@ export class CourseRepo {
       progressPercent: total > 0 ? Math.round((completed / total) * 100) : 0,
     }
   }
+  async updateCourseStatus(courseId: string, status: CourseStatus) {
+    return this.txHost.tx.course.update({
+      where: { id: courseId },
+      data: { status },
+    })
+  }
+  async countPublishedCoursesByCreator(creatorId: string) {
+    return this.txHost.tx.course.count({
+      where: { creatorId, status: CourseStatus.PUBLISHED },
+    })
+  }
+
+  async countEnrollmentsByCourse(courseId: string) {
+    return this.txHost.tx.enrollment.count({
+      where: { courseId },
+    })
+  }
+
+  async findChapterByUserId(userId: string, chapterId: string, courseId: string) {
+    return this.txHost.tx.chapter.findUnique({
+      where: {
+        id: chapterId,
+        courseId: courseId,
+        course: {
+          creatorId: userId,
+        },
+      },
+      include: {
+        _count: {
+          select: {
+            lessons: true, // Trả về số lượng bài học trong chapter này
+          },
+        },
+      },
+    })
+  }
+
+  deleteChapter(chapterId: string) {
+    return this.txHost.tx.chapter.delete({
+      where: { id: chapterId },
+    })
+  }
 }

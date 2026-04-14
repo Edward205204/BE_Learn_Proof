@@ -12,6 +12,8 @@ import {
   UpdateCourseBaseInfoDtoSchema,
   QueryCourseDetailById,
   RenameChapterBodySchema,
+  UpdateCourseStatusSchema,
+  DeleteChapterSchema,
 } from './courses.model'
 
 export class GetCoursesQueryDTO extends createZodDto(GetCoursesQuery) {}
@@ -31,3 +33,5 @@ export class ReorderChapterDto extends createZodDto(ReorderChapterBodySchema) {}
 export class RenameChapterDto extends createZodDto(RenameChapterBodySchema) {}
 
 export class GetMyCoursesManagerQueryDTO extends createZodDto(GetMyCoursesManagerQuerySchema) {}
+export class UpdateCourseStatusDto extends createZodDto(UpdateCourseStatusSchema) {}
+export class DeleteChapterDto extends createZodDto(DeleteChapterSchema) {}
