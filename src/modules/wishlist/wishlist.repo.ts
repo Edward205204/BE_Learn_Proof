@@ -11,6 +11,9 @@ export class WishlistRepo {
     return this.txHost.tx.wishlistItem.findMany({
       where: { userId },
       select: {
+        id: true,
+        userId: true,
+        courseId: true,
         course: {
           select: {
             id: true,

@@ -40,6 +40,7 @@ export class EnrollmentRepo {
   }
 
   getEnrollmentUnique(userId: string, courseId: string) {
+    if (!userId || !courseId) return null
     return this.txHost.tx.enrollment.findUnique({
       where: { userId_courseId: { userId, courseId } },
     })

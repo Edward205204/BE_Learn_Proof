@@ -216,8 +216,6 @@ export class CourseRepo {
     })
   }
   async getHomeSections() {
-    // Chạy 4 query song song để tối ưu latency
-
     const baseSelect = {
       id: true,
       title: true,
@@ -233,29 +231,37 @@ export class CourseRepo {
       creator: { select: { fullName: true, avatar: true } },
     } as const
 
+    const publishedWhere = { status: CourseStatus.PUBLISHED }
+
     const [trending, topSelling, newest, topRated] = await Promise.all([
+      // Trending: khoá học có nhiều enrollment nhất
       this.txHost.tx.course.findMany({
-        where: { status: CourseStatus.PUBLISHED },
+        where: publishedWhere,
+        orderBy: { enrollments: { _count: 'desc' } },
+        take: 5,
+        select: baseSelect,
+      }),
+
+      // Top Selling: khoá học có nhiều transaction COMPLETED nhất
+      this.txHost.tx.course.findMany({
+        where: publishedWhere,
+        orderBy: { transactions: { _count: 'desc' } },
+        take: 10,
+        select: baseSelect,
+      }),
+
+      // Newest: khoá học mới tạo/publish gần đây nhất
+      this.txHost.tx.course.findMany({
+        where: publishedWhere,
         orderBy: { createdAt: 'desc' },
         take: 5,
         select: baseSelect,
       }),
 
+      // Top Rated: khoá học có nhiều review và review mới nhất
       this.txHost.tx.course.findMany({
-        where: { status: CourseStatus.PUBLISHED },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-        select: baseSelect,
-      }),
-      this.txHost.tx.course.findMany({
-        where: { status: CourseStatus.PUBLISHED },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        select: baseSelect,
-      }),
-      this.txHost.tx.course.findMany({
-        where: { status: CourseStatus.PUBLISHED },
-        orderBy: { createdAt: 'desc' },
+        where: publishedWhere,
+        orderBy: [{ reviews: { _count: 'desc' } }, { createdAt: 'desc' }],
         take: 5,
         select: baseSelect,
       }),

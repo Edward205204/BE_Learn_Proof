@@ -41,6 +41,7 @@ export class EnrollmentService {
   }
 
   async getEnrollmentStatus(userId: string, courseId: string) {
+    if (!courseId || !userId) return false
     const enrollment = await this.enrollRepo.getEnrollmentUnique(userId, courseId)
     return !!enrollment
   }

@@ -18,6 +18,7 @@ export class CartService {
   }
 
   async addToCart(userId: string, courseId: string) {
+    if (!courseId) throw new BadRequestException('ID khóa học không hợp lệ')
     const [course, enrolled] = await Promise.all([
       this.courseService.findCoursePublic(courseId),
       this.enrollmentService.getEnrollmentStatus(userId, courseId),

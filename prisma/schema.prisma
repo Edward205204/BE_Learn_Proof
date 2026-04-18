@@ -64,6 +64,7 @@ model User {
   headline  String?
   website   String?
   role      Role      @default(LEARNER)
+  isOnboardingCompleted Boolean @default(false)
   deletedAt DateTime?
 
   coursesCreated Course[]          @relation("CourseCreator")

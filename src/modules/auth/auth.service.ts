@@ -81,6 +81,7 @@ export class AuthService {
         headline: user.headline ?? null,
         website: user.website ?? null,
         role: user.role,
+        isOnboardingCompleted: user.isOnboardingCompleted,
       },
     }
   }
@@ -208,6 +209,7 @@ export class AuthService {
       headline: user.headline,
       website: user.website,
       role: user.role,
+      isOnboardingCompleted: user.isOnboardingCompleted,
     }
   }
 
@@ -221,6 +223,7 @@ export class AuthService {
         ...(data.bio !== undefined && { bio: data.bio || null }),
         ...(data.headline !== undefined && { headline: data.headline || null }),
         ...(data.website !== undefined && { website: data.website || null }),
+        ...(data.isOnboardingCompleted !== undefined && { isOnboardingCompleted: data.isOnboardingCompleted }),
       },
     })
     return {
@@ -232,6 +235,7 @@ export class AuthService {
       headline: updated.headline,
       website: updated.website,
       role: updated.role,
+      isOnboardingCompleted: updated.isOnboardingCompleted,
     }
   }
 }

@@ -37,6 +37,7 @@ export class AuthRepo {
         headline: true,
         website: true,
         role: true,
+        isOnboardingCompleted: true,
       },
     })
   }
