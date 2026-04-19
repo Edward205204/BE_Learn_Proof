@@ -36,6 +36,7 @@ export const CourseItemResponseSchema = z.object({
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
   shortDesc: z.string(),
   createdAt: z.date(),
+  isEnrolled: z.boolean().optional().default(false),
   // Quan hệ kèm theo
   category: z.object({
     name: z.string(),
@@ -112,6 +113,7 @@ export const CourseDetailResponseSchema = z.object({
   expectedDays: z.number().int().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  isEnrolled: z.boolean().optional().default(false),
   // --- Relations ---
   category: z
     .object({
@@ -145,6 +147,7 @@ export const HomeCourseCardSchema = z.object({
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
   shortDesc: z.string(),
   createdAt: z.date(),
+  isEnrolled: z.boolean().optional().default(false),
   category: z.object({ name: z.string(), slug: z.string() }),
   creator: z.object({ fullName: z.string(), avatar: z.string().nullable() }),
   overallAnalytics: z

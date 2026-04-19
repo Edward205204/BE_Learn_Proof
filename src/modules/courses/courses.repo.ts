@@ -83,7 +83,7 @@ export class CourseRepo {
 
   // ----- Public catalog -----
 
-  async getCoursesCatalog(query: z.infer<typeof GetCoursesQuery>) {
+  async getCoursesCatalog(query: z.infer<typeof GetCoursesQuery>, userId?: string) {
     const { page, limit, category, level, price, search, sort } = query
     const skip = (page - 1) * limit
     const sortMapping: Record<string, Prisma.CourseOrderByWithRelationInput[]> = {
@@ -104,7 +104,7 @@ export class CourseRepo {
       }),
     }
 
-    const [courses, total] = await Promise.all([
+    const [courses, total, userEnrollments] = await Promise.all([
       this.txHost.tx.course.findMany({
         where,
         skip,
@@ -123,9 +123,18 @@ export class CourseRepo {
         },
       }),
       this.txHost.tx.course.count({ where }),
+      userId
+        ? this.txHost.tx.enrollment.findMany({
+            where: { userId, course: where },
+            select: { courseId: true },
+          })
+        : Promise.resolve([]),
     ])
+
+    const enrolledIds = new Set(userEnrollments.map((e) => e.courseId))
+
     return {
-      items: courses,
+      items: courses.map((c) => ({ ...c, isEnrolled: enrolledIds.has(c.id) })),
       meta: {
         total,
         page,
@@ -135,8 +144,8 @@ export class CourseRepo {
     }
   }
 
-  getCourseDetail(slug: string) {
-    return this.txHost.tx.course.findUnique({
+  async getCourseDetail(slug: string, userId?: string) {
+    const course = await this.txHost.tx.course.findUnique({
       where: {
         slug,
         status: CourseStatus.PUBLISHED,
@@ -212,10 +221,26 @@ export class CourseRepo {
             },
           },
         },
+        // --- Check Enrollment ---
+        ...(userId && {
+          enrollments: {
+            where: { userId },
+            select: { id: true },
+            take: 1,
+          },
+        }),
       },
     })
+
+    if (!course) return null
+
+    const { enrollments, ...rest } = course as any
+    return {
+      ...rest,
+      isEnrolled: enrollments ? enrollments.length > 0 : false,
+    }
   }
-  async getHomeSections() {
+  async getHomeSections(userId?: string) {
     const baseSelect = {
       id: true,
       title: true,
@@ -233,7 +258,7 @@ export class CourseRepo {
 
     const publishedWhere = { status: CourseStatus.PUBLISHED }
 
-    const [trending, topSelling, newest, topRated] = await Promise.all([
+    const [trending, topSelling, newest, topRated, userEnrollments] = await Promise.all([
       // Trending: khoá học có nhiều enrollment nhất
       this.txHost.tx.course.findMany({
         where: publishedWhere,
@@ -265,9 +290,24 @@ export class CourseRepo {
         take: 5,
         select: baseSelect,
       }),
+      userId
+        ? this.txHost.tx.enrollment.findMany({
+            where: { userId },
+            select: { courseId: true },
+          })
+        : Promise.resolve([]),
     ])
 
-    return { trending, topSelling, newest, topRated }
+    const enrolledIds = new Set(userEnrollments.map((e) => e.courseId))
+
+    const mapWithEnrollment = (courses: any[]) => courses.map((c) => ({ ...c, isEnrolled: enrolledIds.has(c.id) }))
+
+    return {
+      trending: mapWithEnrollment(trending),
+      topSelling: mapWithEnrollment(topSelling),
+      newest: mapWithEnrollment(newest),
+      topRated: mapWithEnrollment(topRated),
+    }
   }
 
   getCategories() {
@@ -625,6 +665,17 @@ export class CourseRepo {
   deleteChapter(chapterId: string) {
     return this.txHost.tx.chapter.delete({
       where: { id: chapterId },
+    })
+  }
+
+  deleteCourse(courseId: string, creatorId: string) {
+    return this.txHost.tx.course.delete({
+      where: {
+        id_creatorId: {
+          id: courseId,
+          creatorId,
+        },
+      },
     })
   }
 }

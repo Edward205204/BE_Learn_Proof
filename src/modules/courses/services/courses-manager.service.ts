@@ -210,4 +210,19 @@ export class CoursesManagerService {
 
     return this.courseRepo.deleteChapter(chapterId)
   }
+
+  async deleteCourse(courseId: string, creatorId: string) {
+    const course = await this.courseRepo.getCourseUnique({ creatorId, id: courseId })
+    if (!course) throw new CourseNotFoundException()
+
+    // Kiểm tra xem khóa học đã có người đăng ký chưa
+    const enrollCount = await this.courseRepo.countEnrollmentsByCourse(courseId)
+    if (enrollCount > 0) {
+      throw new BadRequestException(
+        `Không thể xóa khóa học vì đã có ${enrollCount} học viên đăng ký. Hãy chuyển sang trạng thái Lưu trữ (ARCHIVED) thay vì xóa.`,
+      )
+    }
+
+    return this.courseRepo.deleteCourse(courseId, creatorId)
+  }
 }
