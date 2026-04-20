@@ -692,52 +692,52 @@ async function seedRealData() {
   })
 
   // TRANSACTION
-  await prisma.transaction.createMany({
-    data: [
-      {
-        userId: u3.id,
-        courseId: course1.id,
-        amount: 299000,
-        status: PaymentStatus.COMPLETED,
-        provider: 'MOMO',
-      },
-      {
-        userId: u4.id,
-        courseId: course1.id,
-        amount: 299000,
-        status: PaymentStatus.COMPLETED,
-        provider: 'VNPAY',
-      },
-      {
-        userId: u5.id,
-        courseId: course2.id,
-        amount: 399000,
-        status: PaymentStatus.COMPLETED,
-        provider: 'ZALOPAY',
-      },
-      {
-        userId: u6.id,
-        courseId: course2.id,
-        amount: 399000,
-        status: PaymentStatus.PENDING,
-        provider: 'VNPAY',
-      },
-      {
-        userId: u7.id,
-        courseId: course3.id,
-        amount: 499000,
-        status: PaymentStatus.COMPLETED,
-        provider: 'MOMO',
-      },
-      {
-        userId: u8.id,
-        courseId: course3.id,
-        amount: 499000,
-        status: PaymentStatus.FAILED,
-        provider: 'VNPAY',
-      },
-    ],
-  })
+  // await prisma.transaction.createMany({
+  //   data: [
+  //     {
+  //       userId: u3.id,
+  //       courseId: course1.id,
+  //       amount: 299000,
+  //       status: PaymentStatus.COMPLETED,
+  //       provider: 'MOMO',
+  //     },
+  //     {
+  //       userId: u4.id,
+  //       courseId: course1.id,
+  //       amount: 299000,
+  //       status: PaymentStatus.COMPLETED,
+  //       provider: 'VNPAY',
+  //     },
+  //     {
+  //       userId: u5.id,
+  //       courseId: course2.id,
+  //       amount: 399000,
+  //       status: PaymentStatus.COMPLETED,
+  //       provider: 'ZALOPAY',
+  //     },
+  //     {
+  //       userId: u6.id,
+  //       courseId: course2.id,
+  //       amount: 399000,
+  //       status: PaymentStatus.PENDING,
+  //       provider: 'VNPAY',
+  //     },
+  //     {
+  //       userId: u7.id,
+  //       courseId: course3.id,
+  //       amount: 499000,
+  //       status: PaymentStatus.COMPLETED,
+  //       provider: 'MOMO',
+  //     },
+  //     {
+  //       userId: u8.id,
+  //       courseId: course3.id,
+  //       amount: 499000,
+  //       status: PaymentStatus.FAILED,
+  //       provider: 'VNPAY',
+  //     },
+  //   ],
+  // })
 
   // CERTIFICATE
   await prisma.certificate.createMany({

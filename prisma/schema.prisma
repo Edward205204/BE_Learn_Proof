@@ -55,17 +55,17 @@ enum VideoProviderEnum {
 
 // thuộc modules user - start
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  password  String
-  fullName  String
-  avatar    String?
-  bio       String?   @db.Text
-  headline  String?
-  website   String?
-  role      Role      @default(LEARNER)
-  isOnboardingCompleted Boolean @default(false)
-  deletedAt DateTime?
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  password              String
+  fullName              String
+  avatar                String?
+  bio                   String?   @db.Text
+  headline              String?
+  website               String?
+  role                  Role      @default(LEARNER)
+  isOnboardingCompleted Boolean   @default(false)
+  deletedAt             DateTime?
 
   coursesCreated Course[]          @relation("CourseCreator")
   enrollments    Enrollment[]
@@ -359,17 +359,17 @@ model Reply {
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  rating    Int      @default(5)
-  comment   String?
-  userId    String
-  courseId  String
+  id       String  @id @default(cuid())
+  rating   Int     @default(5)
+  comment  String?
+  userId   String
+  courseId String
 
   instructorReply   String?   @db.Text
   instructorReplyAt DateTime?
 
-  learnerReply      String?   @db.Text
-  learnerReplyAt    DateTime?
+  learnerReply   String?   @db.Text
+  learnerReplyAt DateTime?
 
   createdAt DateTime @default(now())
   course    Course   @relation(fields: [courseId], references: [id])
@@ -378,16 +378,31 @@ model Review {
   @@unique([userId, courseId])
 }
 
+enum PaymentProvider {
+  VNPAY
+}
+
 model Transaction {
-  id        String        @id @default(cuid())
-  userId    String
-  courseId  String
-  amount    Float
-  status    PaymentStatus @default(PENDING)
-  provider  String
-  createdAt DateTime      @default(now())
-  course    Course        @relation(fields: [courseId], references: [id])
-  user      User          @relation(fields: [userId], references: [id])
+  id       String          @id @default(cuid())
+  userId   String
+  courseId String
+  amount   Float
+  status   PaymentStatus   @default(PENDING)
+  provider PaymentProvider @default(VNPAY)
+
+  txnRef       String    // mã bạn gửi sang VNPay
+  vnpTxnNo     String? // mã giao dịch VNPay trả về
+  responseCode String? // vnp_ResponseCode
+  payDate      DateTime? // thời điểm thanh toán thành công
+
+  createdAt DateTime @default(now())
+  course    Course   @relation(fields: [courseId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([courseId, createdAt])
+  @@index([status, createdAt])
+  @@index([txnRef])
 }
 
 model Certificate {

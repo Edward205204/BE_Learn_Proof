@@ -21,6 +21,7 @@ import { EnrollmentModule } from './modules/enrollment/enrollment.module'
 import { LessonModule } from './modules/lesson/lesson.module'
 import { BlockchainModule } from './modules/blockchain/blockchain.module'
 import { IpfsModule } from './modules/ipfs/ipfs.module'
+import { PaymentModule } from './modules/payment/payment.module'
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { IpfsModule } from './modules/ipfs/ipfs.module'
     EnrollmentModule,
     BlockchainModule,
     IpfsModule,
+    PaymentModule,
   ],
   controllers: [],
   providers: [

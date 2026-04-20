@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { PaymentStatus, PrismaClient } from 'src/generated/prisma/client'
+import { PrismaClient } from 'src/generated/prisma/client'
 
 @Injectable()
 export class CartRepo {
@@ -57,28 +57,27 @@ export class CartRepo {
     })
   }
 
-  async checkout(userId: string) {
+  async getCartCourseIdsForCheckout(userId: string) {
     const cart = await this.getCartWithItems(userId)
     if (!cart || cart.items.length === 0) return null
-
-    const transactionData = cart.items.map((item) => ({
-      userId,
-      courseId: item.course.id,
-      amount: item.course.price,
-      status: PaymentStatus.COMPLETED,
-      provider: 'MOCK_PAYMENT'
-    }))
-
-    // 1. Create transactions
-    await this.txHost.tx.transaction.createMany({
-      data: transactionData
-    })
-
-    // 2. Clear cart
-    await this.txHost.tx.cartItem.deleteMany({
-      where: { cartId: cart.id }
-    })
-
     return cart.items.map((item) => item.course.id)
+  }
+
+  async removeItemsByCourseIds(userId: string, courseIds: string[]) {
+    if (!courseIds.length) return
+    const cart = await this.txHost.tx.cart.findUnique({
+      where: { userId },
+      select: { id: true },
+    })
+    if (!cart) return
+
+    await this.txHost.tx.cartItem.deleteMany({
+      where: {
+        cartId: cart.id,
+        courseId: {
+          in: courseIds,
+        },
+      },
+    })
   }
 }

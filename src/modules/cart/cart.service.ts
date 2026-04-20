@@ -40,6 +40,11 @@ export class CartService {
 
   @Transactional()
   async checkout(userId: string) {
-    return this.cartRepo.checkout(userId)
+    return this.cartRepo.getCartCourseIdsForCheckout(userId)
+  }
+
+  @Transactional()
+  async removePurchasedItems(userId: string, courseIds: string[]) {
+    await this.cartRepo.removeItemsByCourseIds(userId, courseIds)
   }
 }

@@ -30,6 +30,10 @@ const configSchema = z.object({
   GOOGLE_REDIRECT_URI: z.string(),
   GOOGLE_CLIENT_REDIRECT_URI: z.string(),
   RESEND_DOMAIN: z.string(),
+
+  VNP_TMN_CODE: z.string(),
+  VNP_HASH_SECRET: z.string(),
+  RETURN_URL: z.string(),
   // ADMIN_NAME: z.string(),
   // ADMIN_PASSWORD: z.string(),
   // ADMIN_EMAIL: z.string(),

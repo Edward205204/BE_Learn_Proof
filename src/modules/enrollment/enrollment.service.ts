@@ -12,10 +12,7 @@ export class EnrollmentService {
     if (!course) throw new NotFoundException('Khóa học không tồn tại hoặc chưa được publish')
 
     if (!course.isFree) {
-      const transaction = await this.enrollRepo.checkUserPaymentCompleted(userId, courseId)
-      if (!transaction) {
-        throw new BadRequestException(`Bạn chưa thanh toán khóa học này (ID: ${courseId})`)
-      }
+      throw new BadRequestException('Khóa học trả phí cần được kích hoạt thông qua luồng thanh toán')
     }
 
     try {
@@ -30,14 +27,27 @@ export class EnrollmentService {
 
   async getMyEnrollments(userId: string) {
     const enrollments = await this.enrollRepo.getMyEnrollmentsByUserId(userId)
-    const progressList = await Promise.all(
-      enrollments.map((e) => this.enrollRepo.getProgressSummary(userId, e.course.id)),
-    )
+    if (!enrollments.length) return []
 
-    return enrollments.map((enrollment, idx) => ({
-      ...enrollment,
-      ...progressList[idx],
-    }))
+    const courseIds = [...new Set(enrollments.map((item) => item.course.id))]
+    const [analyticsMap, progressMap] = await Promise.all([
+      this.enrollRepo.getCourseAnalyticsByCourseIds(courseIds),
+      this.enrollRepo.getProgressSummariesByCourseIds(userId, courseIds),
+    ])
+
+    return enrollments.map((enrollment) => {
+      const courseId = enrollment.course.id
+      const analytics = analyticsMap.get(courseId) || { avgRating: 0, totalStudents: 0 }
+      const progress = progressMap.get(courseId) || { totalLessons: 0, completedLessons: 0, progressPercent: 0 }
+      return {
+        ...enrollment,
+        course: {
+          ...enrollment.course,
+          overallAnalytics: analytics,
+        },
+        ...progress,
+      }
+    })
   }
 
   async getEnrollmentStatus(userId: string, courseId: string) {
@@ -51,5 +61,17 @@ export class EnrollmentService {
     if (!enrollment) throw new ForbiddenException('Bạn chưa đăng ký khóa học này')
     if (enrollment.completedAt) return enrollment
     await this.enrollRepo.updateEnrollmentCompleted(userId, courseId)
+  }
+
+  async getOwnedCourseIds(userId: string, courseIds: string[]) {
+    if (!courseIds.length) return []
+    const rows = await this.enrollRepo.getOwnedCourseIds(userId, courseIds)
+    return rows.map((row) => row.courseId)
+  }
+
+  @Transactional()
+  async grantEnrollmentsAfterPayment(userId: string, courseIds: string[]) {
+    if (!courseIds.length) return []
+    return this.enrollRepo.upsertManyEnrollments(userId, courseIds)
   }
 }
