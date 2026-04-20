@@ -91,4 +91,16 @@ export class InteractionController {
   createReview(@Param('courseId') courseId: string, @Body() body: CreateReviewDto, @ActiveUser() user: TokenPayload) {
     return this.service.createReview(courseId, user.userId, body.rating, body.comment)
   }
+
+  @Patch('courses/:courseId/reviews')
+  @ZodSerializerDto(ReviewItemSchema)
+  updateReview(@Param('courseId') courseId: string, @Body() body: CreateReviewDto, @ActiveUser() user: TokenPayload) {
+    return this.service.updateReview(courseId, user.userId, body.rating, body.comment)
+  }
+
+  @Delete('courses/:courseId/reviews')
+  @ZodSerializerDto(ReviewItemSchema)
+  deleteReview(@Param('courseId') courseId: string, @ActiveUser() user: TokenPayload) {
+    return this.service.deleteReview(courseId, user.userId)
+  }
 }

@@ -133,8 +133,31 @@ export class CourseRepo {
 
     const enrolledIds = new Set(userEnrollments.map((e) => e.courseId))
 
+    const items = await Promise.all(
+      courses.map(async (c) => {
+        const [avgRatingRes, totalStudents] = await Promise.all([
+          this.txHost.tx.review.aggregate({
+            where: { courseId: c.id },
+            _avg: { rating: true },
+          }),
+          this.txHost.tx.enrollment.count({
+            where: { courseId: c.id },
+          }),
+        ])
+
+        return {
+          ...c,
+          isEnrolled: enrolledIds.has(c.id),
+          overallAnalytics: {
+            avgRating: avgRatingRes._avg.rating || 0,
+            totalStudents,
+          },
+        }
+      }),
+    )
+
     return {
-      items: courses.map((c) => ({ ...c, isEnrolled: enrolledIds.has(c.id) })),
+      items,
       meta: {
         total,
         page,
@@ -213,8 +236,11 @@ export class CourseRepo {
             rating: true,
             comment: true,
             createdAt: true,
+            instructorReply: true,
+            instructorReplyAt: true,
             user: {
               select: {
+                id: true,
                 fullName: true,
                 avatar: true,
               },
@@ -234,10 +260,33 @@ export class CourseRepo {
 
     if (!course) return null
 
+    // --- Tính toán analytics thực tế ---
+    const [avgRatingRes, totalStudents, userReview] = await Promise.all([
+      this.txHost.tx.review.aggregate({
+        where: { courseId: course.id },
+        _avg: { rating: true },
+      }),
+      this.txHost.tx.enrollment.count({
+        where: { courseId: course.id },
+      }),
+      userId
+        ? this.txHost.tx.review.findUnique({
+            where: { userId_courseId: { userId, courseId: course.id } },
+            include: { user: { select: { id: true, fullName: true, avatar: true } } },
+          })
+        : Promise.resolve(null),
+    ])
+
     const { enrollments, ...rest } = course as any
     return {
       ...rest,
       isEnrolled: enrollments ? enrollments.length > 0 : false,
+      userReview: userReview,
+      overallAnalytics: {
+        avgRating: avgRatingRes._avg.rating || 0,
+        totalStudents,
+        completionRate: 0, // Tạm thời
+      },
     }
   }
   async getHomeSections(userId?: string) {
@@ -300,13 +349,38 @@ export class CourseRepo {
 
     const enrolledIds = new Set(userEnrollments.map((e) => e.courseId))
 
-    const mapWithEnrollment = (courses: any[]) => courses.map((c) => ({ ...c, isEnrolled: enrolledIds.has(c.id) }))
+    // --- Helper để gộp analytics cho danh sách khóa học ---
+    const attachAnalytics = async (courses: any[]) => {
+      return await Promise.all(
+        courses.map(async (c) => {
+          const [avgRatingRes, totalStudents] = await Promise.all([
+            this.txHost.tx.review.aggregate({
+              where: { courseId: c.id },
+              _avg: { rating: true },
+            }),
+            this.txHost.tx.enrollment.count({
+              where: { courseId: c.id },
+            }),
+          ])
+
+          return {
+            ...c,
+            isEnrolled: enrolledIds.has(c.id),
+            overallAnalytics: {
+              avgRating: avgRatingRes._avg.rating || 0,
+              totalStudents,
+              avgInterestScore: 0,
+            },
+          }
+        }),
+      )
+    }
 
     return {
-      trending: mapWithEnrollment(trending),
-      topSelling: mapWithEnrollment(topSelling),
-      newest: mapWithEnrollment(newest),
-      topRated: mapWithEnrollment(topRated),
+      trending: await attachAnalytics(trending),
+      topSelling: await attachAnalytics(topSelling),
+      newest: await attachAnalytics(newest),
+      topRated: await attachAnalytics(topRated),
     }
   }
 

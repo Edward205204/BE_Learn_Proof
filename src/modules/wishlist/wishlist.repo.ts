@@ -7,8 +7,8 @@ import { PrismaClient } from 'src/generated/prisma/client'
 export class WishlistRepo {
   constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
 
-  getWishlistItems(userId: string) {
-    return this.txHost.tx.wishlistItem.findMany({
+  async getWishlistItems(userId: string) {
+    const items = await this.txHost.tx.wishlistItem.findMany({
       where: { userId },
       select: {
         id: true,
@@ -29,6 +29,32 @@ export class WishlistRepo {
         },
       },
     })
+
+    // --- Gắn thêm analytics cho từng khóa học ---
+    return await Promise.all(
+      items.map(async (i) => {
+        const [avgRatingRes, totalStudents] = await Promise.all([
+          this.txHost.tx.review.aggregate({
+            where: { courseId: i.course.id },
+            _avg: { rating: true },
+          }),
+          this.txHost.tx.enrollment.count({
+            where: { courseId: i.course.id },
+          }),
+        ])
+
+        return {
+          ...i,
+          course: {
+            ...i.course,
+            overallAnalytics: {
+              avgRating: avgRatingRes._avg.rating || 0,
+              totalStudents,
+            },
+          },
+        }
+      }),
+    )
   }
 
   addItem(userId: string, courseId: string) {

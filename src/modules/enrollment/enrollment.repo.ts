@@ -46,8 +46,8 @@ export class EnrollmentRepo {
     })
   }
 
-  getMyEnrollmentsByUserId(userId: string) {
-    return this.txHost.tx.enrollment.findMany({
+  async getMyEnrollmentsByUserId(userId: string) {
+    const enrollments = await this.txHost.tx.enrollment.findMany({
       where: { userId },
       select: {
         id: true,
@@ -69,6 +69,32 @@ export class EnrollmentRepo {
       },
       orderBy: { enrolledAt: 'desc' },
     })
+
+    // --- Gắn thêm analytics cho từng khóa học ---
+    return await Promise.all(
+      enrollments.map(async (e) => {
+        const [avgRatingRes, totalStudents] = await Promise.all([
+          this.txHost.tx.review.aggregate({
+            where: { courseId: e.course.id },
+            _avg: { rating: true },
+          }),
+          this.txHost.tx.enrollment.count({
+            where: { courseId: e.course.id },
+          }),
+        ])
+
+        return {
+          ...e,
+          course: {
+            ...e.course,
+            overallAnalytics: {
+              avgRating: avgRatingRes._avg.rating || 0,
+              totalStudents,
+            },
+          },
+        }
+      }),
+    )
   }
 
   async getProgressSummary(userId: string, courseId: string) {

@@ -88,9 +88,12 @@ export const CourseReviewSchema = z.object({
   comment: z.string().nullable(),
   createdAt: z.date(),
   user: z.object({
+    id: z.string(),
     fullName: z.string(),
     avatar: z.string().nullable(),
   }),
+  instructorReply: z.string().nullable().optional(),
+  instructorReplyAt: z.date().nullable().optional(),
 })
 
 export const CourseDetailResponseSchema = z.object({
@@ -132,6 +135,7 @@ export const CourseDetailResponseSchema = z.object({
     .optional(),
   chapters: z.array(CurriculumChapterSchema).optional().default([]),
   overallAnalytics: z.any().optional().default(null),
+  userReview: CourseReviewSchema.nullable().optional(),
   reviews: z.array(CourseReviewSchema).optional().default([]),
 })
 
