@@ -101,6 +101,8 @@ export const ReviewItemSchema = z.object({
   comment: z.string().nullable(),
   instructorReply: z.string().nullable(),
   instructorReplyAt: z.date().nullable(),
+  learnerReply: z.string().nullable(),
+  learnerReplyAt: z.date().nullable(),
   userId: z.string(),
   courseId: z.string(),
   createdAt: z.date(),

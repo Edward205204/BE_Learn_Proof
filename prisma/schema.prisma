@@ -368,6 +368,9 @@ model Review {
   instructorReply   String?   @db.Text
   instructorReplyAt DateTime?
 
+  learnerReply      String?   @db.Text
+  learnerReplyAt    DateTime?
+
   createdAt DateTime @default(now())
   course    Course   @relation(fields: [courseId], references: [id])
   user      User     @relation(fields: [userId], references: [id])

@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
+import { PrismaClient } from 'src/generated/prisma/client'
 
 @Injectable()
 export class InteractionRepo {
-  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma>) {}
+  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
 
   findLessonInCourse(courseId: string, lessonId: string) {
     return this.txHost.tx.lesson.findFirst({
@@ -230,7 +231,14 @@ export class InteractionRepo {
     })
   }
 
-  updateReview(id: string, data: { rating?: number; comment?: string; instructorReply?: string; instructorReplyAt?: Date | null }) {
+  updateReview(id: string, data: { 
+    rating?: number; 
+    comment?: string; 
+    instructorReply?: string; 
+    instructorReplyAt?: Date | null;
+    learnerReply?: string;
+    learnerReplyAt?: Date | null;
+  }) {
     return this.txHost.tx.review.update({
       where: { id },
       data,

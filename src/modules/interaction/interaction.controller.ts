@@ -107,6 +107,12 @@ export class InteractionController {
     return this.service.deleteReview(courseId, user.userId)
   }
 
+  @Post('reviews/:id/learner-reply')
+  @ZodSerializerDto(ReviewItemSchema)
+  learnerReplyToReview(@Param('id') id: string, @Body() body: ReplyReviewDto, @ActiveUser() user: TokenPayload) {
+    return this.service.learnerReplyToReview(id, body.content, user.userId)
+  }
+
   // CM / Admin management endpoints
   @Get('reviews')
   @ZodSerializerDto(GetReviewsResponseSchema)

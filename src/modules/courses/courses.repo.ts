@@ -238,6 +238,8 @@ export class CourseRepo {
             createdAt: true,
             instructorReply: true,
             instructorReplyAt: true,
+            learnerReply: true,
+            learnerReplyAt: true,
             user: {
               select: {
                 id: true,

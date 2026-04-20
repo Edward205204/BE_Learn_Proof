@@ -260,4 +260,22 @@ export class InteractionService {
       instructorReplyAt: new Date(),
     })
   }
+
+  async learnerReplyToReview(reviewId: string, content: string, userId: string) {
+    const review = await this.repo.findReviewById(reviewId)
+    if (!review) throw new NotFoundException('Danh gia khong ton tai')
+
+    if (review.userId !== userId) {
+      throw new ForbiddenException('Day khong phai danh gia cua ban')
+    }
+
+    if (!review.instructorReply) {
+      throw new BadRequestException('Ban chi co the phan hoi khi giang vien da tra loi danh gia')
+    }
+
+    return this.repo.updateReview(reviewId, {
+      learnerReply: content,
+      learnerReplyAt: new Date(),
+    })
+  }
 }
