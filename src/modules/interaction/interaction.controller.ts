@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Query, Patch, Body, Post, Delete } from '@nestjs/common'
+import { Role } from 'src/generated/prisma/enums'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import { InteractionService } from './interaction.service'
 import {
@@ -11,6 +12,7 @@ import {
   UpdateCommentDto,
   CreateReplyDto,
   UpdateReplyDto,
+  ReplyReviewDto,
 } from './interaction.dto'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 import { TokenPayload } from 'src/shared/types/jwt.type'
@@ -39,8 +41,9 @@ export class InteractionController {
   // Content Manager
   @Get('comments')
   @ZodSerializerDto(GetAllCommentsResponseSchema)
-  getAllComments(@Query() query: PaginationDto) {
-    return this.service.getAllComments(query.page, query.limit)
+  getAllComments(@Query() query: PaginationDto, @ActiveUser() user: TokenPayload) {
+    const creatorId = user.role === Role.CONTENT_MANAGER ? user.userId : undefined
+    return this.service.getAllComments(query.page, query.limit, creatorId)
   }
 
   @Patch('comments/:id/pin')
@@ -61,7 +64,7 @@ export class InteractionController {
   @Delete('comments/:id')
   @ZodSerializerDto(CommentItemSchema)
   deleteComment(@Param() param: IdParamDto, @ActiveUser() user: TokenPayload) {
-    return this.service.deleteComment(param.id, user.userId)
+    return this.service.deleteComment(param.id, user.userId, user.role)
   }
   @Post('comments/:id/replies')
   @ZodSerializerDto(ReplyItemSchema)
@@ -76,7 +79,7 @@ export class InteractionController {
   @Delete('replies/:id')
   @ZodSerializerDto(ReplyItemSchema)
   deleteReply(@Param() param: IdParamDto, @ActiveUser() user: TokenPayload) {
-    return this.service.deleteReply(param.id, user.userId)
+    return this.service.deleteReply(param.id, user.userId, user.role)
   }
 
   //Review
@@ -102,5 +105,25 @@ export class InteractionController {
   @ZodSerializerDto(ReviewItemSchema)
   deleteReview(@Param('courseId') courseId: string, @ActiveUser() user: TokenPayload) {
     return this.service.deleteReview(courseId, user.userId)
+  }
+
+  // CM / Admin management endpoints
+  @Get('reviews')
+  @ZodSerializerDto(GetReviewsResponseSchema)
+  getAllReviews(@Query() query: PaginationDto, @ActiveUser() user: TokenPayload) {
+    const creatorId = user.role === Role.CONTENT_MANAGER ? user.userId : undefined
+    return this.service.getAllReviews(query.page, query.limit, creatorId)
+  }
+
+  @Post('reviews/:id/replies')
+  @ZodSerializerDto(ReviewItemSchema)
+  replyToReview(@Param('id') id: string, @Body() body: ReplyReviewDto, @ActiveUser() user: TokenPayload) {
+    return this.service.replyToReview(id, body.content, user.userId)
+  }
+
+  @Delete('reviews/:id')
+  @ZodSerializerDto(ReviewItemSchema)
+  deleteReviewById(@Param('id') id: string, @ActiveUser() user: TokenPayload) {
+    return this.service.deleteReviewById(id, user.userId, user.role)
   }
 }

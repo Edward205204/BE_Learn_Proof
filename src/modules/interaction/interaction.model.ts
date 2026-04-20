@@ -99,6 +99,8 @@ export const ReviewItemSchema = z.object({
   id: z.string(),
   rating: z.number().int().min(1).max(5),
   comment: z.string().nullable(),
+  instructorReply: z.string().nullable(),
+  instructorReplyAt: z.date().nullable(),
   userId: z.string(),
   courseId: z.string(),
   createdAt: z.date(),
@@ -124,6 +126,10 @@ export const CreateReviewSchema = z.object({
   comment: z.string().optional(),
 })
 
+export const ReplyReviewSchema = z.object({
+  content: z.string().min(1, 'Reply content cannot be empty'),
+})
+
 export type ReviewItem = z.infer<typeof ReviewItemSchema>
 export type GetReviewsResponse = z.infer<typeof GetReviewsResponseSchema>
 export type ReplyItem = z.infer<typeof ReplyItemSchema>
@@ -131,3 +137,4 @@ export type CommentItem = z.infer<typeof CommentItemSchema>
 export type CommentWithLessonItem = z.infer<typeof CommentWithLessonItemSchema>
 export type GetCommentsResponse = z.infer<typeof GetCommentsResponseSchema>
 export type GetAllCommentsResponse = z.infer<typeof GetAllCommentsResponseSchema>
+export type ReplyReviewDto = z.infer<typeof ReplyReviewSchema>

@@ -63,8 +63,11 @@ export class InteractionRepo {
     }
   }
 
-  async findAllComments(page: number, limit: number) {
-    const where = { isDeleted: false }
+  async findAllComments(page: number, limit: number, creatorId?: string) {
+    const where: any = { isDeleted: false }
+    if (creatorId) {
+      where.course = { creatorId }
+    }
     const [data, total] = await Promise.all([
       this.txHost.tx.discussion.findMany({
         where,
@@ -178,6 +181,38 @@ export class InteractionRepo {
     }
   }
 
+  async findAllReviews(page: number, limit: number, creatorId?: string) {
+    const where: any = {}
+    if (creatorId) {
+      where.course = { creatorId }
+    }
+    const [data, total] = await Promise.all([
+      this.txHost.tx.review.findMany({
+        where,
+        include: {
+          user: { select: { id: true, fullName: true, avatar: true } },
+          course: { select: { id: true, title: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.txHost.tx.review.count({ where }),
+    ])
+    return { data, total, totalPages: Math.ceil(total / limit) }
+  }
+
+  findReviewById(id: string) {
+    return this.txHost.tx.review.findUnique({
+      where: { id },
+      include: {
+        course: {
+          select: { creatorId: true },
+        },
+      },
+    })
+  }
+
   findReviewByUserAndCourse(userId: string, courseId: string) {
     return this.txHost.tx.review.findUnique({
       where: {
@@ -195,7 +230,7 @@ export class InteractionRepo {
     })
   }
 
-  updateReview(id: string, data: { rating?: number; comment?: string }) {
+  updateReview(id: string, data: { rating?: number; comment?: string; instructorReply?: string; instructorReplyAt?: Date | null }) {
     return this.txHost.tx.review.update({
       where: { id },
       data,
