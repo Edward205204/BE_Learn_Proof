@@ -20,6 +20,9 @@ import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-pr
 import { EnrollmentModule } from './modules/enrollment/enrollment.module'
 import { LessonModule } from './modules/lesson/lesson.module'
 import { AdminModule } from './modules/admin/admin.module'
+import { BlockchainModule } from './modules/blockchain/blockchain.module'
+import { IpfsModule } from './modules/ipfs/ipfs.module'
+import { PaymentModule } from './modules/payment/payment.module'
 
 @Module({
   imports: [
@@ -48,6 +51,9 @@ import { AdminModule } from './modules/admin/admin.module'
     }),
 
     EnrollmentModule,
+    BlockchainModule,
+    IpfsModule,
+    PaymentModule,
   ],
   controllers: [],
   providers: [

@@ -38,6 +38,7 @@ export class AuthRepo {
         website: true,
         role: true,
         isBanned: true,
+        isOnboardingCompleted: true,
       },
     })
   }

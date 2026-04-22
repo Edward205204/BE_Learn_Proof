@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common'
 import {
   CreateCourseSt1Dto,
   CreateCourseSt2Dto,
   CreateCourseSt3Dto,
+  DeleteChapterBodySchemaType,
   GetMyCoursesManagerQueryType,
   ReorderChapterDto,
 } from '../courses.model'
@@ -15,15 +16,26 @@ import {
   CourseNotFoundException,
 } from '../error.model'
 import { CourseStatus } from 'src/generated/prisma/enums'
+import { UpdateCourseStatusDto } from '../courses.dto'
 
 @Injectable()
 export class CoursesManagerService {
+  private static readonly MIN_LESSONS_TO_COMPLETE = 10
+  private static readonly MAX_DRAFT_COURSES = 10
+
   constructor(
     private readonly courseRepo: CourseRepo,
     private readonly slugService: SlugService,
   ) {}
 
   async createCourse(body: CreateCourseSt1Dto, creatorId: string) {
+    const draftCoursesCount = await this.courseRepo.countCoursesByCreatorAndStatus(creatorId, CourseStatus.DRAFT)
+    if (draftCoursesCount >= CoursesManagerService.MAX_DRAFT_COURSES) {
+      throw new BadRequestException(
+        `Bạn đã tạo quá số lượng khóa học nháp (tối đa ${CoursesManagerService.MAX_DRAFT_COURSES}). Vui lòng hoàn thiện và publish bớt khóa học trước khi tạo mới.`,
+      )
+    }
+
     const category = await this.courseRepo.findCategoryUnique({ id: body.categoryId })
     if (!category) {
       throw new CategoryNotFoundException()
@@ -59,6 +71,20 @@ export class CoursesManagerService {
 
     const data = await this.courseRepo.finishCreateCourse(courseId, { ...body, creatorId })
     return data
+  }
+
+  async completeCourse(courseId: string, creatorId: string) {
+    const course = await this.courseRepo.getCourseUnique({ creatorId, id: courseId })
+    if (!course) throw new CourseNotFoundException()
+
+    const lessonsCount = await this.courseRepo.countLessonsByCourse(courseId)
+    if (lessonsCount < CoursesManagerService.MIN_LESSONS_TO_COMPLETE) {
+      throw new BadRequestException(
+        `Khóa học cần tối thiểu ${CoursesManagerService.MIN_LESSONS_TO_COMPLETE} bài học để được đánh dấu hoàn thiện.`,
+      )
+    }
+
+    return this.courseRepo.completeCourse(courseId, creatorId)
   }
 
   async getCourseBaseInfo(courseId: string, creatorId: string) {
@@ -126,5 +152,77 @@ export class CoursesManagerService {
     const chapter = await this.courseRepo.findChapterUnique({ id: chapterId, creatorId })
     if (!chapter) throw new CourseNotMatchException()
     return this.courseRepo.renameChapter(chapterId, title)
+  }
+
+  async updateCourseStatus(courseId: string, body: UpdateCourseStatusDto, creatorId: string) {
+    const course = await this.courseRepo.getCourseUnique({
+      id: courseId,
+      creatorId,
+    })
+
+    if (!course) throw new CourseNotFoundException()
+
+    // TODO
+    const enrollCount = await this.courseRepo.countEnrollmentsByCourse(courseId)
+
+    const currentStatus = course.status
+    const nextStatus = body.status
+
+    // ❌ DRAFT → ARCHIVED
+    if (currentStatus === CourseStatus.DRAFT && nextStatus === CourseStatus.ARCHIVED) {
+      throw new BadRequestException('Không thể chuyển từ DRAFT sang ARCHIVED')
+    }
+
+    // ❌ ARCHIVED → DRAFT
+    if (currentStatus === CourseStatus.ARCHIVED && nextStatus === CourseStatus.DRAFT) {
+      throw new BadRequestException('Không thể chuyển từ ARCHIVED về DRAFT')
+    }
+
+    // ❌ nếu đã có enroll → không được về DRAFT
+    if (nextStatus === CourseStatus.DRAFT && enrollCount > 0) {
+      throw new BadRequestException('Khóa học đã có người đăng ký, không thể chuyển về DRAFT')
+    }
+
+    // 🚨 RULE QUAN TRỌNG: phải có ít nhất 3 khóa published trước đó
+    if (currentStatus === CourseStatus.DRAFT && nextStatus === CourseStatus.PUBLISHED) {
+      const publishedCount = await this.courseRepo.countPublishedCoursesByCreator(creatorId)
+
+      if (publishedCount < 3) {
+        throw new BadRequestException('Bạn cần publish ít nhất 3 khóa học trước đó để mở khóa tính năng này')
+      }
+    }
+
+    return this.courseRepo.updateCourseStatus(courseId, nextStatus)
+  }
+
+  async deleteChapter(body: DeleteChapterBodySchemaType & { userId: string }) {
+    const { userId, chapterId, coursesId } = body
+    const chapter = await this.courseRepo.findChapterByUserId(userId, chapterId, coursesId)
+    if (!chapter) {
+      throw new ForbiddenException('Chương không tồn tại hoặc bạn không có quyền.')
+    }
+
+    if (chapter._count.lessons > 0) {
+      throw new BadRequestException(
+        `Không thể xóa chương vì đang có ${chapter._count.lessons} bài học bên trong. Hãy xóa các bài học trước.`,
+      )
+    }
+
+    return this.courseRepo.deleteChapter(chapterId)
+  }
+
+  async deleteCourse(courseId: string, creatorId: string) {
+    const course = await this.courseRepo.getCourseUnique({ creatorId, id: courseId })
+    if (!course) throw new CourseNotFoundException()
+
+    // Kiểm tra xem khóa học đã có người đăng ký chưa
+    const enrollCount = await this.courseRepo.countEnrollmentsByCourse(courseId)
+    if (enrollCount > 0) {
+      throw new BadRequestException(
+        `Không thể xóa khóa học vì đã có ${enrollCount} học viên đăng ký. Hãy chuyển sang trạng thái Lưu trữ (ARCHIVED) thay vì xóa.`,
+      )
+    }
+
+    return this.courseRepo.deleteCourse(courseId, creatorId)
   }
 }

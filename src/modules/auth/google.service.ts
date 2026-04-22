@@ -67,9 +67,11 @@ export class GoogleService {
           email: data.email,
         })
 
-      if (!user) {
-        const randomPassword = uuidv4()
-        const hashedPassword = await this.hashingService.hash(randomPassword)
+      const finalUser =
+        user ||
+        (await (async () => {
+          const randomPassword = uuidv4()
+          const hashedPassword = await this.hashingService.hash(randomPassword)
 
         user = await this.authRepo.createUser({
           email: data.email,

@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { IStorageService } from '../storage.interface'
 import * as fs from 'fs'
 import * as path from 'path'

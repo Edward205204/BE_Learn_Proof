@@ -16,6 +16,8 @@ export const CartItemCourseSchema = z.object({
 })
 
 export const CartItemSchema = z.object({
+  id: z.string(),
+  courseId: z.string(),
   course: CartItemCourseSchema,
 })
 

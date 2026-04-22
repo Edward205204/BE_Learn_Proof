@@ -53,6 +53,7 @@ export const UserResSchema = z.object({
   headline: z.string().nullable(),
   website: z.string().nullable(),
   role: z.enum(Role),
+  isOnboardingCompleted: z.boolean(),
 })
 
 export const UpdateProfileBodySchema = z.object({
@@ -60,6 +61,7 @@ export const UpdateProfileBodySchema = z.object({
   bio: z.string().trim().max(2000).nullable().optional(),
   headline: z.string().trim().max(60).nullable().optional(),
   website: z.string().trim().url('URL không hợp lệ').nullable().optional().or(z.literal('')),
+  isOnboardingCompleted: z.boolean().optional(),
 })
 
 export const AuthResDto = z.object({
