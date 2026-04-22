@@ -1,6 +1,6 @@
 import { Injectable, Inject, BadRequestException, Logger } from '@nestjs/common'
 import { IStorageService } from '../storage.interface'
-import sharp = require('sharp')
+import sharp from 'sharp'
 import { v4 as uuidv4 } from 'uuid'
 import { Stream } from 'stream'
 import 'multer'

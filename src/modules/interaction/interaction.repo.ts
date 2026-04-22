@@ -231,14 +231,17 @@ export class InteractionRepo {
     })
   }
 
-  updateReview(id: string, data: { 
-    rating?: number; 
-    comment?: string; 
-    instructorReply?: string; 
-    instructorReplyAt?: Date | null;
-    learnerReply?: string;
-    learnerReplyAt?: Date | null;
-  }) {
+  updateReview(
+    id: string,
+    data: {
+      rating?: number
+      comment?: string
+      instructorReply?: string
+      instructorReplyAt?: Date | null
+      learnerReply?: string
+      learnerReplyAt?: Date | null
+    },
+  ) {
     return this.txHost.tx.review.update({
       where: { id },
       data,

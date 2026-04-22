@@ -114,7 +114,8 @@ export class EnrollmentRepo {
   }
 
   async getProgressSummariesByCourseIds(userId: string, courseIds: string[]) {
-    if (!courseIds.length) return new Map<string, { totalLessons: number; completedLessons: number; progressPercent: number }>()
+    if (!courseIds.length)
+      return new Map<string, { totalLessons: number; completedLessons: number; progressPercent: number }>()
 
     const [lessonRows, progressRows] = await Promise.all([
       this.txHost.tx.lesson.findMany({

@@ -1,5 +1,5 @@
-import { Module, Global } from '@nestjs/common';
-import { IpfsService } from './ipfs.service';
+import { Module, Global } from '@nestjs/common'
+import { IpfsService } from './ipfs.service'
 
 @Global()
 @Module({

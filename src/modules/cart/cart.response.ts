@@ -29,5 +29,5 @@ export const CartResponseSchema = z
   .nullable()
 
 export const CheckoutResponseSchema = z.object({
-  courseIds: z.array(z.string())
+  courseIds: z.array(z.string()),
 })
