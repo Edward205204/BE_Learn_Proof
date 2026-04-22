@@ -15,32 +15,15 @@ export class MediaService {
     return `${uuidv4()}${ext}`
   }
 
-  private async validateImage(file: Express.Multer.File): Promise<void> {
-    if (!file?.buffer?.length) {
-      throw new BadRequestException('Empty file')
-    }
-
-    if (!file.mimetype.startsWith('image/')) {
-      throw new BadRequestException('File must be an image')
-    }
-
-    try {
-      const metadata = await sharp(file.buffer).metadata()
-      if (!metadata.width || !metadata.height) {
-        throw new BadRequestException('Invalid image file')
-      }
-    } catch {
-      throw new BadRequestException('Invalid image file')
-    }
-  }
-
   /**
    * General Image Upload
    * Used for standard images. Optimizes using WebP, strips EXIF data for security and performance.
    */
   async uploadImage(file: Express.Multer.File): Promise<string> {
     try {
-      await this.validateImage(file)
+      if (!file.mimetype.startsWith('image/')) {
+        throw new BadRequestException('File must be an image')
+      }
 
       const filename = this.generateFilename(file.originalname)
       this.logger.log(`Processing general image: ${file.originalname}`)
@@ -63,7 +46,9 @@ export class MediaService {
    */
   async uploadAvatar(file: Express.Multer.File): Promise<string> {
     try {
-      await this.validateImage(file)
+      if (!file.mimetype.startsWith('image/')) {
+        throw new BadRequestException('File must be an image')
+      }
 
       const filename = this.generateFilename(file.originalname)
       this.logger.log(`Processing avatar image: ${file.originalname}`)
@@ -90,7 +75,9 @@ export class MediaService {
    */
   async uploadAvatarThumbnail(file: Express.Multer.File): Promise<string> {
     try {
-      await this.validateImage(file)
+      if (!file.mimetype.startsWith('image/')) {
+        throw new BadRequestException('File must be an image')
+      }
 
       const filename = this.generateFilename(file.originalname)
       this.logger.log(`Processing avatar thumbnail: ${file.originalname}`)

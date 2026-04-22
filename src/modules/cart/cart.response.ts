@@ -27,7 +27,3 @@ export const CartResponseSchema = z
     items: z.array(CartItemSchema),
   })
   .nullable()
-
-export const CheckoutResponseSchema = z.object({
-  courseIds: z.array(z.string()),
-})

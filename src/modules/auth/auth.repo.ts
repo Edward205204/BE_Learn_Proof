@@ -25,7 +25,7 @@ export class AuthRepo {
     })
   }
 
-  createUser(payload: Pick<User, 'email' | 'fullName' | 'password'> & { avatar?: string }) {
+  createUser(payload: Pick<User, 'email' | 'fullName' | 'password'> & { avatar?: string; role?: User['role'] }) {
     return this.txHost.tx.user.create({
       data: payload,
       select: {
@@ -37,6 +37,7 @@ export class AuthRepo {
         headline: true,
         website: true,
         role: true,
+        isBanned: true,
         isOnboardingCompleted: true,
       },
     })

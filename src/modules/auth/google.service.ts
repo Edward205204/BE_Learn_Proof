@@ -8,8 +8,8 @@ import { AuthRepo } from './auth.repo'
 import { v4 as uuidv4 } from 'uuid'
 import { HashingService } from 'src/shared/services/hashing.service'
 import { AuthService } from './auth.service'
-import { User } from 'src/generated/prisma/client'
-import { StringFieldUpdateOperationsInput } from 'src/generated/prisma/models'
+import { User, Role } from 'src/generated/prisma/client'
+import { ADMIN_EMAILS } from './auth.util'
 
 @Injectable()
 export class GoogleService {
@@ -62,9 +62,10 @@ export class GoogleService {
       }
 
       // 3. Tìm hoặc Tạo user
-      const user = await this.authRepo.findUserUnique({
-        email: data.email,
-      })
+      let user: User | Pick<User, 'id' | 'email' | 'fullName' | 'avatar' | 'role'> | null =
+        await this.authRepo.findUserUnique({
+          email: data.email,
+        })
 
       const finalUser =
         user ||
@@ -72,17 +73,25 @@ export class GoogleService {
           const randomPassword = uuidv4()
           const hashedPassword = await this.hashingService.hash(randomPassword)
 
-          return await this.authRepo.createUser({
-            email: data.email as string,
-            fullName: data.name ?? '',
-            password: hashedPassword,
-            avatar: data.picture ?? '',
-          })
-        })())
+        user = await this.authRepo.createUser({
+          email: data.email,
+          fullName: data.name ?? '',
+          password: hashedPassword,
+          avatar: data.picture ?? '',
+          role: ADMIN_EMAILS.includes(data.email) ? Role.ADMIN : Role.LEARNER,
+        })
+      }
+
+      // Tự động nâng cấp quyền Admin nếu email nằm trong danh sách
+      let role = user.role
+      if (ADMIN_EMAILS.includes(user.email) && role !== Role.ADMIN) {
+        await this.authRepo.updateUser({ where: { id: user.id }, data: { role: Role.ADMIN } })
+        role = Role.ADMIN
+      }
 
       return await this.authService.generateAndSaveTokens({
-        userId: finalUser.id,
-        role: finalUser.role,
+        userId: user.id,
+        role: role,
       })
     } catch (error) {
       console.error('Google Auth Error:', error)
