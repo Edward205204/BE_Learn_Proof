@@ -73,7 +73,6 @@ export class LessonRepo {
     type: LessonTypeEnumTS
     title: string
     shortDesc: string | null
-    fullDesc: string | null
     order: number
     videoId: string | null
     provider: VideoProviderEnumTS | null

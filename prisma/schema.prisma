@@ -151,7 +151,6 @@ model Course {
   publishedLessonsCount Int            @default(0) // @denormalized số lượng bài học đã public - cần sync
   totalPlannedLessons   Int?
   shortDesc             String
-  fullDesc              String
   thumbnail             String?
   status                CourseStatus   @default(DRAFT)
   isBanned              Boolean        @default(false)

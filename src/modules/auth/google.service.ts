@@ -79,9 +79,9 @@ export class GoogleService {
         })
       }
 
-      // Lúc này TypeScript vẫn có thể nghĩ user là null nếu logic phức tạp, 
+      // Lúc này TypeScript vẫn có thể nghĩ user là null nếu logic phức tạp,
       // chúng ta gán vào hằng số để khẳng định user tồn tại (Narrowing)
-      const GoogleUser = user 
+      const GoogleUser = user
       if (!GoogleUser) {
         throw new UnauthorizedException('Không thể xác thực hoặc tạo người dùng')
       }

@@ -102,7 +102,6 @@ export const CourseDetailResponseSchema = z.object({
   title: z.string(),
   slug: z.string(),
   shortDesc: z.string(),
-  fullDesc: z.string(),
   thumbnail: z.string().nullable(),
 
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
@@ -214,7 +213,6 @@ export const CreateCourseSt1DtoSchema = z
     categoryId: z.string(),
     level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
     shortDesc: z.string().min(1),
-    fullDesc: z.string().min(1),
     thumbnail: z.string().url().nullable().optional(),
     // expectedDays: z.number().int().min(1).optional(),
   })
@@ -232,7 +230,6 @@ export const CreateCourseSt1ResponseSchema = z.object({
 
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
   shortDesc: z.string(),
-  fullDesc: z.string(),
   thumbnail: z.string().nullable(),
   expectedDays: z.number().int().nullable(),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']),
@@ -280,7 +277,6 @@ export const CreateCourseFullResponseSchema = z.object({
   categoryId: z.string(),
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
   shortDesc: z.string(),
-  fullDesc: z.string(),
   thumbnail: z.string().nullable(),
   expectedDays: z.number().int().nullable(),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']),
@@ -316,7 +312,6 @@ export const GetCourseDetailManagerResponseSchema = z.object({
   title: z.string(),
   slug: z.string(),
   shortDesc: z.string(),
-  fullDesc: z.string(),
   thumbnail: z.string().nullable(),
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']),

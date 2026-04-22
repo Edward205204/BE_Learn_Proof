@@ -26,7 +26,6 @@ export const UpdateLessonSchema = z
     type: LessonTypeEnum,
     title: z.string().optional(),
     shortDesc: z.string().optional(),
-    fullDesc: z.string().optional(),
     duration: z.number().optional(),
     textContent: z.string().optional(),
   })
@@ -54,7 +53,6 @@ export const CreateLessonSchema = z
     type: LessonTypeEnum,
     title: z.string().min(1, 'Phải có tiêu đề bài học'),
     shortDesc: z.string().optional(),
-    fullDesc: z.string().optional(),
     chapterId: z.string(),
     videoId: z.string().optional(),
     duration: z.coerce.number().optional(),

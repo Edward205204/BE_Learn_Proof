@@ -23,6 +23,7 @@ import { AdminModule } from './modules/admin/admin.module'
 import { BlockchainModule } from './modules/blockchain/blockchain.module'
 import { IpfsModule } from './modules/ipfs/ipfs.module'
 import { PaymentModule } from './modules/payment/payment.module'
+import { DashboardModule } from './modules/dashboard/dashboard.module'
 
 @Module({
   imports: [
@@ -54,7 +55,9 @@ import { PaymentModule } from './modules/payment/payment.module'
     BlockchainModule,
     IpfsModule,
     PaymentModule,
+    DashboardModule,
   ],
+
   controllers: [],
   providers: [
     {

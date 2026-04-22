@@ -23,7 +23,6 @@ export class QuizLessonStrategy implements LessonStrategy {
       chapterId: data.chapterId,
       title: data.title,
       shortDesc: data?.shortDesc ?? null,
-      fullDesc: data?.fullDesc ?? null,
       order: order,
       videoId: null,
       provider: null,

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { DashboardRepo } from './dashboard.repo'
-import { DashboardOverview } from './dashboard.model'
+import { DashboardOverview, RevenueChartItem } from './dashboard.model'
 
 @Injectable()
 export class DashboardService {
@@ -19,11 +19,11 @@ export class DashboardService {
     }
   }
 
-  getRevenueChart(filter: any) {
+  async getRevenueChart(filter: any): Promise<RevenueChartItem[]> {
     return this.repo.getRevenueChart(filter.fromDate, filter.toDate)
   }
 
-  async getTopCoursesByMonth(month: string) {
+  async getTopCoursesByMonth(month: string): Promise<any[]> {
     const data = await this.repo.getTopCoursesByMonth(month)
 
     return data.map((item: any) => ({
@@ -34,7 +34,7 @@ export class DashboardService {
     }))
   }
 
-  async getHardLessons() {
+  async getHardLessons(): Promise<any[]> {
     const data = await this.repo.getHardLessons()
 
     return data.map((item: any) => {

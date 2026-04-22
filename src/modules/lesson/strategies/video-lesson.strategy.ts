@@ -44,7 +44,6 @@ export class VideoLessonStrategy implements LessonStrategy {
       type: LessonType.VIDEO,
       title: data.title,
       shortDesc: data?.shortDesc ?? null,
-      fullDesc: data?.fullDesc ?? null,
       order: order,
       videoId,
       provider: provider,

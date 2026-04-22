@@ -57,6 +57,8 @@ async function main() {
   await prisma.chapter.deleteMany()
   await prisma.course.deleteMany()
   await prisma.category.deleteMany()
+  await prisma.auditLog.deleteMany()
+  await prisma.systemSetting.deleteMany()
   await prisma.user.deleteMany()
 
   // 1. Tạo Giảng viên
@@ -90,7 +92,7 @@ async function main() {
         title: `Khóa học chuyên sâu số ${i}: Master ${randomCategory.name}`,
         slug: `khoa-hoc-so-${i}-${randomCategory.slug}`,
         shortDesc: `Mô tả ngắn gọn cho khóa học thứ ${i}. Đây là kiến thức thực chiến.`,
-        fullDesc: `Nội dung chi tiết của khóa học ${i}. Bao gồm đầy đủ tài liệu và bài tập...`,
+        // fullDesc: `Nội dung chi tiết của khóa học ${i}. Bao gồm đầy đủ tài liệu và bài tập...`,
         level: randomLevel,
         status: randomStatus,
         price: price,
@@ -479,7 +481,7 @@ async function main() {
         title: course.title,
         slug: course.slug,
         shortDesc: course.shortDesc,
-        fullDesc: course.shortDesc,
+        // fullDesc: course.shortDesc,
         level: course.level,
         status: CourseStatus.PUBLISHED,
         price: course.price,
@@ -550,7 +552,7 @@ async function seedRealData() {
       title: 'React tu co ban den nang cao',
       slug: 'react-complete',
       shortDesc: 'Hoc React full',
-      fullDesc: 'React hooks, context, project',
+      // fullDesc: 'React hooks, context, project',
       level: CourseLevel.BEGINNER,
       status: CourseStatus.PUBLISHED,
       price: 299000,
@@ -564,7 +566,7 @@ async function seedRealData() {
       title: 'NodeJS Backend API',
       slug: 'nodejs-api',
       shortDesc: 'Xay dung REST API',
-      fullDesc: 'Express, JWT, Prisma',
+      // fullDesc: 'Express, JWT, Prisma',
       level: CourseLevel.INTERMEDIATE,
       status: CourseStatus.PUBLISHED,
       price: 399000,
@@ -578,7 +580,7 @@ async function seedRealData() {
       title: 'Machine Learning co ban',
       slug: 'ml-basic',
       shortDesc: 'Nhap mon AI',
-      fullDesc: 'Linear regression, classification',
+      // fullDesc: 'Linear regression, classification',
       level: CourseLevel.BEGINNER,
       status: CourseStatus.PUBLISHED,
       price: 499000,

@@ -3,7 +3,7 @@ import {
   DashboardFilterSchema,
   DashboardOverviewSchema,
   RevenueChartItemSchema,
-  RevenueChartResponseSchema
+  RevenueChartResponseSchema,
 } from './dashboard.model'
 
 // request

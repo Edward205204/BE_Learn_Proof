@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common'
-import { PrismaService } from 'src/prisma/prisma.service'
+import { PrismaService } from 'src/shared/services/prisma.service'
 import { PaymentStatus, CourseStatus } from '@prisma/client'
 
 @Injectable()
 export class DashboardRepo {
   constructor(private prisma: PrismaService) {}
 
-  getOverview() {
+  getOverview(): Promise<[number, number, number, number, number, { _sum: { amount: number | null } }]> {
     return Promise.all([
       this.prisma.user.count({ where: { deletedAt: null } }),
       this.prisma.course.count(),
@@ -22,8 +22,8 @@ export class DashboardRepo {
     ])
   }
 
-  getRevenueChart(fromDate?: string, toDate?: string) {
-    return this.prisma.$queryRaw`
+  getRevenueChart(fromDate?: string, toDate?: string): Promise<any[]> {
+    return this.prisma.$queryRaw<any[]>`
       SELECT 
         DATE_TRUNC('month', "createdAt") as month,
         SUM(amount) as revenue
@@ -36,8 +36,8 @@ export class DashboardRepo {
     `
   }
 
-  async getTopCoursesByMonth(month: string) {
-    return this.prisma.$queryRaw`
+  async getTopCoursesByMonth(month: string): Promise<any[]> {
+    return this.prisma.$queryRaw<any[]>`
     SELECT 
       c.id,
       c.title,
@@ -53,8 +53,8 @@ export class DashboardRepo {
   `
   }
 
-  async getHardLessons() {
-    return this.prisma.$queryRaw`
+  async getHardLessons(): Promise<any[]> {
+    return this.prisma.$queryRaw<any[]>`
     SELECT 
       l.id,
       l.title,

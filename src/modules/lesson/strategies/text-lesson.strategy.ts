@@ -25,7 +25,6 @@ export class TextLessonStrategy implements LessonStrategy {
       type: LessonType.TEXT,
       title: data.title,
       shortDesc: data?.shortDesc ?? null,
-      fullDesc: data?.fullDesc ?? null,
       order: order,
       videoId: null,
       provider: null,

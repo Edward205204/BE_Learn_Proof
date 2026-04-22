@@ -31,7 +31,6 @@ export class CourseRepo {
 
         level: dto.level,
         shortDesc: dto.shortDesc,
-        fullDesc: dto.fullDesc,
         thumbnail: dto.thumbnail ?? null,
         // expectedDays: dto.expectedDays ?? null,
         expectedDays: null,
@@ -48,7 +47,6 @@ export class CourseRepo {
 
         level: true,
         shortDesc: true,
-        fullDesc: true,
         thumbnail: true,
         expectedDays: true,
         status: true,
@@ -179,7 +177,6 @@ export class CourseRepo {
         title: true,
         slug: true,
         shortDesc: true,
-        fullDesc: true,
         thumbnail: true,
 
         level: true,
@@ -458,7 +455,6 @@ export class CourseRepo {
         categoryId: dto.categoryId,
         level: dto.level,
         shortDesc: dto.shortDesc,
-        fullDesc: dto.fullDesc,
         thumbnail: dto.thumbnail ?? null,
       },
       include: {
@@ -590,7 +586,6 @@ export class CourseRepo {
         title: true,
         slug: true,
         shortDesc: true,
-        fullDesc: true,
         thumbnail: true,
 
         level: true,
