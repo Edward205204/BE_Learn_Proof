@@ -37,6 +37,13 @@ enum PaymentStatus {
   FAILED
 }
 
+enum CertMintStatus {
+  PENDING
+  MINTING
+  COMPLETED
+  FAILED
+}
+
 enum QuizType {
   LESSON
   CHAPTER
@@ -55,8 +62,9 @@ enum VideoProviderEnum {
 
 // thuộc modules user - start
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
+  id            String    @id @default(cuid())
+  email         String    @unique
+  walletAddress String?   @unique
   password  String
   fullName  String
   avatar    String?
@@ -64,6 +72,9 @@ model User {
   headline  String?
   website   String?
   role      Role      @default(LEARNER)
+  isBanned  Boolean   @default(false)
+  isOnboardingCompleted Boolean   @default(false)
+
   deletedAt DateTime?
 
   coursesCreated Course[]          @relation("CourseCreator")
@@ -78,6 +89,7 @@ model User {
   certificates   Certificate[]
   heartbeats     LessonHeartbeat[]
   quizAttempts   QuizAttempt[]
+  auditLogs      AuditLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -142,6 +154,7 @@ model Course {
   fullDesc              String
   thumbnail             String?
   status                CourseStatus   @default(DRAFT)
+  isBanned              Boolean        @default(false)
   isFree                Boolean        @default(true)
   price                 Float          @default(0)
   originalPrice         Float?
@@ -358,11 +371,18 @@ model Reply {
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  rating    Int      @default(5)
-  comment   String?
-  userId    String
-  courseId  String
+  id       String  @id @default(cuid())
+  rating   Int     @default(5)
+  comment  String?
+  userId   String
+  courseId String
+
+  instructorReply   String?   @db.Text
+  instructorReplyAt DateTime?
+
+  learnerReply   String?   @db.Text
+  learnerReplyAt DateTime?
+
   createdAt DateTime @default(now())
   course    Course   @relation(fields: [courseId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
@@ -370,27 +390,45 @@ model Review {
   @@unique([userId, courseId])
 }
 
+enum PaymentProvider {
+  VNPAY
+}
+
 model Transaction {
-  id        String        @id @default(cuid())
-  userId    String
-  courseId  String
-  amount    Float
-  status    PaymentStatus @default(PENDING)
-  provider  String
-  createdAt DateTime      @default(now())
-  course    Course        @relation(fields: [courseId], references: [id])
-  user      User          @relation(fields: [userId], references: [id])
+  id       String          @id @default(cuid())
+  userId   String
+  courseId String
+  amount   Float
+  status   PaymentStatus   @default(PENDING)
+  provider PaymentProvider @default(VNPAY)
+
+  txnRef       String    // mã bạn gửi sang VNPay
+  vnpTxnNo     String? // mã giao dịch VNPay trả về
+  responseCode String? // vnp_ResponseCode
+  payDate      DateTime? // thời điểm thanh toán thành công
+
+  createdAt DateTime @default(now())
+  course    Course   @relation(fields: [courseId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([courseId, createdAt])
+  @@index([status, createdAt])
+  @@index([txnRef])
 }
 
 model Certificate {
-  id              String   @id @default(cuid())
+  id              String         @id @default(cuid())
   userId          String
   courseId        String
-  issuedAt        DateTime @default(now())
-  certificateHash String   @unique
-  txHash          String?
-  course          Course   @relation(fields: [courseId], references: [id])
-  user            User     @relation(fields: [userId], references: [id])
+  issuedAt        DateTime       @default(now())
+  certificateHash String         @unique
+  tokenId         String?        @unique 
+  ipfsHash        String?        
+  txHash          String?        
+  status          CertMintStatus @default(PENDING) 
+  course          Course         @relation(fields: [courseId], references: [id])
+  user            User           @relation(fields: [userId], references: [id])
 }
 
 // model CourseOverallAnalytics {
@@ -459,3 +497,26 @@ model WishlistItem {
 
   @@unique([userId, courseId])
 }
+
+// @Change thay đổi cho admin modules.Rules: Thêm bảng AuditLog để lưu vết thao tác của Admin
+model AuditLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String   // Ví dụ: UPDATE_ROLE, BAN_USER, DELETE_COURSE
+  entity    String   // Ví dụ: USER, COURSE
+  entityId  String   @map("entity_id")
+  details   Json?    // Dữ liệu chi tiết về thay đổi
+  createdAt DateTime @default(now()) @map("created_at")
+  admin     User     @relation(fields: [adminId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+

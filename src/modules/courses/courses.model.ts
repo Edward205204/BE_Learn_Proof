@@ -36,6 +36,7 @@ export const CourseItemResponseSchema = z.object({
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
   shortDesc: z.string(),
   createdAt: z.date(),
+  isEnrolled: z.boolean().optional().default(false),
   // Quan hệ kèm theo
   category: z.object({
     name: z.string(),
@@ -87,9 +88,12 @@ export const CourseReviewSchema = z.object({
   comment: z.string().nullable(),
   createdAt: z.date(),
   user: z.object({
+    id: z.string(),
     fullName: z.string(),
     avatar: z.string().nullable(),
   }),
+  instructorReply: z.string().nullable().optional(),
+  instructorReplyAt: z.date().nullable().optional(),
 })
 
 export const CourseDetailResponseSchema = z.object({
@@ -112,25 +116,27 @@ export const CourseDetailResponseSchema = z.object({
   expectedDays: z.number().int().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  isEnrolled: z.boolean().optional().default(false),
   // --- Relations ---
-  category: z.object({
-    name: z.string(),
-    slug: z.string(),
-  }),
-  creator: z.object({
-    id: z.string(),
-    fullName: z.string(),
-    avatar: z.string().nullable(),
-  }),
-  chapters: z.array(CurriculumChapterSchema),
-  overallAnalytics: z
+  category: z
     .object({
-      totalStudents: z.number().int(),
-      avgRating: z.number(),
-      completionRate: z.number(),
+      name: z.string(),
+      slug: z.string(),
     })
-    .nullable(),
-  reviews: z.array(CourseReviewSchema),
+    .nullable()
+    .optional(),
+  creator: z
+    .object({
+      id: z.string(),
+      fullName: z.string(),
+      avatar: z.string().nullable(),
+    })
+    .nullable()
+    .optional(),
+  chapters: z.array(CurriculumChapterSchema).optional().default([]),
+  overallAnalytics: z.any().optional().default(null),
+  userReview: CourseReviewSchema.nullable().optional(),
+  reviews: z.array(CourseReviewSchema).optional().default([]),
 })
 
 /** Card nhỏ dùng chung cho tất cả các section trên trang chủ */
@@ -145,6 +151,7 @@ export const HomeCourseCardSchema = z.object({
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
   shortDesc: z.string(),
   createdAt: z.date(),
+  isEnrolled: z.boolean().optional().default(false),
   category: z.object({ name: z.string(), slug: z.string() }),
   creator: z.object({ fullName: z.string(), avatar: z.string().nullable() }),
   overallAnalytics: z
@@ -316,6 +323,7 @@ export const GetCourseDetailManagerResponseSchema = z.object({
   isFree: z.boolean(),
   price: z.number(),
   originalPrice: z.number().nullable(),
+  isCompleted: z.boolean(),
   publishedLessonsCount: z.number().int(),
   totalPlannedLessons: z.number().int().nullable(),
   expectedDays: z.number().int().nullable(),

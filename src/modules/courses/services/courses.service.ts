@@ -7,19 +7,19 @@ import { CourseNotFoundException } from '../error.model'
 export class CourseService {
   constructor(private readonly repo: CourseRepo) {}
 
-  getCourses(query: GetCoursesQueryType) {
-    return this.repo.getCoursesCatalog(query)
+  getCourses(query: GetCoursesQueryType & { userId?: string }) {
+    const { userId, ...rest } = query
+    return this.repo.getCoursesCatalog(rest, userId)
   }
 
-  async getCourseDetail(slug: string) {
-    const course = await this.repo.getCourseDetail(slug)
+  async getCourseDetail(slug: string, userId?: string) {
+    const course = await this.repo.getCourseDetail(slug, userId)
     if (!course) throw new CourseNotFoundException()
     return course
   }
 
-  async getHomeSections() {
-    const data = await this.repo.getHomeSections()
-    console.log(data)
+  async getHomeSections(userId?: string) {
+    const data = await this.repo.getHomeSections(userId)
     return data
   }
 

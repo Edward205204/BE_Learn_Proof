@@ -23,6 +23,8 @@ export class CartRepo {
         id: true,
         items: {
           select: {
+            id: true,
+            courseId: true,
             course: {
               select: {
                 id: true,
@@ -42,20 +44,6 @@ export class CartRepo {
     })
   }
 
-  findCoursePublished(courseId: string) {
-    return this.txHost.tx.course.findFirst({
-      where: { id: courseId, status: 'PUBLISHED' },
-      select: { id: true },
-    })
-  }
-
-  checkEnrolled(userId: string, courseId: string) {
-    return this.txHost.tx.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId } },
-      select: { id: true },
-    })
-  }
-
   addItemToCart(cartId: string, courseId: string) {
     return this.txHost.tx.cartItem.createMany({
       data: [{ cartId, courseId }],
@@ -66,6 +54,30 @@ export class CartRepo {
   removeItemFromCart(cartId: string, courseId: string) {
     return this.txHost.tx.cartItem.deleteMany({
       where: { cartId, courseId },
+    })
+  }
+
+  async getCartCourseIdsForCheckout(userId: string) {
+    const cart = await this.getCartWithItems(userId)
+    if (!cart || cart.items.length === 0) return null
+    return cart.items.map((item) => item.course.id)
+  }
+
+  async removeItemsByCourseIds(userId: string, courseIds: string[]) {
+    if (!courseIds.length) return
+    const cart = await this.txHost.tx.cart.findUnique({
+      where: { userId },
+      select: { id: true },
+    })
+    if (!cart) return
+
+    await this.txHost.tx.cartItem.deleteMany({
+      where: {
+        cartId: cart.id,
+        courseId: {
+          in: courseIds,
+        },
+      },
     })
   }
 }

@@ -16,10 +16,18 @@ export const CartItemCourseSchema = z.object({
 })
 
 export const CartItemSchema = z.object({
+  id: z.string(),
+  courseId: z.string(),
   course: CartItemCourseSchema,
 })
 
-export const CartResponseSchema = z.object({
-  id: z.string(),
-  items: z.array(CartItemSchema),
-}).nullable()
+export const CartResponseSchema = z
+  .object({
+    id: z.string(),
+    items: z.array(CartItemSchema),
+  })
+  .nullable()
+
+export const CheckoutResponseSchema = z.object({
+  courseIds: z.array(z.string()),
+})

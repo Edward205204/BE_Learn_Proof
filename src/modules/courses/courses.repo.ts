@@ -75,7 +75,7 @@ export class CourseRepo {
       },
       include: {
         chapters: {
-          orderBy: { order: 'asc' }, // Lấy ra luôn danh sách đã sắp xếp
+          orderBy: [{ order: 'asc' }, { id: 'asc' }], // Lấy ra luôn danh sách đã sắp xếp
         },
       },
     })
@@ -83,7 +83,7 @@ export class CourseRepo {
 
   // ----- Public catalog -----
 
-  async getCoursesCatalog(query: z.infer<typeof GetCoursesQuery>) {
+  async getCoursesCatalog(query: z.infer<typeof GetCoursesQuery>, userId?: string) {
     const { page, limit, category, level, price, search, sort } = query
     const skip = (page - 1) * limit
     const sortMapping: Record<string, Prisma.CourseOrderByWithRelationInput[]> = {
@@ -104,7 +104,7 @@ export class CourseRepo {
       }),
     }
 
-    const [courses, total] = await Promise.all([
+    const [courses, total, userEnrollments] = await Promise.all([
       this.txHost.tx.course.findMany({
         where,
         skip,
@@ -123,9 +123,41 @@ export class CourseRepo {
         },
       }),
       this.txHost.tx.course.count({ where }),
+      userId
+        ? this.txHost.tx.enrollment.findMany({
+            where: { userId, course: where },
+            select: { courseId: true },
+          })
+        : Promise.resolve([]),
     ])
+
+    const enrolledIds = new Set(userEnrollments.map((e) => e.courseId))
+
+    const items = await Promise.all(
+      courses.map(async (c) => {
+        const [avgRatingRes, totalStudents] = await Promise.all([
+          this.txHost.tx.review.aggregate({
+            where: { courseId: c.id },
+            _avg: { rating: true },
+          }),
+          this.txHost.tx.enrollment.count({
+            where: { courseId: c.id },
+          }),
+        ])
+
+        return {
+          ...c,
+          isEnrolled: enrolledIds.has(c.id),
+          overallAnalytics: {
+            avgRating: avgRatingRes._avg.rating || 0,
+            totalStudents,
+          },
+        }
+      }),
+    )
+
     return {
-      items: courses,
+      items,
       meta: {
         total,
         page,
@@ -135,8 +167,8 @@ export class CourseRepo {
     }
   }
 
-  getCourseDetail(slug: string) {
-    return this.txHost.tx.course.findUnique({
+  async getCourseDetail(slug: string, userId?: string) {
+    const course = await this.txHost.tx.course.findUnique({
       where: {
         slug,
         status: CourseStatus.PUBLISHED,
@@ -178,13 +210,13 @@ export class CourseRepo {
         },
         // --- Curriculum (KHÔNG lấy videoUrl / textContent / contentAI) ---
         chapters: {
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
           select: {
             id: true,
             title: true,
             order: true,
             lessons: {
-              orderBy: { order: 'asc' },
+              orderBy: [{ order: 'asc' }, { id: 'asc' }],
               select: {
                 id: true,
                 title: true,
@@ -204,20 +236,62 @@ export class CourseRepo {
             rating: true,
             comment: true,
             createdAt: true,
+            instructorReply: true,
+            instructorReplyAt: true,
+            learnerReply: true,
+            learnerReplyAt: true,
             user: {
               select: {
+                id: true,
                 fullName: true,
                 avatar: true,
               },
             },
           },
         },
+        // --- Check Enrollment ---
+        ...(userId && {
+          enrollments: {
+            where: { userId },
+            select: { id: true },
+            take: 1,
+          },
+        }),
       },
     })
-  }
-  async getHomeSections() {
-    // Chạy 4 query song song để tối ưu latency
 
+    if (!course) return null
+
+    // --- Tính toán analytics thực tế ---
+    const [avgRatingRes, totalStudents, userReview] = await Promise.all([
+      this.txHost.tx.review.aggregate({
+        where: { courseId: course.id },
+        _avg: { rating: true },
+      }),
+      this.txHost.tx.enrollment.count({
+        where: { courseId: course.id },
+      }),
+      userId
+        ? this.txHost.tx.review.findUnique({
+            where: { userId_courseId: { userId, courseId: course.id } },
+            include: { user: { select: { id: true, fullName: true, avatar: true } } },
+          })
+        : Promise.resolve(null),
+    ])
+
+    const { enrollments, ...rest } = course as any
+    return {
+      ...rest,
+      isEnrolled: enrollments ? enrollments.length > 0 : false,
+      userReview: userReview,
+      overallAnalytics: {
+        avgRating: avgRatingRes._avg.rating || 0,
+        totalStudents,
+        completionRate: 0, // Tạm thời
+      },
+    }
+  }
+  async getHomeSections(userId?: string) {
     const baseSelect = {
       id: true,
       title: true,
@@ -233,35 +307,83 @@ export class CourseRepo {
       creator: { select: { fullName: true, avatar: true } },
     } as const
 
-    const [trending, topSelling, newest, topRated] = await Promise.all([
+    const publishedWhere = { status: CourseStatus.PUBLISHED }
+
+    const [trending, topSelling, newest, topRated, userEnrollments] = await Promise.all([
+      // Trending: khoá học có nhiều enrollment nhất
       this.txHost.tx.course.findMany({
-        where: { status: CourseStatus.PUBLISHED },
-        orderBy: { createdAt: 'desc' },
+        where: publishedWhere,
+        orderBy: { enrollments: { _count: 'desc' } },
         take: 5,
         select: baseSelect,
       }),
 
+      // Top Selling: khoá học có nhiều transaction COMPLETED nhất
       this.txHost.tx.course.findMany({
-        where: { status: CourseStatus.PUBLISHED },
-        orderBy: { createdAt: 'desc' },
+        where: publishedWhere,
+        orderBy: { transactions: { _count: 'desc' } },
         take: 10,
         select: baseSelect,
       }),
+
+      // Newest: khoá học mới tạo/publish gần đây nhất
       this.txHost.tx.course.findMany({
-        where: { status: CourseStatus.PUBLISHED },
+        where: publishedWhere,
         orderBy: { createdAt: 'desc' },
         take: 5,
         select: baseSelect,
       }),
+
+      // Top Rated: khoá học có nhiều review và review mới nhất
       this.txHost.tx.course.findMany({
-        where: { status: CourseStatus.PUBLISHED },
-        orderBy: { createdAt: 'desc' },
+        where: publishedWhere,
+        orderBy: [{ reviews: { _count: 'desc' } }, { createdAt: 'desc' }],
         take: 5,
         select: baseSelect,
       }),
+      userId
+        ? this.txHost.tx.enrollment.findMany({
+            where: { userId },
+            select: { courseId: true },
+          })
+        : Promise.resolve([]),
     ])
 
-    return { trending, topSelling, newest, topRated }
+    const enrolledIds = new Set(userEnrollments.map((e) => e.courseId))
+
+    // --- Helper để gộp analytics cho danh sách khóa học ---
+    const attachAnalytics = async (courses: any[]) => {
+      return await Promise.all(
+        courses.map(async (c) => {
+          const [avgRatingRes, totalStudents] = await Promise.all([
+            this.txHost.tx.review.aggregate({
+              where: { courseId: c.id },
+              _avg: { rating: true },
+            }),
+            this.txHost.tx.enrollment.count({
+              where: { courseId: c.id },
+            }),
+          ])
+
+          return {
+            ...c,
+            isEnrolled: enrolledIds.has(c.id),
+            overallAnalytics: {
+              avgRating: avgRatingRes._avg.rating || 0,
+              totalStudents,
+              avgInterestScore: 0,
+            },
+          }
+        }),
+      )
+    }
+
+    return {
+      trending: await attachAnalytics(trending),
+      topSelling: await attachAnalytics(topSelling),
+      newest: await attachAnalytics(newest),
+      topRated: await attachAnalytics(topRated),
+    }
   }
 
   getCategories() {
@@ -316,7 +438,7 @@ export class CourseRepo {
       where: body,
       include: {
         chapters: {
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
         },
       },
     })
@@ -341,7 +463,7 @@ export class CourseRepo {
       },
       include: {
         chapters: {
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
         },
       },
     })
@@ -362,7 +484,26 @@ export class CourseRepo {
       },
       include: {
         chapters: {
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
+        },
+      },
+    })
+  }
+
+  completeCourse(courseId: string, creatorId: string) {
+    return this.txHost.tx.course.update({
+      where: {
+        id_creatorId: {
+          id: courseId,
+          creatorId,
+        },
+      },
+      data: {
+        isCompleted: true,
+      },
+      include: {
+        chapters: {
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
         },
       },
     })
@@ -457,6 +598,7 @@ export class CourseRepo {
         isFree: true,
         price: true,
         originalPrice: true,
+        isCompleted: true,
         publishedLessonsCount: true,
         totalPlannedLessons: true,
         expectedDays: true,
@@ -469,13 +611,13 @@ export class CourseRepo {
           },
         },
         chapters: {
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
           select: {
             id: true,
             title: true,
             order: true,
             lessons: {
-              orderBy: { order: 'asc' },
+              orderBy: [{ order: 'asc' }, { id: 'asc' }],
               select: {
                 id: true,
                 title: true,
@@ -507,13 +649,13 @@ export class CourseRepo {
   getCourseProgress(userId: string, courseId: string) {
     return this.txHost.tx.chapter.findMany({
       where: { courseId },
-      orderBy: { order: 'asc' },
+      orderBy: [{ order: 'asc' }, { id: 'asc' }],
       select: {
         id: true,
         title: true,
         order: true,
         lessons: {
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
           select: {
             id: true,
             title: true,
@@ -555,9 +697,25 @@ export class CourseRepo {
     })
   }
 
+  async countCoursesByCreatorAndStatus(creatorId: string, status: CourseStatus) {
+    return this.txHost.tx.course.count({
+      where: { creatorId, status },
+    })
+  }
+
   async countEnrollmentsByCourse(courseId: string) {
     return this.txHost.tx.enrollment.count({
       where: { courseId },
+    })
+  }
+
+  async countLessonsByCourse(courseId: string) {
+    return this.txHost.tx.lesson.count({
+      where: {
+        chapter: {
+          courseId,
+        },
+      },
     })
   }
 
@@ -583,6 +741,17 @@ export class CourseRepo {
   deleteChapter(chapterId: string) {
     return this.txHost.tx.chapter.delete({
       where: { id: chapterId },
+    })
+  }
+
+  deleteCourse(courseId: string, creatorId: string) {
+    return this.txHost.tx.course.delete({
+      where: {
+        id_creatorId: {
+          id: courseId,
+          creatorId,
+        },
+      },
     })
   }
 }

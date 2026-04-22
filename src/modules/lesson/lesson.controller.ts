@@ -21,8 +21,8 @@ export class LessonController {
 
   @Post()
   @ZodSerializerDto(LessonBasicResponseSchema)
-  createLesson(@Body() body: CreateLessonDto) {
-    return this.lessonService.createLesson(body)
+  createLesson(@Body() body: CreateLessonDto, @ActiveUser() user: TokenPayload) {
+    return this.lessonService.createLesson(body, user.userId)
   }
 
   @Patch('reorder')

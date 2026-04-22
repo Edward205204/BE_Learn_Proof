@@ -15,7 +15,12 @@ export class LessonService {
     private readonly quizLearnerService: QuizLearnerService,
   ) {}
 
-  async createLesson(body: CreateLessonBodyType) {
+  async createLesson(body: CreateLessonBodyType, userId: string) {
+    const chapter = await this.lessonRepo.findChapterWithAuthorId({ id: body.chapterId, authorId: userId })
+    if (!chapter) {
+      throw new ForbiddenException('Chương học không tồn tại hoặc bạn không có quyền thao tác trên khóa học này')
+    }
+
     const lessonStrategy = this.registry.resolve(body.type)
     return lessonStrategy.create(body)
   }
