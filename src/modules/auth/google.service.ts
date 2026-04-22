@@ -56,41 +56,45 @@ export class GoogleService {
       })
 
       const { data } = await oauth2.userinfo.get()
+      const email = data.email
+      const name = data.name
 
-      if (!data.email) {
+      if (!email) {
         throw new UnauthorizedException('Không thể lấy thông tin email từ Google')
       }
 
       // 3. Tìm hoặc Tạo user
-      let user: User | Pick<User, 'id' | 'email' | 'fullName' | 'avatar' | 'role'> | null =
-        await this.authRepo.findUserUnique({
-          email: data.email,
-        })
+      let user = await this.authRepo.findUserUnique({ email })
 
-      const finalUser =
-        user ||
-        (await (async () => {
-          const randomPassword = uuidv4()
-          const hashedPassword = await this.hashingService.hash(randomPassword)
+      if (!user) {
+        const randomPassword = uuidv4()
+        const hashedPassword = await this.hashingService.hash(randomPassword)
 
         user = await this.authRepo.createUser({
-          email: data.email,
-          fullName: data.name ?? '',
+          email: email,
+          fullName: name ?? 'Người dùng Google',
           password: hashedPassword,
           avatar: data.picture ?? '',
-          role: ADMIN_EMAILS.includes(data.email) ? Role.ADMIN : Role.LEARNER,
+          role: ADMIN_EMAILS.includes(email) ? Role.ADMIN : Role.LEARNER,
         })
       }
 
+      // Lúc này TypeScript vẫn có thể nghĩ user là null nếu logic phức tạp, 
+      // chúng ta gán vào hằng số để khẳng định user tồn tại (Narrowing)
+      const GoogleUser = user 
+      if (!GoogleUser) {
+        throw new UnauthorizedException('Không thể xác thực hoặc tạo người dùng')
+      }
+
       // Tự động nâng cấp quyền Admin nếu email nằm trong danh sách
-      let role = user.role
-      if (ADMIN_EMAILS.includes(user.email) && role !== Role.ADMIN) {
-        await this.authRepo.updateUser({ where: { id: user.id }, data: { role: Role.ADMIN } })
+      let role = GoogleUser.role
+      if (ADMIN_EMAILS.includes(GoogleUser.email) && role !== Role.ADMIN) {
+        await this.authRepo.updateUser({ where: { id: GoogleUser.id }, data: { role: Role.ADMIN } })
         role = Role.ADMIN
       }
 
       return await this.authService.generateAndSaveTokens({
-        userId: user.id,
+        userId: GoogleUser.id,
         role: role,
       })
     } catch (error) {

@@ -73,6 +73,8 @@ model User {
   website   String?
   role      Role      @default(LEARNER)
   isBanned  Boolean   @default(false)
+  isOnboardingCompleted Boolean   @default(false)
+
   deletedAt DateTime?
 
   coursesCreated Course[]          @relation("CourseCreator")
