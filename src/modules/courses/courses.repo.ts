@@ -10,6 +10,7 @@ import {
   GetMyCoursesManagerQueryType,
 } from './courses.model'
 import { CourseStatus, Prisma, PrismaClient } from 'src/generated/prisma/client'
+import { formatSearchQuery } from 'src/shared/utils/search.util'
 
 @Injectable()
 export class CourseRepo {
@@ -98,7 +99,7 @@ export class CourseRepo {
       ...(level && { level }),
       ...(price !== undefined && { isFree: price === 'true' }),
       ...(search && {
-        title: { contains: search, mode: 'insensitive' },
+        OR: [{ title: { search: formatSearchQuery(search) } }, { shortDesc: { search: formatSearchQuery(search) } }],
       }),
     }
 
@@ -399,19 +400,20 @@ export class CourseRepo {
     })
   }
 
-  getSearchSuggestions(q: string) {
-    return this.txHost.tx.course.findMany({
-      where: {
-        status: 'PUBLISHED',
-        title: { contains: q, mode: 'insensitive' },
-      },
-      take: 5,
-      select: {
-        title: true,
-        slug: true,
-        thumbnail: true,
-      },
-    })
+  async getSearchSuggestions(query: string) {
+    const searchPattern = `%${query}%`
+
+    // Sử dụng $queryRaw để dùng hàm unaccent() của Postgres
+    // Giúp tìm kiếm "lap trinh" vẫn ra "lập trình"
+    return await this.txHost.tx.$queryRaw`
+      SELECT id, title, slug, thumbnail, price
+      FROM "Course"
+      WHERE status = 'PUBLISHED'
+        AND (unaccent(title) ILIKE unaccent(${searchPattern}) 
+             OR unaccent("shortDesc") ILIKE unaccent(${searchPattern}))
+      ORDER BY similarity(unaccent(title), unaccent(${query})) DESC
+      LIMIT 8
+    `
   }
 
   getAllSlugs() {

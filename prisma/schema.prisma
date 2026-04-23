@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions", "fullTextSearch", "fullTextIndex"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [pg_trgm(schema: "public"), unaccent(schema: "public")]
 }
 
 enum Role {
@@ -179,6 +181,7 @@ model Course {
   @@index([creatorId, createdAt])
   @@index([creatorId, status, createdAt])
   @@index([categoryId])
+  @@index([title(ops: raw("gin_trgm_ops")), shortDesc(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 model Chapter {
@@ -221,6 +224,7 @@ model Lesson {
   updatedAt   DateTime          @updatedAt
 
   @@index([chapterId, order])
+  @@index([title(ops: raw("gin_trgm_ops")), shortDesc(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 // thuộc modules lesson - end
