@@ -69,4 +69,21 @@ export class PaymentRepo {
       },
     })
   }
+
+  getTransactionsByUserId(userId: string) {
+    return this.txHost.tx.transaction.findMany({
+      where: { userId },
+      include: {
+        course: {
+          select: {
+            title: true,
+            thumbnail: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+  }
 }
