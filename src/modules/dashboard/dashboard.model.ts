@@ -14,6 +14,21 @@ export const DashboardOverviewSchema = z.object({
   totalRevenue: z.number(),
 })
 
+export const CartAbandonedItemSchema = z.object({
+  courseId: z.string(),
+  title: z.string(),
+  cartCount: z.number(),
+  purchasedCount: z.number(),
+  abandonedCount: z.number(),
+})
+
+export const FallingRatedCourseSchema = z.object({
+  courseId: z.string(),
+  title: z.string(),
+  avgRating: z.number(),
+  totalReviews: z.number(),
+})
+
 export const RevenueChartItemSchema = z.object({
   month: z.date(),
   revenue: z.number(),

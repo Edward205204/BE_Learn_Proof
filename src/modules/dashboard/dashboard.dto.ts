@@ -1,7 +1,9 @@
 import { createZodDto } from 'nestjs-zod'
 import {
+  CartAbandonedItemSchema,
   DashboardFilterSchema,
   DashboardOverviewSchema,
+  FallingRatedCourseSchema,
   RevenueChartItemSchema,
   RevenueChartResponseSchema
 } from './dashboard.model'
@@ -13,3 +15,5 @@ export class DashboardFilterDto extends createZodDto(DashboardFilterSchema) {}
 export class DashboardOverviewDto extends createZodDto(DashboardOverviewSchema) {}
 export class RevenueChartItemDto extends createZodDto(RevenueChartItemSchema) {}
 export class RevenueChartResponseDto extends createZodDto(RevenueChartResponseSchema) {}
+export class CartAbandonedItemDto extends createZodDto(CartAbandonedItemSchema) {}
+export class FallingRatedCourseDto extends createZodDto(FallingRatedCourseSchema) {}

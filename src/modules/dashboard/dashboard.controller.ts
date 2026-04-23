@@ -25,4 +25,14 @@ export class DashboardController {
   getHardLessons() {
     return this.service.getHardLessons()
   }
+
+  @Get('cart-abandoned')
+  getCartAbandonedCourses() {
+    return this.service.getCartAbandonedCourses()
+  }
+
+  @Get('falling-rated-courses')
+  getFallingRatedCourses() {
+    return this.service.getFallingRatedCourses()
+  }
 }
