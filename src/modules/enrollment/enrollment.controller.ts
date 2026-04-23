@@ -29,7 +29,7 @@ export class EnrollmentController {
   @Get(':courseId/status')
   @ZodSerializerDto(EnrollmentStatusResponseSchema)
   getEnrollmentStatus(@ActiveUser() user: TokenPayload, @Param('courseId') courseId: string) {
-    return this.enrollmentService.getEnrollmentStatus(user.userId, courseId)
+    return this.enrollmentService.getEnrollmentStatus(user.userId, courseId).then((enrolled) => ({ enrolled }))
   }
 
   @Post(':courseId/complete')

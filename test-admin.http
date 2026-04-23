@@ -1,0 +1,53 @@
+### Admin Module API Test
+@baseUrl = http://localhost:3000
+@accessToken = YOUR_ACCESS_TOKEN_HERE
+
+# 1. Lấy danh sách người dùng (Yêu cầu quyền ADMIN)
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+###
+
+# 2. Lấy danh sách người dùng có Search & Filter
+# sort: newest, oldest, name-asc, name-desc
+GET {{baseUrl}}/admin/users?search=thai&role=LEARNER&page=1&limit=5
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+###
+
+# 3. Lấy chi tiết 1 người dùng
+@userId = cmnp123...
+GET {{baseUrl}}/admin/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+###
+
+# 4. Cập nhật Role cho User
+# Role: ADMIN, CONTENT_MANAGER, LEARNER
+PATCH {{baseUrl}}/admin/users/{{userId}}/role
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "role": "CONTENT_MANAGER"
+}
+
+###
+
+# 5. Khóa / Mở khóa tài khoản (Ban)
+PATCH {{baseUrl}}/admin/users/{{userId}}/ban
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "isBanned": true
+}
+
+###
+
+# Lưu ý: 
+# - Bạn cần gán cứng 1 User trong DB thành role 'ADMIN' trước để lấy Access Token test.
+# - Sau khi thực hiện các lệnh PATCH, bảng 'audit_logs' trong Database sẽ được cập nhật tự động.

@@ -4,10 +4,10 @@ services:
     container_name: learn-proof-db
     restart: always
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: "123"
+      POSTGRES_PASSWORD: '123'
       POSTGRES_DB: learn-proof-db
     volumes:
       - postgres_data:/var/lib/postgresql/data
