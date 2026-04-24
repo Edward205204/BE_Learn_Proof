@@ -24,6 +24,7 @@ import { BlockchainModule } from './modules/blockchain/blockchain.module'
 import { IpfsModule } from './modules/ipfs/ipfs.module'
 import { PaymentModule } from './modules/payment/payment.module'
 import { DashboardModule } from './modules/dashboard/dashboard.module'
+import { VideoModule } from './modules/video/video.module'
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module'
     IpfsModule,
     PaymentModule,
     DashboardModule,
+    VideoModule,
   ],
 
   controllers: [],

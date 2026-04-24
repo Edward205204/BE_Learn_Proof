@@ -28,6 +28,7 @@ export class QuizLessonStrategy implements LessonStrategy {
       provider: null,
       duration: null,
       textContent: null,
+      videoKey: null,
     })
     if (data?.quizData) {
       await this.quizCmsService.createQuiz({ lessonId: lesson.id, quizData: data.quizData })

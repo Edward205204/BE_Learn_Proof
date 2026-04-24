@@ -31,6 +31,7 @@ export class TextLessonStrategy implements LessonStrategy {
       duration: null,
       chapterId: data.chapterId,
       textContent,
+      videoKey: null,
     })
 
     if (data?.quizData) {

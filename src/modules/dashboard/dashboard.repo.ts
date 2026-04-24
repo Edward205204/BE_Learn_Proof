@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from 'src/shared/services/prisma.service'
-import { PaymentStatus, CourseStatus } from '@prisma/client'
+import { PaymentStatus, CourseStatus } from 'src/generated/prisma/enums'
 
 @Injectable()
 export class DashboardRepo {

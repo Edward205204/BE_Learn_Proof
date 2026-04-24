@@ -21,24 +21,34 @@ export class VideoLessonStrategy implements LessonStrategy {
 
   private extractYoutubeId(videoId?: string): string | null {
     if (!videoId) return null
-    const match = videoId.match(this.YOUTUBE_URL_REGEX)
-    const idToValidate = match ? match[1] : videoId
+    const sanitizedVideoId = videoId.trim()
+    const match = sanitizedVideoId.match(this.YOUTUBE_URL_REGEX)
 
-    return this.YOUTUBE_ID_REGEX.test(idToValidate) ? idToValidate : videoId
+    if (match?.[1] && this.YOUTUBE_ID_REGEX.test(match[1])) {
+      return match[1]
+    }
+
+    if (this.YOUTUBE_ID_REGEX.test(sanitizedVideoId)) {
+      return sanitizedVideoId
+    }
+
+    return null
   }
 
   @Transactional()
   async create(data: CreateLessonBodyType) {
     const order = await this.baseLessonStrategy.getNextOrder(data.chapterId)
-    let provider = LessonProvider.BUNNY // default
+    let provider = LessonProvider.CLOUDINARY // default
 
-    const youtubeId = this.extractYoutubeId(data?.videoId)
+    const inputVideoId = (data?.videoId as string).trim()
+    const youtubeId = this.extractYoutubeId(inputVideoId)
+    const videoKey = data?.videoKey?.trim() || null
 
     if (youtubeId) {
       provider = LessonProvider.YOUTUBE
     }
     // ko thể undefined vì đã được định nghĩa trong hàm refine() zod
-    const videoId = youtubeId ?? (data?.videoId as string)
+    const videoId = youtubeId ?? inputVideoId
 
     const lesson = await this.lessonRepo.createLesson({
       type: LessonType.VIDEO,
@@ -50,6 +60,7 @@ export class VideoLessonStrategy implements LessonStrategy {
       duration: data?.duration || 0,
       chapterId: data.chapterId,
       textContent: null,
+      videoKey: youtubeId ? null : videoKey,
     })
 
     if (data?.quizData) {
@@ -69,6 +80,7 @@ export class VideoLessonStrategy implements LessonStrategy {
       chapterId: lesson.chapterId,
       duration: lesson.duration,
       videoUrl: this.buildVideoUrl(lesson.videoId ?? '', lesson.provider as LessonProvider),
+      videoKey: lesson.videoKey,
     })
   }
 
@@ -76,7 +88,7 @@ export class VideoLessonStrategy implements LessonStrategy {
     if (provider === LessonProvider.YOUTUBE) {
       return `https://www.youtube.com/watch?v=${videoId}`
     }
-    // TODO: BUNNY CDN URL khi có library ID
+    // TODO: CLOUDINARY CDN URL khi có library ID
     return videoId
   }
 }
