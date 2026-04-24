@@ -3,7 +3,7 @@ import { AdminCoursesService } from '../services/admin-courses.service'
 import { checkAdmin } from 'src/modules/admin/admin.util'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 import { TokenPayload } from 'src/shared/types/jwt.type'
-import { GetCoursesQueryDTO, UpdateCourseBanStatusBodyDTO, UpdateCourseStatusBodyDTO } from '../admin.dto'
+import { GetCoursesQueryDTO, UpdateCourseStatusBodyDTO } from '../admin.dto'
 import { ZodSerializerDto } from 'nestjs-zod'
 import {
   AdminCourseDetailResponseSchema,
@@ -38,16 +38,5 @@ export class AdminCoursesController {
   ) {
     checkAdmin(user)
     return this.adminCoursesService.updateCourseStatus(id, body, user.userId)
-  }
-
-  @Patch(':id/ban')
-  @ZodSerializerDto(AdminUpdateCourseResponseSchema)
-  async updateCourseBanStatus(
-    @Param('id') id: string,
-    @Body() body: UpdateCourseBanStatusBodyDTO,
-    @ActiveUser() user: TokenPayload,
-  ) {
-    checkAdmin(user)
-    return this.adminCoursesService.updateCourseBanStatus(id, body, user.userId)
   }
 }

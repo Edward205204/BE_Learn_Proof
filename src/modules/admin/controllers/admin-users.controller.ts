@@ -6,7 +6,7 @@ import { TokenPayload } from 'src/shared/types/jwt.type'
 import { Role } from 'src/generated/prisma/enums'
 import { AdminUsersService } from '../services/admin-users.service'
 import { checkAdmin } from '../admin.util'
-import { GetUsersQueryDTO, UpdateUserRoleBodyDTO, UpdateBanStatusBodyDTO } from '../admin.dto'
+import { GetUsersQueryDTO, UpdateUserRoleBodyDTO } from '../admin.dto'
 import {
   AdminGetUsersResponseSchema,
   AdminUserDetailResponseSchema,
@@ -40,10 +40,4 @@ export class AdminUsersController {
     return this.adminUsersService.updateUserRole(id, body, user.userId)
   }
 
-  @Patch(':id/ban')
-  @ZodSerializerDto(AdminUpdateUserResponseSchema)
-  updateBanStatus(@Param('id') id: string, @Body() body: UpdateBanStatusBodyDTO, @ActiveUser() user: TokenPayload) {
-    checkAdmin(user)
-    return this.adminUsersService.updateBanStatus(id, body, user.userId)
-  }
 }

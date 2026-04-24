@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { AdminUsersRepo } from '../repos/admin-users.repo'
 import { AuthService } from '../../auth/auth.service'
-import { GetUsersQueryType, UpdateUserRoleBodyType, UpdateBanStatusBodyType } from '../admin.model'
+import { GetUsersQueryType, UpdateUserRoleBodyType } from '../admin.model'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 import { PrismaClient } from 'src/generated/prisma/client'
@@ -50,15 +50,4 @@ export class AdminUsersService {
     return result
   }
 
-  async updateBanStatus(id: string, body: UpdateBanStatusBodyType, adminId: string) {
-    const user = await this.getUserDetail(id)
-
-    // Gọi AuthService để thực hiện việc ghi DB
-    const result = await this.authService.updateBanStatus(id, body.isBanned)
-
-    // Ghi log
-    await this.logAction(adminId, 'UPDATE_BAN_STATUS', 'USER', id, { from: user.isBanned, to: body.isBanned })
-
-    return result
-  }
 }

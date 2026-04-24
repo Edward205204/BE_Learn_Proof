@@ -7,7 +7,6 @@ export const GetUsersQuerySchema = z
     page: z.coerce.number().default(1),
     limit: z.coerce.number().default(10),
     role: z.nativeEnum(Role).optional(),
-    isBanned: z.enum(['true', 'false']).optional(),
     search: z.string().optional(),
     sort: z.enum(['newest', 'oldest', 'name-asc', 'name-desc']).optional(),
   })
@@ -18,7 +17,6 @@ export const GetCoursesQuerySchema = z
     page: z.coerce.number().default(1),
     limit: z.coerce.number().default(10),
     status: z.nativeEnum(CourseStatus).optional(),
-    isBanned: z.enum(['true', 'false']).optional(),
     search: z.string().optional(),
     sort: z.enum(['newest', 'oldest', 'price-asc', 'price-desc']).optional(),
   })
@@ -31,21 +29,10 @@ export const UpdateUserRoleBodySchema = z
   })
   .strict()
 
-export const UpdateBanStatusBodySchema = z
-  .object({
-    isBanned: z.boolean(),
-  })
-  .strict()
 
 export const UpdateCourseStatusBodySchema = z
   .object({
     status: z.nativeEnum(CourseStatus),
-  })
-  .strict()
-
-export const UpdateCourseBanStatusBodySchema = z
-  .object({
-    isBanned: z.boolean(),
   })
   .strict()
 
@@ -56,7 +43,6 @@ export const AdminUserItemSchema = z.object({
   fullName: z.string(),
   avatar: z.string().nullable(),
   role: z.nativeEnum(Role),
-  isBanned: z.boolean(),
   createdAt: z.date(),
   // Stats - có thể join vào
   _count: z.object({
@@ -84,7 +70,6 @@ export const AdminUserDetailResponseSchema = z.object({
   headline: z.string().nullable(),
   website: z.string().nullable(),
   role: z.nativeEnum(Role),
-  isBanned: z.boolean(),
   createdAt: z.date(),
   updatedAt: z.date(),
 })
@@ -92,7 +77,6 @@ export const AdminUserDetailResponseSchema = z.object({
 export const AdminUpdateUserResponseSchema = z.object({
   id: z.string(),
   role: z.nativeEnum(Role),
-  isBanned: z.boolean(),
 })
 
 export const AdminCourseItemSchema = z.object({
@@ -101,7 +85,6 @@ export const AdminCourseItemSchema = z.object({
   slug: z.string(),
   thumbnail: z.string().nullable(),
   status: z.nativeEnum(CourseStatus),
-  isBanned: z.boolean(),
   price: z.number(),
   isFree: z.boolean(),
   level: z.nativeEnum(CourseLevel),
@@ -133,9 +116,7 @@ export const AdminCourseDetailResponseSchema = z.object({
   slug: z.string(),
   thumbnail: z.string().nullable(),
   shortDesc: z.string(),
-  fullDesc: z.string(),
   status: z.nativeEnum(CourseStatus),
-  isBanned: z.boolean(),
   price: z.number(),
   isFree: z.boolean(),
   level: z.nativeEnum(CourseLevel),
@@ -151,7 +132,6 @@ export const AdminCourseDetailResponseSchema = z.object({
 export const AdminUpdateCourseResponseSchema = z.object({
   id: z.string(),
   status: z.nativeEnum(CourseStatus),
-  isBanned: z.boolean(),
 })
 
 export const UpdateSystemSettingSchema = z.object({
@@ -162,12 +142,10 @@ export const UpdateSystemSettingSchema = z.object({
 // Export Type theo Model
 export type GetUsersQueryType = z.infer<typeof GetUsersQuerySchema>
 export type UpdateUserRoleBodyType = z.infer<typeof UpdateUserRoleBodySchema>
-export type UpdateBanStatusBodyType = z.infer<typeof UpdateBanStatusBodySchema>
 export type UpdateSystemSettingBodyType = z.infer<typeof UpdateSystemSettingSchema>
 
 export type GetCoursesQueryType = z.infer<typeof GetCoursesQuerySchema>
 export type UpdateCourseStatusBodyType = z.infer<typeof UpdateCourseStatusBodySchema>
-export type UpdateCourseBanStatusBodyType = z.infer<typeof UpdateCourseBanStatusBodySchema>
 
 export const GetAuditLogsQuerySchema = z
   .object({

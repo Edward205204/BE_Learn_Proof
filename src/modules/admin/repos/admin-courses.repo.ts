@@ -9,12 +9,11 @@ export class AdminCoursesRepo {
   constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
 
   async getCoursesPaging(query: GetCoursesQueryType) {
-    const { page, limit, status, isBanned, search, sort } = query
+    const { page, limit, status, search, sort } = query
     const skip = (page - 1) * limit
 
     const where: any = {}
     if (status) where.status = status
-    if (isBanned !== undefined) where.isBanned = isBanned === 'true'
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
@@ -33,7 +32,16 @@ export class AdminCoursesRepo {
         skip,
         take: limit,
         orderBy,
-        include: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          thumbnail: true,
+          status: true,
+          price: true,
+          isFree: true,
+          level: true,
+          createdAt: true,
           creator: {
             select: { id: true, fullName: true, email: true },
           },
@@ -59,7 +67,18 @@ export class AdminCoursesRepo {
   async getCourseDetail(id: string) {
     return this.txHost.tx.course.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        thumbnail: true,
+        shortDesc: true,
+        status: true,
+        price: true,
+        isFree: true,
+        level: true,
+        createdAt: true,
+        updatedAt: true,
         creator: {
           select: { id: true, fullName: true, email: true },
         },

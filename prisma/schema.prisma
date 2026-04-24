@@ -84,7 +84,6 @@ model User {
   headline  String?
   website   String?
   role      Role      @default(LEARNER)
-  isBanned  Boolean   @default(false)
   isOnboardingCompleted Boolean   @default(false)
 
   deletedAt DateTime?
@@ -168,7 +167,6 @@ model Course {
   shortDesc             String
   thumbnail             String?
   status                CourseStatus   @default(DRAFT)
-  isBanned              Boolean        @default(false)
   isFree                Boolean        @default(true)
   price                 Float          @default(0)
   originalPrice         Float?
@@ -216,7 +214,6 @@ model Lesson {
   id        String     @id @default(cuid())
   title     String
   shortDesc String?    @db.Text
-  fullDesc  String?    @db.Text // Context cho AI
   type      LessonType
   order     Float
 

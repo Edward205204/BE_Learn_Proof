@@ -72,9 +72,13 @@ export class CourseRepo {
           },
         },
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        status: true,
         chapters: {
-          orderBy: [{ order: 'asc' }, { id: 'asc' }], // Lấy ra luôn danh sách đã sắp xếp
+          orderBy: [{ order: 'asc' }, { id: 'asc' }],
         },
       },
     })
@@ -196,7 +200,7 @@ export class CourseRepo {
     const course = await this.txHost.tx.course.findUnique({
       where: {
         slug,
-        status: CourseStatus.PUBLISHED,
+        status: { in: [CourseStatus.PUBLISHED, CourseStatus.ARCHIVED] },
       },
       select: {
         // --- Core fields ---
@@ -285,6 +289,12 @@ export class CourseRepo {
     })
 
     if (!course) return null
+
+    // Logic: Nếu khoá học bị ARCHIVED, chỉ người đã enrolled mới được thấy
+    if (course.status === CourseStatus.ARCHIVED) {
+      const isEnrolled = course.enrollments && course.enrollments.length > 0
+      if (!isEnrolled) return null
+    }
 
     // --- Tính toán analytics thực tế ---
     const [avgRatingRes, totalStudents, userReview] = await Promise.all([
@@ -461,7 +471,10 @@ export class CourseRepo {
   getCourseUniqueIncludeChapters(body: { id: string } | { slug: string } | { creatorId: string; id: string }) {
     return this.txHost.tx.course.findUnique({
       where: body,
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
         chapters: {
           orderBy: [{ order: 'asc' }, { id: 'asc' }],
         },
@@ -485,7 +498,10 @@ export class CourseRepo {
         shortDesc: dto.shortDesc,
         thumbnail: dto.thumbnail ?? null,
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
         chapters: {
           orderBy: [{ order: 'asc' }, { id: 'asc' }],
         },
@@ -506,7 +522,10 @@ export class CourseRepo {
         price: payload.price,
         originalPrice: payload.originalPrice,
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
         chapters: {
           orderBy: [{ order: 'asc' }, { id: 'asc' }],
         },
@@ -525,7 +544,10 @@ export class CourseRepo {
       data: {
         isCompleted: true,
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
         chapters: {
           orderBy: [{ order: 'asc' }, { id: 'asc' }],
         },
@@ -659,7 +681,7 @@ export class CourseRepo {
     return this.txHost.tx.course.findFirst({
       where: {
         id: courseId,
-        status: CourseStatus.PUBLISHED,
+        status: { in: [CourseStatus.PUBLISHED, CourseStatus.ARCHIVED] },
       },
       select: {
         id: true,

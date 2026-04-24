@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { AdminCoursesRepo } from '../repos/admin-courses.repo'
-import { GetCoursesQueryType, UpdateCourseStatusBodyType, UpdateCourseBanStatusBodyType } from '../admin.model'
+import { GetCoursesQueryType, UpdateCourseStatusBodyType } from '../admin.model'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 import { PrismaClient } from 'src/generated/prisma/client'
@@ -37,27 +37,6 @@ export class AdminCoursesService {
         entity: 'COURSE',
         entityId: id,
         details: { from: course.status, to: body.status },
-      },
-    })
-
-    return updated
-  }
-
-  async updateCourseBanStatus(id: string, body: UpdateCourseBanStatusBodyType, adminId: string) {
-    const course = await this.getCourseDetail(id)
-
-    const updated = await this.txHost.tx.course.update({
-      where: { id },
-      data: { isBanned: body.isBanned },
-    })
-
-    await this.txHost.tx.auditLog.create({
-      data: {
-        adminId,
-        action: 'UPDATE_COURSE_BAN_STATUS',
-        entity: 'COURSE',
-        entityId: id,
-        details: { from: course.isBanned, to: body.isBanned },
       },
     })
 
