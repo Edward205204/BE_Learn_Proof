@@ -161,6 +161,14 @@ export const HomeCourseCardSchema = z.object({
   isEnrolled: z.boolean().optional().default(false),
   category: z.object({ name: z.string(), slug: z.string() }),
   creator: z.object({ fullName: z.string(), avatar: z.string().nullable() }),
+  overallAnalytics: z
+    .object({
+      avgRating: z.number(),
+      totalStudents: z.number(),
+      avgInterestScore: z.number().optional()
+    })
+    .nullable()
+    .optional()
 })
 
 export const HomeSectionsResponseSchema = z.object({
