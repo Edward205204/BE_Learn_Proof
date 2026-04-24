@@ -86,9 +86,17 @@ export class CourseRepo {
     const { page, limit, category, level, price, search, sort } = query
     const skip = (page - 1) * limit
     const sortMapping: Record<string, Prisma.CourseOrderByWithRelationInput[]> = {
-      popular: [{ createdAt: 'desc' }],
-      rating: [{ createdAt: 'desc' }],
+      popular: [
+        { enrollments: { _count: 'desc' } },
+        { reviews: { _count: 'desc' } },
+        { avgRating: 'desc' },
+      ],
+      rating_desc: [
+        { avgRating: 'desc' },
+        { reviews: { _count: 'desc' } },
+      ],
       newest: [{ createdAt: 'desc' }],
+      relevant: [{ createdAt: 'desc' }],
       'price-asc': [{ price: 'asc' }, { createdAt: 'desc' }],
       'price-desc': [{ price: 'desc' }, { createdAt: 'desc' }],
     }
@@ -96,8 +104,21 @@ export class CourseRepo {
     const where: Prisma.CourseWhereInput = {
       status: CourseStatus.PUBLISHED,
       ...(category && { category: { slug: category } }),
-      ...(level && { level }),
+      ...(level && { level: level as any }), // Ép kiểu nếu query level không khớp chính xác enum
       ...(price !== undefined && { isFree: price === 'true' }),
+      ...(query.language && { language: query.language as any }),
+      ...(query.rating && { avgRating: { gte: query.rating } }),
+      ...(query.feature && {
+        chapters: {
+          some: {
+            lessons: {
+              some: {
+                type: query.feature as any,
+              },
+            },
+          },
+        },
+      }),
       ...(search && {
         OR: [{ title: { search: formatSearchQuery(search) } }, { shortDesc: { search: formatSearchQuery(search) } }],
       }),
@@ -117,6 +138,11 @@ export class CourseRepo {
           price: true,
           originalPrice: true,
           level: true,
+          language: true,
+          avgRating: true,
+          totalReviews: true,
+          shortDesc: true,
+          createdAt: true,
           category: { select: { name: true, slug: true } },
           creator: { select: { fullName: true, avatar: true } },
         },

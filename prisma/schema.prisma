@@ -31,6 +31,16 @@ enum LessonType {
   VIDEO
   TEXT
   QUIZ
+  CODING
+  PRACTICE
+  ROLE_PLAY
+}
+
+enum CourseLanguage {
+  VIETNAMESE
+  ENGLISH
+  JAPANESE
+  KOREAN
 }
 
 enum PaymentStatus {
@@ -152,6 +162,9 @@ model Course {
   isCompleted           Boolean        @default(false)
   publishedLessonsCount Int            @default(0) // @denormalized số lượng bài học đã public - cần sync
   totalPlannedLessons   Int?
+  language              CourseLanguage @default(VIETNAMESE)
+  avgRating             Float          @default(0)
+  totalReviews          Int            @default(0)
   shortDesc             String
   thumbnail             String?
   status                CourseStatus   @default(DRAFT)
@@ -181,6 +194,7 @@ model Course {
   @@index([creatorId, createdAt])
   @@index([creatorId, status, createdAt])
   @@index([categoryId])
+  @@index([categoryId, level, isFree, status])
   @@index([title(ops: raw("gin_trgm_ops")), shortDesc(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
