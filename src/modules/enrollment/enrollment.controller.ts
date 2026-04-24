@@ -8,6 +8,7 @@ import {
   MyEnrollmentsResponseSchema,
   EnrollmentStatusResponseSchema,
   MarkCompletedResponseSchema,
+  CourseProgressResponseSchema,
 } from './enrollment.response'
 
 @Controller('enrollment')
@@ -30,6 +31,12 @@ export class EnrollmentController {
   @ZodSerializerDto(EnrollmentStatusResponseSchema)
   getEnrollmentStatus(@ActiveUser() user: TokenPayload, @Param('courseId') courseId: string) {
     return this.enrollmentService.getEnrollmentStatus(user.userId, courseId).then((enrolled) => ({ enrolled }))
+  }
+
+  @Get(':courseId/progress')
+  @ZodSerializerDto(CourseProgressResponseSchema)
+  getCourseProgress(@ActiveUser() user: TokenPayload, @Param('courseId') courseId: string) {
+    return this.enrollmentService.getCourseProgress(user.userId, courseId)
   }
 
   @Post(':courseId/complete')
