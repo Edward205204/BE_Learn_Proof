@@ -13,6 +13,7 @@ export class AdminUsersRepo {
     const skip = (page - 1) * limit
 
     const where: Prisma.UserWhereInput = {
+      deletedAt: null,
       ...(role && { role }),
       ...(search && {
         OR: [
@@ -43,6 +44,7 @@ export class AdminUsersRepo {
           fullName: true,
           avatar: true,
           role: true,
+          provider: true,
           createdAt: true,
           _count: {
             select: {

@@ -66,6 +66,11 @@ enum VerificationCodeType {
   FORGOT_PASSWORD
 }
 
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
 enum VideoProviderEnum {
   YOUTUBE
   BUNNY
@@ -84,6 +89,7 @@ model User {
   headline  String?
   website   String?
   role      Role      @default(LEARNER)
+  provider  AuthProvider @default(LOCAL)
   isOnboardingCompleted Boolean   @default(false)
 
   deletedAt DateTime?

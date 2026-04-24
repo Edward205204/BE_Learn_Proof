@@ -76,6 +76,7 @@ export class GoogleService {
           password: hashedPassword,
           avatar: data.picture ?? '',
           role: ADMIN_EMAILS.includes(email) ? Role.ADMIN : Role.LEARNER,
+          provider: 'GOOGLE',
         })
       }
 

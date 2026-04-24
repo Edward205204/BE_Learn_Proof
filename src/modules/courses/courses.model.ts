@@ -4,7 +4,7 @@ import { z } from 'zod'
 export const GetCoursesQuery = z
   .object({
     page: z.coerce.number().default(1),
-    limit: z.coerce.number().default(12),
+    limit: z.coerce.number().default(16),
     category: z.string().optional(),
     level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).optional(),
     price: z.enum(['true', 'false']).optional(),

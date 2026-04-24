@@ -25,7 +25,13 @@ export class AuthRepo {
     })
   }
 
-  createUser(payload: Pick<User, 'email' | 'fullName' | 'password'> & { avatar?: string; role?: User['role'] }) {
+  createUser(
+    payload: Pick<User, 'email' | 'fullName' | 'password'> & {
+      avatar?: string
+      role?: User['role']
+      provider?: User['provider']
+    },
+  ) {
     return this.txHost.tx.user.create({
       data: payload,
     })
