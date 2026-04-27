@@ -9,6 +9,7 @@ export class StorageService {
   private s3Client: S3Client
   private bucketName = envConfig.R2_BUCKET_NAME
   private endpoint = envConfig.ENDPOINT_CLOUD_STORE.replace(/\/+$/, '')
+  private publicBaseUrl = envConfig.PUBLIC_CLOUD_STORE_URL?.replace(/\/+$/, '')
 
   constructor() {
     this.s3Client = new S3Client({
@@ -44,7 +45,7 @@ export class StorageService {
     }
 
     return {
-      url: `${this.endpoint}/${key}`,
+      url: this.publicBaseUrl ? `${this.publicBaseUrl}/${key}` : `${this.endpoint}/${this.bucketName}/${key}`,
       key: key,
     }
   }
