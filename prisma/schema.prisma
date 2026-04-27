@@ -31,6 +31,16 @@ enum LessonType {
   VIDEO
   TEXT
   QUIZ
+  CODING
+  PRACTICE
+  ROLE_PLAY
+}
+
+enum CourseLanguage {
+  VIETNAMESE
+  ENGLISH
+  JAPANESE
+  KOREAN
 }
 
 enum PaymentStatus {
@@ -56,6 +66,11 @@ enum VerificationCodeType {
   FORGOT_PASSWORD
 }
 
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
 enum VideoProviderEnum {
   YOUTUBE
   CLOUDINARY
@@ -64,18 +79,19 @@ enum VideoProviderEnum {
 
 // thuộc modules user - start
 model User {
-  id                    String  @id @default(cuid())
-  email                 String  @unique
-  walletAddress         String? @unique
+  id                    String       @id @default(cuid())
+  email                 String       @unique
+  walletAddress         String?      @unique
   password              String
   fullName              String
   avatar                String?
-  bio                   String? @db.Text
+  bio                   String?      @db.Text
   headline              String?
   website               String?
-  role                  Role    @default(LEARNER)
-  isBanned              Boolean @default(false)
-  isOnboardingCompleted Boolean @default(false)
+  role                  Role         @default(LEARNER)
+  provider              AuthProvider @default(LOCAL)
+  isBanned              Boolean      @default(false)
+  isOnboardingCompleted Boolean      @default(false)
 
   deletedAt DateTime?
 
@@ -152,10 +168,12 @@ model Course {
   isCompleted           Boolean        @default(false)
   publishedLessonsCount Int            @default(0) // @denormalized số lượng bài học đã public - cần sync
   totalPlannedLessons   Int?
+  language              CourseLanguage @default(VIETNAMESE)
+  avgRating             Float          @default(0)
+  totalReviews          Int            @default(0)
   shortDesc             String
   thumbnail             String?
   status                CourseStatus   @default(DRAFT)
-  isBanned              Boolean        @default(false)
   isFree                Boolean        @default(true)
   price                 Float          @default(0)
   originalPrice         Float?
@@ -181,6 +199,7 @@ model Course {
   @@index([creatorId, createdAt])
   @@index([creatorId, status, createdAt])
   @@index([categoryId])
+  @@index([categoryId, level, isFree, status])
   @@index([title(ops: raw("gin_trgm_ops")), shortDesc(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
@@ -202,7 +221,6 @@ model Lesson {
   id        String     @id @default(cuid())
   title     String
   shortDesc String?    @db.Text
-  fullDesc  String?    @db.Text // Context cho AI
   type      LessonType
   order     Float
 

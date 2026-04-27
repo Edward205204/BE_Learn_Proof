@@ -24,8 +24,10 @@ const contentManager = {
 async function createContentManager() {
   const saltRounds = 10
   const hashedPassword = await hash(contentManager.password, saltRounds)
-  return prisma.user.create({
-    data: {
+  return prisma.user.upsert({
+    where: { email: contentManager.email },
+    update: {},
+    create: {
       email: contentManager.email,
       password: hashedPassword,
       fullName: 'Content Manager',
@@ -59,10 +61,23 @@ async function main() {
   await prisma.category.deleteMany()
   await prisma.auditLog.deleteMany()
   await prisma.systemSetting.deleteMany()
-  await prisma.user.deleteMany()
+  // Xóa người dùng mẫu (LOCAL), giữ lại người dùng Google thực tế
+  await prisma.user.deleteMany({
+    where: {
+      provider: 'LOCAL',
+      NOT: {
+        email: {
+          in: [contentManager.email]
+        }
+      }
+    }
+  })
 
   // 1. Tạo Giảng viên
   const instructor = await createContentManager()
+
+  // 1.1. Tạo thêm dữ liệu mẫu (người dùng, khóa học...)
+  // await seedRealData()
 
   // 2. Tạo nhiều Categories để phân loại
   const categoriesData = [
@@ -520,19 +535,39 @@ main()
 async function seedRealData() {
   console.log('--- Seed du lieu that (no loop) ---')
 
+  const saltRounds = 10
+  const hashedPassword = await hash('123', saltRounds)
+
   // USERS
-  const u1 = await prisma.user.create({ data: { email: 'an@gmail.com', password: '123', fullName: 'Nguyen Van An' } })
-  const u2 = await prisma.user.create({ data: { email: 'binh@gmail.com', password: '123', fullName: 'Tran Thi Binh' } })
-  const u3 = await prisma.user.create({ data: { email: 'cuong@gmail.com', password: '123', fullName: 'Le Van Cuong' } })
-  const u4 = await prisma.user.create({ data: { email: 'dung@gmail.com', password: '123', fullName: 'Pham Thi Dung' } })
-  const u5 = await prisma.user.create({ data: { email: 'em@gmail.com', password: '123', fullName: 'Hoang Van Em' } })
-  const u6 = await prisma.user.create({ data: { email: 'giang@gmail.com', password: '123', fullName: 'Vo Thi Giang' } })
-  const u7 = await prisma.user.create({ data: { email: 'hung@gmail.com', password: '123', fullName: 'Dang Van Hung' } })
-  const u8 = await prisma.user.create({ data: { email: 'hoa@gmail.com', password: '123', fullName: 'Bui Thi Hoa' } })
-  const u9 = await prisma.user.create({ data: { email: 'khanh@gmail.com', password: '123', fullName: 'Do Van Khanh' } })
-  const u10 = await prisma.user.create({
-    data: { email: 'linh@gmail.com', password: '123', fullName: 'Nguyen Thi Linh' },
-  })
+  const usersToSeed = [
+    { email: 'an@gmail.com', fullName: 'Nguyen Van An' },
+    { email: 'binh@gmail.com', fullName: 'Tran Thi Binh' },
+    { email: 'cuong@gmail.com', fullName: 'Le Van Cuong' },
+    { email: 'dung@gmail.com', fullName: 'Pham Thi Dung' },
+    { email: 'em@gmail.com', fullName: 'Hoang Van Em' },
+    { email: 'giang@gmail.com', fullName: 'Vo Thi Giang' },
+    { email: 'hung@gmail.com', fullName: 'Dang Van Hung' },
+    { email: 'hoa@gmail.com', fullName: 'Bui Thi Hoa' },
+    { email: 'khanh@gmail.com', fullName: 'Do Van Khanh' },
+    { email: 'linh@gmail.com', fullName: 'Nguyen Thi Linh' },
+  ]
+
+  const seededUsers = await Promise.all(
+    usersToSeed.map((user) =>
+      prisma.user.upsert({
+        where: { email: user.email },
+        update: {},
+        create: {
+          email: user.email,
+          password: hashedPassword,
+          fullName: user.fullName,
+          role: Role.LEARNER,
+        },
+      }),
+    ),
+  )
+
+  const [u1, u2, u3, u4, u5, u6, u7, u8, u9, u10] = seededUsers
 
   // CATEGORY
   const c1 = await prisma.category.create({ data: { name: 'Frontend', slug: 'frontend' } })

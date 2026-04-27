@@ -10,6 +10,7 @@ import { AuthenticationGuard } from 'src/shared/guards/authentication.guard'
 import { MailService } from './services/mail.service'
 import { SlugService } from './services/slug.service'
 import { SystemSettingsService } from './services/system-settings.service'
+import { MaintenanceGuard } from './guards/maintenance.guard'
 
 const sharedServices = [PrismaService, HashingService, TokenService, MailService, SlugService, SystemSettingsService]
 
@@ -22,6 +23,10 @@ const sharedServices = [PrismaService, HashingService, TokenService, MailService
     {
       provide: APP_GUARD,
       useClass: AuthenticationGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: MaintenanceGuard,
     },
   ],
   exports: sharedServices,

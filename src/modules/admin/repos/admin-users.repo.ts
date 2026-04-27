@@ -9,12 +9,12 @@ export class AdminUsersRepo {
   constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
 
   async getUsersPaging(query: GetUsersQueryType) {
-    const { page, limit, role, isBanned, search, sort } = query
+    const { page, limit, role, search, sort } = query
     const skip = (page - 1) * limit
 
     const where: Prisma.UserWhereInput = {
+      deletedAt: null,
       ...(role && { role }),
-      ...(isBanned !== undefined && { isBanned: isBanned === 'true' }),
       ...(search && {
         OR: [
           { email: { contains: search, mode: 'insensitive' } },
@@ -44,7 +44,7 @@ export class AdminUsersRepo {
           fullName: true,
           avatar: true,
           role: true,
-          isBanned: true,
+          provider: true,
           createdAt: true,
           _count: {
             select: {
@@ -80,7 +80,6 @@ export class AdminUsersRepo {
         headline: true,
         website: true,
         role: true,
-        isBanned: true,
         createdAt: true,
         updatedAt: true,
       },

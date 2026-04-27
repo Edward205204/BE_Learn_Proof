@@ -74,6 +74,12 @@ export class AuthService {
       role = Role.ADMIN
     }
 
+    // Kiểm tra chế độ bảo trì
+    const isMaintenance = await this.systemSettingsService.getSetting('MAINTENANCE_MODE', false)
+    if (isMaintenance && role !== Role.ADMIN) {
+      throw new ForbiddenException('Hệ thống hiện đang trong quá trình bảo trì. Vui lòng quay lại sau.')
+    }
+
     const { accessToken, refreshToken } = await this.generateAndSaveTokens({ userId: user.id, role })
 
     return {
@@ -96,12 +102,19 @@ export class AuthService {
   }
 
   async register(body: RegisterBodyType): Promise<AuthResType> {
+    const isMaintenance = await this.systemSettingsService.getSetting('MAINTENANCE_MODE', false)
+    const { email, fullName, password, code } = body
+    const isAdminEmail = ADMIN_EMAILS.includes(email)
+
+    if (isMaintenance && !isAdminEmail) {
+      throw new ForbiddenException('Hệ thống hiện đang trong quá trình bảo trì. Đăng ký tạm đóng.')
+    }
+
     const allowRegistration = await this.systemSettingsService.getSetting('ALLOW_REGISTRATION', true)
     if (!allowRegistration) {
       throw new ForbiddenException('Registration is currently disabled by administrator.')
     }
 
-    const { email, fullName, password, code } = body
     const user = await this.authRepo.findUserUnique({ email })
     if (user) throw new EmailAlreadyExistsException()
 
@@ -112,7 +125,7 @@ export class AuthService {
 
     const hashedPassword = await this.hashingService.hash(password)
 
-    const role = ADMIN_EMAILS.includes(email) ? Role.ADMIN : Role.LEARNER
+    const role = isAdminEmail ? Role.ADMIN : Role.LEARNER
 
     const newUser = await this.authRepo.createUser({
       email,
@@ -130,12 +143,19 @@ export class AuthService {
   }
 
   async sendOtpForRegister(body: SendOtpBodyType) {
+    const isMaintenance = await this.systemSettingsService.getSetting('MAINTENANCE_MODE', false)
+    const { email } = body
+    const isAdminEmail = ADMIN_EMAILS.includes(email)
+
+    if (isMaintenance && !isAdminEmail) {
+      throw new ForbiddenException('Hệ thống hiện đang trong quá trình bảo trì.')
+    }
+
     const allowRegistration = await this.systemSettingsService.getSetting('ALLOW_REGISTRATION', true)
     if (!allowRegistration) {
       throw new ForbiddenException('Registration is currently disabled by administrator.')
     }
 
-    const { email } = body
     const user = await this.authRepo.findUserUnique({ email })
 
     if (user) throw new EmailAlreadyExistsAndCannotSendOtpException()
@@ -274,14 +294,7 @@ export class AuthService {
     return { id: updated.id, role: updated.role }
   }
 
-  async updateBanStatus(userId: string, isBanned: boolean) {
-    const user = await this.authRepo.findUserUnique({ id: userId })
-    if (!user) throw new UserNotFoundException()
-
-    const updated = await this.authRepo.updateUser({
-      where: { id: userId },
-      data: { isBanned },
-    })
-    return { id: updated.id, isBanned: updated.isBanned }
+  async getMaintenanceStatus() {
+    return this.systemSettingsService.getSetting('MAINTENANCE_MODE', false)
   }
 }

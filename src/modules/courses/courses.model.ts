@@ -4,13 +4,15 @@ import { z } from 'zod'
 export const GetCoursesQuery = z
   .object({
     page: z.coerce.number().default(1),
-    limit: z.coerce.number().default(12),
+    limit: z.coerce.number().default(16),
     category: z.string().optional(),
     level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).optional(),
     price: z.enum(['true', 'false']).optional(),
     rating: z.coerce.number().optional(),
+    language: z.enum(['VIETNAMESE', 'ENGLISH', 'JAPANESE', 'KOREAN']).optional(),
+    feature: z.enum(['QUIZ', 'CODING', 'PRACTICE', 'ROLE_PLAY']).optional(),
     search: z.string().optional(),
-    sort: z.enum(['newest', 'popular', 'rating', 'price-asc', 'price-desc']).optional(),
+    sort: z.enum(['newest', 'popular', 'rating_desc', 'relevant', 'price-asc', 'price-desc']).optional(),
   })
   .strict()
 
@@ -34,6 +36,9 @@ export const CourseItemResponseSchema = z.object({
   price: z.number(),
   originalPrice: z.number().nullable(),
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
+  language: z.enum(['VIETNAMESE', 'ENGLISH', 'JAPANESE', 'KOREAN']),
+  avgRating: z.number().default(0),
+  totalReviews: z.number().int().default(0),
   shortDesc: z.string(),
   createdAt: z.date(),
   isEnrolled: z.boolean().optional().default(false),
@@ -71,7 +76,7 @@ export const CurriculumLessonSchema = z.object({
   id: z.string(),
   title: z.string(),
   order: z.number(),
-  type: z.enum(['VIDEO', 'TEXT', 'QUIZ']),
+  type: z.enum(['VIDEO', 'TEXT', 'QUIZ', 'CODING', 'PRACTICE', 'ROLE_PLAY']),
   duration: z.number().nullable(), // giây
 })
 
@@ -148,6 +153,9 @@ export const HomeCourseCardSchema = z.object({
   originalPrice: z.number().nullable(),
   isFree: z.boolean(),
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
+  language: z.enum(['VIETNAMESE', 'ENGLISH', 'JAPANESE', 'KOREAN']),
+  avgRating: z.number(),
+  totalReviews: z.number(),
   shortDesc: z.string(),
   createdAt: z.date(),
   isEnrolled: z.boolean().optional().default(false),
@@ -157,11 +165,10 @@ export const HomeCourseCardSchema = z.object({
     .object({
       avgRating: z.number(),
       totalStudents: z.number(),
-      avgInterestScore: z.number(),
+      avgInterestScore: z.number().optional()
     })
     .nullable()
     .optional()
-    .default(null),
 })
 
 export const HomeSectionsResponseSchema = z.object({

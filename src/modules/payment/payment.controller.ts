@@ -6,13 +6,13 @@ import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 import { TokenPayload } from 'src/shared/types/jwt.type'
 import { IsPublic } from 'src/shared/decorators/auth.decorator'
 import { CreatePaymentBodyDto, VnpayReturnQueryDto } from './payment.dto'
-import { CreatePaymentResponseSchema } from './payment.response'
+import { CreatePaymentResponseSchema, PaymentHistoryResponseSchema } from './payment.response'
 import { Response } from 'express'
 import envConfig from 'src/shared/config'
 
 @Controller('payment')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(private readonly paymentService: PaymentService) { }
 
   @ApiBearerAuth('access-token')
   @Post('vnpay/create-payment')
@@ -38,5 +38,12 @@ export class PaymentController {
     redirectUrl.searchParams.set('txnRef', result.txnRef)
     redirectUrl.searchParams.set('courseIds', result.courseIds.join(','))
     return res.redirect(redirectUrl.toString())
+  }
+
+  @ApiBearerAuth('access-token')
+  @Get('history')
+  @ZodSerializerDto(PaymentHistoryResponseSchema)
+  getHistory(@ActiveUser() user: TokenPayload) {
+    return this.paymentService.getHistory(user.userId)
   }
 }

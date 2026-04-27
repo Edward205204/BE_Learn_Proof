@@ -119,6 +119,10 @@ export class PaymentService {
     }
   }
 
+  async getHistory(userId: string) {
+    return this.paymentRepo.getTransactionsByUserId(userId)
+  }
+
   private parseVnpPayDate(vnpPayDate?: string) {
     if (!vnpPayDate || vnpPayDate.length !== 14) return undefined
     const year = Number(vnpPayDate.slice(0, 4))
