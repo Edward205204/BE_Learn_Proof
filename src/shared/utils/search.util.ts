@@ -3,7 +3,7 @@
  * Ví dụ: "react nextjs" -> "react & nextjs"
  */
 export function formatSearchQuery(query: string): string {
-  if (!query) return '';
+  if (!query) return ''
 
   // 1. Loại bỏ các ký tự đặc biệt có thể gây lỗi cú pháp tsquery
   // 2. Tách chuỗi thành các từ
@@ -13,7 +13,7 @@ export function formatSearchQuery(query: string): string {
     .replace(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/g, ' ')
     .split(/\s+/)
     .filter((word) => word.length > 0)
-    .join(' & ');
+    .join(' & ')
 
-  return cleanQuery;
+  return cleanQuery
 }

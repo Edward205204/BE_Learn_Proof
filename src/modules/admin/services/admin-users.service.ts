@@ -49,5 +49,4 @@ export class AdminUsersService {
 
     return result
   }
-
 }

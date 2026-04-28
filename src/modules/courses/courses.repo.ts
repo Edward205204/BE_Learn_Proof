@@ -90,15 +90,8 @@ export class CourseRepo {
     const { page, limit, category, level, price, search, sort } = query
     const skip = (page - 1) * limit
     const sortMapping: Record<string, Prisma.CourseOrderByWithRelationInput[]> = {
-      popular: [
-        { enrollments: { _count: 'desc' } },
-        { reviews: { _count: 'desc' } },
-        { avgRating: 'desc' },
-      ],
-      rating_desc: [
-        { avgRating: 'desc' },
-        { reviews: { _count: 'desc' } },
-      ],
+      popular: [{ enrollments: { _count: 'desc' } }, { reviews: { _count: 'desc' } }, { avgRating: 'desc' }],
+      rating_desc: [{ avgRating: 'desc' }, { reviews: { _count: 'desc' } }],
       newest: [{ createdAt: 'desc' }],
       relevant: [{ createdAt: 'desc' }],
       'price-asc': [{ price: 'asc' }, { createdAt: 'desc' }],

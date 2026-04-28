@@ -29,7 +29,6 @@ export const UpdateUserRoleBodySchema = z
   })
   .strict()
 
-
 export const UpdateCourseStatusBodySchema = z
   .object({
     status: z.nativeEnum(CourseStatus),

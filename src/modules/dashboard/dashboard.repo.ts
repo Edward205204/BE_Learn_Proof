@@ -4,7 +4,7 @@ import { PaymentStatus, CourseStatus } from 'src/generated/prisma/enums'
 
 @Injectable()
 export class DashboardRepo {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   getOverview(): Promise<[number, number, number, number, number, { _sum: { amount: number | null } }]> {
     return Promise.all([

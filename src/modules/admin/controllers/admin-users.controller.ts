@@ -39,5 +39,4 @@ export class AdminUsersController {
     checkAdmin(user)
     return this.adminUsersService.updateUserRole(id, body, user.userId)
   }
-
 }

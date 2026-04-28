@@ -12,7 +12,7 @@ import envConfig from 'src/shared/config'
 
 @Controller('payment')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) { }
+  constructor(private readonly paymentService: PaymentService) {}
 
   @ApiBearerAuth('access-token')
   @Post('vnpay/create-payment')

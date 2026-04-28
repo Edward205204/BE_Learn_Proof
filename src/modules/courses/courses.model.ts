@@ -165,10 +165,10 @@ export const HomeCourseCardSchema = z.object({
     .object({
       avgRating: z.number(),
       totalStudents: z.number(),
-      avgInterestScore: z.number().optional()
+      avgInterestScore: z.number().optional(),
     })
     .nullable()
-    .optional()
+    .optional(),
 })
 
 export const HomeSectionsResponseSchema = z.object({
