@@ -50,6 +50,17 @@ export class EnrollmentService {
     })
   }
 
+  async getCourseProgress(userId: string, courseId: string) {
+    const progressMap = await this.enrollRepo.getProgressSummariesByCourseIds(userId, [courseId])
+    return (
+      progressMap.get(courseId) || {
+        totalLessons: 0,
+        completedLessons: 0,
+        progressPercent: 0,
+      }
+    )
+  }
+
   async getEnrollmentStatus(userId: string, courseId: string) {
     if (!courseId || !userId) return false
     const enrollment = await this.enrollRepo.getEnrollmentUnique(userId, courseId)

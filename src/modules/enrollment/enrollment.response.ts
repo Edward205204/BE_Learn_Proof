@@ -35,3 +35,9 @@ export const EnrollmentStatusResponseSchema = z.object({
 })
 
 export const MarkCompletedResponseSchema = EnrollmentIdResponseSchema
+
+export const CourseProgressResponseSchema = z.object({
+  totalLessons: z.number(),
+  completedLessons: z.number(),
+  progressPercent: z.number(),
+})
