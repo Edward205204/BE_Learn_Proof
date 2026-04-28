@@ -79,6 +79,7 @@ export class LessonRepo {
     duration: number | null
     chapterId: string
     textContent: string | null
+    videoKey: string | null
   }) {
     return this.txHost.tx.lesson.create({
       data,
@@ -106,6 +107,7 @@ export class LessonRepo {
         textContent: true,
         duration: true,
         chapterId: true,
+        videoKey: true,
       },
     })
   }

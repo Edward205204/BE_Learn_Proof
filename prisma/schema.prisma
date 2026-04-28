@@ -73,24 +73,25 @@ enum AuthProvider {
 
 enum VideoProviderEnum {
   YOUTUBE
-  BUNNY
+  CLOUDINARY
   SELF_HOSTED
 }
 
 // thuộc modules user - start
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  walletAddress String?   @unique
-  password  String
-  fullName  String
-  avatar    String?
-  bio       String?   @db.Text
-  headline  String?
-  website   String?
-  role      Role      @default(LEARNER)
-  provider  AuthProvider @default(LOCAL)
-  isOnboardingCompleted Boolean   @default(false)
+  id                    String       @id @default(cuid())
+  email                 String       @unique
+  walletAddress         String?      @unique
+  password              String
+  fullName              String
+  avatar                String?
+  bio                   String?      @db.Text
+  headline              String?
+  website               String?
+  role                  Role         @default(LEARNER)
+  provider              AuthProvider @default(LOCAL)
+  isBanned              Boolean      @default(false)
+  isOnboardingCompleted Boolean      @default(false)
 
   deletedAt DateTime?
 
@@ -227,6 +228,10 @@ model Lesson {
   provider    VideoProviderEnum?
   textContent String?            @db.Text
   duration    Int?
+
+  // Cloudinary video key
+  videoKey String?
+  // cloudinaryVideoUrl String?
 
   chapterId String
   chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
@@ -422,7 +427,7 @@ model Transaction {
   status   PaymentStatus   @default(PENDING)
   provider PaymentProvider @default(VNPAY)
 
-  txnRef       String    // mã bạn gửi sang VNPay
+  txnRef       String // mã bạn gửi sang VNPay
   vnpTxnNo     String? // mã giao dịch VNPay trả về
   responseCode String? // vnp_ResponseCode
   payDate      DateTime? // thời điểm thanh toán thành công
@@ -443,10 +448,10 @@ model Certificate {
   courseId        String
   issuedAt        DateTime       @default(now())
   certificateHash String         @unique
-  tokenId         String?        @unique 
-  ipfsHash        String?        
-  txHash          String?        
-  status          CertMintStatus @default(PENDING) 
+  tokenId         String?        @unique
+  ipfsHash        String?
+  txHash          String?
+  status          CertMintStatus @default(PENDING)
   course          Course         @relation(fields: [courseId], references: [id])
   user            User           @relation(fields: [userId], references: [id])
 }
@@ -522,10 +527,10 @@ model WishlistItem {
 model AuditLog {
   id        String   @id @default(cuid())
   adminId   String
-  action    String   // Ví dụ: UPDATE_ROLE, BAN_USER, DELETE_COURSE
-  entity    String   // Ví dụ: USER, COURSE
+  action    String // Ví dụ: UPDATE_ROLE, BAN_USER, DELETE_COURSE
+  entity    String // Ví dụ: USER, COURSE
   entityId  String   @map("entity_id")
-  details   Json?    // Dữ liệu chi tiết về thay đổi
+  details   Json? // Dữ liệu chi tiết về thay đổi
   createdAt DateTime @default(now()) @map("created_at")
   admin     User     @relation(fields: [adminId], references: [id])
 
@@ -539,4 +544,3 @@ model SystemSetting {
 
   @@map("system_settings")
 }
-

@@ -34,6 +34,7 @@ const configSchema = z.object({
   VNP_TMN_CODE: z.string(),
   VNP_HASH_SECRET: z.string(),
   RETURN_URL: z.string(),
+  PRVKEY: z.string(),
   // ADMIN_NAME: z.string(),
   // ADMIN_PASSWORD: z.string(),
   // ADMIN_EMAIL: z.string(),
@@ -42,6 +43,14 @@ const configSchema = z.object({
   // GOOGLE_CLIENT_SECRET: z.string(),
   // GOOGLE_REDIRECT_URI: z.string(),
   // GOOGLE_CLIENT_REDIRECT_URI: z.string(),
+
+  CLOUD_TOKEN_VALUE: z.string(),
+  CLOUD_ACCESS_KEY_ID: z.string(),
+  CLOUD_SECRET_ACCESS_KEY: z.string(),
+  ENDPOINT_CLOUD_STORE: z.string(),
+  PUBLIC_CLOUD_STORE_URL: z.string().optional(),
+  CLOUDINARY_ACCOUNT_ID: z.string(),
+  R2_BUCKET_NAME: z.string().default('learn-proof'),
 })
 
 const configServer = configSchema.safeParse(process.env)

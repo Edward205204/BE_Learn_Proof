@@ -22,6 +22,7 @@ export type LessonDetailRaw = {
   textContent: string | null
   duration: number | null
   chapterId: string
+  videoKey: string | null
 }
 
 // --- Response types theo từng loại lesson ---
@@ -35,6 +36,7 @@ export type VideoLessonDetailResponse = {
   chapterId: string
   duration: number | null
   videoUrl: string
+  videoKey: string | null
 }
 
 export type TextLessonDetailResponse = {
