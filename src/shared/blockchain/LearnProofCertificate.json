@@ -562,11 +562,6 @@
           "type": "address"
         },
         {
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
-        },
-        {
           "internalType": "string",
           "name": "uri",
           "type": "string"
@@ -794,5 +789,5 @@
       "type": "function"
     }
   ],
-  "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  "address": "0x69dd39BB382dA8334EfDD7654BC66F169C6AF29d"
 }

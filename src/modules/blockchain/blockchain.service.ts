@@ -46,6 +46,11 @@ export class BlockchainService implements OnModuleInit {
     }
   }
 
+  getAdminWalletAddress(): string {
+    if (!this.signer) throw new Error('Blockchain Service not initialized')
+    return this.signer.address
+  }
+
   /**
    * Mints a Soulbound Certificate (SBT) for a user
    * @param to The wallet address of the recipient

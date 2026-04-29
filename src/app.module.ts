@@ -25,6 +25,7 @@ import { IpfsModule } from './modules/ipfs/ipfs.module'
 import { PaymentModule } from './modules/payment/payment.module'
 import { DashboardModule } from './modules/dashboard/dashboard.module'
 import { VideoModule } from './modules/video/video.module'
+import { CertificateModule } from './modules/certificate/certificate.module'
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { VideoModule } from './modules/video/video.module'
     PaymentModule,
     DashboardModule,
     VideoModule,
+    CertificateModule,
   ],
 
   controllers: [],
