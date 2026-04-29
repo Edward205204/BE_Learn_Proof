@@ -34,7 +34,6 @@ const configSchema = z.object({
   VNP_TMN_CODE: z.string(),
   VNP_HASH_SECRET: z.string(),
   RETURN_URL: z.string(),
-  PRVKEY: z.string(),
   // ADMIN_NAME: z.string(),
   // ADMIN_PASSWORD: z.string(),
   // ADMIN_EMAIL: z.string(),

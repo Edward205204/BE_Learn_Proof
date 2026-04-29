@@ -12,6 +12,31 @@ import {
 import { CourseStatus, Prisma, PrismaClient } from 'src/generated/prisma/client'
 import { formatSearchQuery } from 'src/shared/utils/search.util'
 
+const CourseFullSelect: Prisma.CourseSelect = {
+  id: true,
+  title: true,
+  slug: true,
+  categoryId: true,
+  level: true,
+  shortDesc: true,
+  thumbnail: true,
+  expectedDays: true,
+  status: true,
+  isFree: true,
+  price: true,
+  originalPrice: true,
+  isCompleted: true,
+  publishedLessonsCount: true,
+  totalPlannedLessons: true,
+  creatorId: true,
+  createdAt: true,
+  updatedAt: true,
+  chapters: {
+    orderBy: [{ order: 'asc' }, { id: 'asc' }],
+  },
+};
+
+
 @Injectable()
 export class CourseRepo {
   constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
@@ -72,15 +97,7 @@ export class CourseRepo {
           },
         },
       },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        status: true,
-        chapters: {
-          orderBy: [{ order: 'asc' }, { id: 'asc' }],
-        },
-      },
+      select: CourseFullSelect,
     })
   }
 
@@ -467,14 +484,7 @@ export class CourseRepo {
   getCourseUniqueIncludeChapters(body: { id: string } | { slug: string } | { creatorId: string; id: string }) {
     return this.txHost.tx.course.findUnique({
       where: body,
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        chapters: {
-          orderBy: [{ order: 'asc' }, { id: 'asc' }],
-        },
-      },
+      select: CourseFullSelect,
     })
   }
 
@@ -494,14 +504,7 @@ export class CourseRepo {
         shortDesc: dto.shortDesc,
         thumbnail: dto.thumbnail ?? null,
       },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        chapters: {
-          orderBy: [{ order: 'asc' }, { id: 'asc' }],
-        },
-      },
+      select: CourseFullSelect,
     })
   }
 
@@ -518,14 +521,7 @@ export class CourseRepo {
         price: payload.price,
         originalPrice: payload.originalPrice,
       },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        chapters: {
-          orderBy: [{ order: 'asc' }, { id: 'asc' }],
-        },
-      },
+      select: CourseFullSelect,
     })
   }
 
@@ -540,14 +536,7 @@ export class CourseRepo {
       data: {
         isCompleted: true,
       },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        chapters: {
-          orderBy: [{ order: 'asc' }, { id: 'asc' }],
-        },
-      },
+      select: CourseFullSelect,
     })
   }
 
@@ -703,6 +692,7 @@ export class CourseRepo {
             type: true,
             order: true,
             duration: true,
+            isLocked: true,
             progress: {
               where: { userId },
               select: { isCompleted: true, lastAccess: true },

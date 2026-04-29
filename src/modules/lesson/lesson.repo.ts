@@ -29,6 +29,7 @@ export class LessonRepo {
         type: true,
         order: true,
         chapterId: true,
+        isLocked: true,
       },
     })
   }
@@ -89,7 +90,16 @@ export class LessonRepo {
         type: true,
         order: true,
         chapterId: true,
+        isLocked: true,
       },
+    })
+  }
+
+  toggleLessonLock(lessonId: string, isLocked: boolean) {
+    return this.txHost.tx.lesson.update({
+      where: { id: lessonId },
+      data: { isLocked },
+      select: { id: true, isLocked: true },
     })
   }
 
@@ -108,7 +118,31 @@ export class LessonRepo {
         duration: true,
         chapterId: true,
         videoKey: true,
+        isLocked: true,
       },
+    })
+  }
+
+  /** Lấy tất cả lesson id đứng trước lessonId đó trong cùng khóa học (theo order) */
+  async getLessonsPrecedingInCourse(lessonId: string) {
+    // 1. lấy thông tin lesson hiện tại
+    const lesson = await this.txHost.tx.lesson.findUnique({
+      where: { id: lessonId },
+      select: { order: true, chapter: { select: { order: true, courseId: true } } },
+    })
+    if (!lesson) return []
+    const { order: lessonOrder, chapter } = lesson
+    const { order: chapterOrder, courseId } = chapter
+    // 2. lấy tất cả lesson trong khóa học có thứ tự trước bài này
+    return this.txHost.tx.lesson.findMany({
+      where: {
+        chapter: { courseId },
+        OR: [
+          { chapter: { order: { lt: chapterOrder } } },
+          { chapter: { order: chapterOrder }, order: { lt: lessonOrder } },
+        ],
+      },
+      select: { id: true },
     })
   }
 
@@ -118,6 +152,30 @@ export class LessonRepo {
       create: { userId, lessonId, isCompleted: true },
       update: { isCompleted: true },
     })
+  }
+
+  /** Tạo bản ghi progress (lần đầu học) để lưu startedAt */
+  touchProgress(userId: string, lessonId: string) {
+    return this.txHost.tx.progress.upsert({
+      where: { userId_lessonId: { userId, lessonId } },
+      create: { userId, lessonId, isCompleted: false },
+      update: {}, // không cập nhật gì nếu đã tồn tại
+    })
+  }
+
+  getProgress(userId: string, lessonId: string) {
+    return this.txHost.tx.progress.findUnique({
+      where: { userId_lessonId: { userId, lessonId } },
+      select: { isCompleted: true, startedAt: true },
+    })
+  }
+
+  async getCompletedLessonIds(userId: string, lessonIds: string[]) {
+    const rows = await this.txHost.tx.progress.findMany({
+      where: { userId, lessonId: { in: lessonIds }, isCompleted: true },
+      select: { lessonId: true },
+    })
+    return rows.map((r) => r.lessonId)
   }
 
   async countCourseProgress(userId: string, courseId: string) {

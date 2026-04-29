@@ -31,30 +31,28 @@ export class LessonController {
     return this.lessonService.reorderLesson(body)
   }
 
+  @Get(':lessonId/learn')
+  @ZodSerializerDto(LessonLearnerResponseSchema)
+  getLessonForLearner(@Param('lessonId') lessonId: string, @ActiveUser() user: TokenPayload) {
+    return this.lessonService.getLessonForLearner(lessonId, user.userId)
+  }
+
   @Get(':lessonId')
   @ZodSerializerDto(LessonDetailResponseSchema)
   getLessonDetail(@Param('lessonId') lessonId: string) {
     return this.lessonService.getLessonDetail(lessonId)
   }
 
+  @Patch(':lessonId/lock')
+  @ZodSerializerDto(LessonBasicResponseSchema)
+  toggleLessonLock(@Param('lessonId') lessonId: string, @Body('isLocked') isLocked: boolean) {
+    return this.lessonService.toggleLessonLock(lessonId, isLocked)
+  }
+
   @Patch(':lessonId')
   @ZodSerializerDto(LessonDetailResponseSchema)
   updateLesson(@Param('lessonId') lessonId: string, @Body() body: UpdateLessonDto) {
     return this.lessonService.updateLesson(lessonId, body)
-  }
-
-  @Delete(':lessonId')
-  @ZodSerializerDto(LessonBasicResponseSchema)
-  deleteLesson(@Param('lessonId') lessonId: string) {
-    return this.lessonService.deleteLesson(lessonId)
-  }
-
-  // Learner
-
-  @Get(':lessonId/learn')
-  @ZodSerializerDto(LessonLearnerResponseSchema)
-  getLessonForLearner(@Param('lessonId') lessonId: string) {
-    return this.lessonService.getLessonForLearner(lessonId)
   }
 
   @Post(':lessonId/complete')

@@ -233,6 +233,7 @@ model Lesson {
   videoKey String?
   // cloudinaryVideoUrl String?
 
+  isLocked    Boolean           @default(false)
   chapterId String
   chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
@@ -337,6 +338,7 @@ model Progress {
   userId      String
   lessonId    String
   isCompleted Boolean  @default(false)
+  startedAt   DateTime @default(now())
   lastAccess  DateTime @updatedAt
   lesson      Lesson   @relation(fields: [lessonId], references: [id])
   user        User     @relation(fields: [userId], references: [id])

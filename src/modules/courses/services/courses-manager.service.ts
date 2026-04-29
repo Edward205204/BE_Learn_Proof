@@ -51,9 +51,6 @@ export class CoursesManagerService {
       throw new CourseNotFoundException()
     }
 
-    if (course.status !== CourseStatus.DRAFT) {
-      throw new CourseNotDraftException()
-    }
 
     const data = await this.courseRepo.syncChaptersFrame(courseId, body)
     return data
@@ -65,9 +62,6 @@ export class CoursesManagerService {
       throw new CourseNotFoundException()
     }
 
-    if (course.status !== CourseStatus.DRAFT) {
-      throw new CourseNotDraftException()
-    }
 
     const data = await this.courseRepo.finishCreateCourse(courseId, { ...body, creatorId })
     return data
@@ -103,9 +97,6 @@ export class CoursesManagerService {
     const course = await this.courseRepo.getCourseUnique({ creatorId, id: courseId })
     if (!course) throw new CourseNotFoundException()
 
-    if (course.status !== CourseStatus.DRAFT) {
-      throw new CourseNotDraftException()
-    }
 
     const category = await this.courseRepo.findCategoryUnique({ id: body.categoryId })
     if (!category) {

@@ -28,6 +28,7 @@ export const UpdateLessonSchema = z
     shortDesc: z.string().optional(),
     duration: z.number().optional(),
     textContent: z.string().optional(),
+    isLocked: z.boolean().optional(),
   })
   .strict()
   .superRefine((data, ctx) => {
