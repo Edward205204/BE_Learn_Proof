@@ -34,8 +34,7 @@ const CourseFullSelect: Prisma.CourseSelect = {
   chapters: {
     orderBy: [{ order: 'asc' }, { id: 'asc' }],
   },
-};
-
+}
 
 @Injectable()
 export class CourseRepo {

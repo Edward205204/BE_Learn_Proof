@@ -51,7 +51,6 @@ export class CoursesManagerService {
       throw new CourseNotFoundException()
     }
 
-
     const data = await this.courseRepo.syncChaptersFrame(courseId, body)
     return data
   }
@@ -61,7 +60,6 @@ export class CoursesManagerService {
     if (!course) {
       throw new CourseNotFoundException()
     }
-
 
     const data = await this.courseRepo.finishCreateCourse(courseId, { ...body, creatorId })
     return data
@@ -96,7 +94,6 @@ export class CoursesManagerService {
   async updateCourseBaseInfo(courseId: string, body: CreateCourseSt1Dto, creatorId: string) {
     const course = await this.courseRepo.getCourseUnique({ creatorId, id: courseId })
     if (!course) throw new CourseNotFoundException()
-
 
     const category = await this.courseRepo.findCategoryUnique({ id: body.categoryId })
     if (!category) {
