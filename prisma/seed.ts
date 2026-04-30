@@ -21,6 +21,11 @@ const contentManager = {
   password: '123456@Aa',
 }
 
+const admin = {
+  email: 't.vinh.1109z@gmail.com',
+  password: 'Vinh11092004@',
+}
+
 async function createContentManager() {
   const saltRounds = 10
   const hashedPassword = await hash(contentManager.password, saltRounds)
@@ -32,6 +37,27 @@ async function createContentManager() {
       password: hashedPassword,
       fullName: 'Content Manager',
       role: Role.CONTENT_MANAGER,
+    },
+  })
+}
+
+async function createAdmin() {
+  const saltRounds = 10
+  const hashedPassword = await hash(admin.password, saltRounds)
+  return prisma.user.upsert({
+    where: { email: admin.email },
+    update: {
+      password: hashedPassword,
+      fullName: 'Admin',
+      provider: 'LOCAL',
+      role: Role.ADMIN,
+    },
+    create: {
+      email: admin.email,
+      password: hashedPassword,
+      fullName: 'Admin',
+      role: Role.ADMIN,
+      provider: 'LOCAL',
     },
   })
 }
@@ -67,14 +93,15 @@ async function main() {
       provider: 'LOCAL',
       NOT: {
         email: {
-          in: [contentManager.email]
-        }
-      }
-    }
+          in: [contentManager.email, admin.email],
+        },
+      },
+    },
   })
 
-  // 1. Tạo Giảng viên
+  // 1. Tạo Giảng viên và Admin
   const instructor = await createContentManager()
+  await createAdmin()
 
   // 1.1. Tạo thêm dữ liệu mẫu (người dùng, khóa học...)
   // await seedRealData()
