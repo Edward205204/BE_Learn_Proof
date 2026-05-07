@@ -784,4 +784,110 @@ export class CourseRepo {
       },
     })
   }
+
+  async getInstructorDashboard(creatorId: string, range: string = '6m') {
+    let interval = "6 months";
+    let trunc = "month";
+
+    switch (range) {
+      case 'today':
+        interval = '1 day';
+        trunc = 'hour';
+        break;
+      case '7d':
+        interval = '7 days';
+        trunc = 'day';
+        break;
+      case '30d':
+        interval = '30 days';
+        trunc = 'day';
+        break;
+      case '1y':
+        interval = '1 year';
+        trunc = 'month';
+        break;
+      default:
+        interval = '6 months';
+        trunc = 'month';
+    }
+
+    const [courseStats, revenueAgg, enrollmentCount, topCourses, recentReviews, revenueChart] = await Promise.all([
+      // Course counts grouped by status
+      this.txHost.tx.course.groupBy({
+        by: ['status'],
+        where: { creatorId },
+        _count: { id: true },
+      }),
+
+      // Total revenue from my courses
+      this.txHost.tx.transaction.aggregate({
+        where: {
+          course: { creatorId },
+          status: 'COMPLETED',
+        },
+        _sum: { amount: true },
+        _count: { id: true },
+      }),
+
+      // Total unique students (distinct userId) enrolled in my courses
+      this.txHost.tx.enrollment.count({
+        where: { course: { creatorId } },
+      }),
+
+      // Top 5 courses by enrollment count
+      this.txHost.tx.course.findMany({
+        where: { creatorId },
+        select: {
+          id: true,
+          title: true,
+          thumbnail: true,
+          status: true,
+          avgRating: true,
+          totalReviews: true,
+          _count: { select: { enrollments: true } },
+        },
+        orderBy: { enrollments: { _count: 'desc' } },
+        take: 5,
+      }),
+
+      // 5 latest reviews for my courses
+      this.txHost.tx.review.findMany({
+        where: { course: { creatorId } },
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          user: { select: { fullName: true, avatar: true } },
+          course: { select: { title: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+
+      // Dynamic Revenue chart data
+      this.txHost.tx.$queryRawUnsafe<any[]>(`
+        SELECT 
+          DATE_TRUNC('${trunc}', t."createdAt") as month,
+          SUM(t.amount)::FLOAT as revenue
+        FROM "Transaction" t
+        JOIN "Course" c ON c.id = t."courseId"
+        WHERE c."creatorId" = '${creatorId}'
+          AND t.status = 'COMPLETED'
+          AND t."createdAt" >= NOW() - INTERVAL '${interval}'
+        GROUP BY month
+        ORDER BY month ASC
+      `),
+    ])
+
+    return {
+      courseStats,
+      totalRevenue: revenueAgg._sum.amount ?? 0,
+      totalTransactions: revenueAgg._count.id,
+      totalStudents: enrollmentCount,
+      topCourses,
+      recentReviews,
+      revenueChart,
+    }
+  }
 }

@@ -213,4 +213,8 @@ export class CoursesManagerService {
 
     return this.courseRepo.deleteCourse(courseId, creatorId)
   }
+
+  async getInstructorDashboard(creatorId: string, range?: string) {
+    return this.courseRepo.getInstructorDashboard(creatorId, range)
+  }
 }
