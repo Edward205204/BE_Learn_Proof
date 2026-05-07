@@ -1,30 +1,33 @@
+import { TransactionHost } from '@nestjs-cls/transactional'
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 import { Injectable } from '@nestjs/common'
-import { Prisma } from '@prisma/client'
-import { PrismaService } from 'src/shared/services/prisma.service'
+import { PrismaClient } from 'src/generated/prisma/client'
+import { Prisma } from 'src/generated/prisma/client'
+
 import { PaymentStatus, CourseStatus } from 'src/generated/prisma/enums'
 
 @Injectable()
 export class DashboardRepo {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>) {}
 
   getOverview(): Promise<[number, number, number, number, number, { _sum: { amount: number | null } }]> {
     return Promise.all([
-      this.prisma.user.count({ where: { deletedAt: null } }),
-      this.prisma.course.count(),
-      this.prisma.course.count({
+      this.txHost.tx.user.count({ where: { deletedAt: null } }),
+      this.txHost.tx.course.count(),
+      this.txHost.tx.course.count({
         where: { status: CourseStatus.PUBLISHED },
       }),
-      this.prisma.enrollment.count(),
-      this.prisma.transaction.count(),
-      this.prisma.transaction.aggregate({
+      this.txHost.tx.enrollment.count(),
+      this.txHost.tx.transaction.count(),
+      this.txHost.tx.transaction.aggregate({
         _sum: { amount: true },
         where: { status: PaymentStatus.COMPLETED },
       }),
     ])
   }
 
-  getRevenueChart(fromDate?: string, toDate?: string): Promise<any[]> {
-    return this.prisma.$queryRaw<any[]>`
+  getRevenueChart(fromDate?: string, toDate?: string) {
+    return this.txHost.tx.$queryRaw<any[]>`
       SELECT 
         DATE_TRUNC('month', "createdAt") as month,
         SUM(amount) as revenue
@@ -37,8 +40,8 @@ export class DashboardRepo {
     `
   }
 
-  async getTopCoursesByMonth(month: string): Promise<any[]> {
-    return this.prisma.$queryRaw<any[]>`
+  getTopCoursesByMonth(month: string) {
+    return this.txHost.tx.$queryRaw<any[]>`
     SELECT 
       c.id,
       c.title,
@@ -54,8 +57,8 @@ export class DashboardRepo {
   `
   }
 
-  async getHardLessons(): Promise<any[]> {
-    return this.prisma.$queryRaw<any[]>`
+  getHardLessons() {
+    return this.txHost.tx.$queryRaw<any[]>`
     SELECT 
       l.id,
       l.title,

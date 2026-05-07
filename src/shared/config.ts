@@ -67,6 +67,8 @@ const configSchema = z.object({
   AI_CHUNK_SIZE: z.coerce.number().default(500),
   AI_CHUNK_OVERLAP: z.coerce.number().default(50),
   AI_TOP_K: z.coerce.number().default(5),
+
+  LLM_MOCK: z.string().default('true'),
 })
 
 const configServer = configSchema.safeParse(process.env)

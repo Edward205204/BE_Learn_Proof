@@ -5,10 +5,12 @@ import { QuizLearnerService } from './quiz-learner.service'
 import { QuizController } from './quiz.controller'
 
 import { BullModule } from '@nestjs/bullmq'
+import { AiModule } from '../ai/ai.module'
+import { QuizGenProcessor } from './processors/quiz-gen.processor'
 
 @Module({
-  imports: [BullModule.registerQueue({ name: 'quiz-generation' })],
-  providers: [QuizCmsService, QuizRepo, QuizLearnerService],
+  imports: [BullModule.registerQueue({ name: 'quiz-generation' }), AiModule],
+  providers: [QuizCmsService, QuizRepo, QuizLearnerService, QuizGenProcessor],
   controllers: [QuizController],
   exports: [QuizCmsService, QuizLearnerService],
 })

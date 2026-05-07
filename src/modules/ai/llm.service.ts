@@ -26,6 +26,18 @@ export class LlmService {
     model: string
     latencyMs: number
   }> {
+    // mock test - start
+    if (envConfig.LLM_MOCK === 'true') {
+      return {
+        content: this.getMockResponse(params.responseFormat),
+        inputTokens: 100,
+        outputTokens: 200,
+        model: 'mock',
+        latencyMs: 50,
+      }
+    }
+    // mock test - end
+
     const startTime = Date.now()
     const model = params.model === 'strong' ? envConfig.LLM_CHAT_MODEL_STRONG : envConfig.LLM_CHAT_MODEL_CHEAP
 
@@ -130,5 +142,41 @@ export class LlmService {
     }
 
     throw new Error('LLM request failed')
+  }
+
+  // Mock function
+  private getMockResponse(responseFormat?: string): string {
+    if (responseFormat === 'json') {
+      // Dùng chung cho cả quiz_gen và rag_answer — LlmService không biết context
+      // QuizGenProcessor sẽ nhận cái này
+      return JSON.stringify({
+        questions: [
+          {
+            question: 'Mock question 1: Đây là câu hỏi thử nghiệm?',
+            options: ['Option A', 'Option B', 'Option C', 'Option D'],
+            correctIndex: 0,
+            explanation: 'Đây là giải thích mock.',
+          },
+          {
+            question: 'Mock question 2: Câu hỏi thứ hai?',
+            options: ['Option A', 'Option B', 'Option C', 'Option D'],
+            correctIndex: 1,
+            explanation: 'Giải thích mock thứ hai.',
+          },
+          {
+            question: 'Mock question 3: Câu hỏi thứ ba?',
+            options: ['Option A', 'Option B', 'Option C', 'Option D'],
+            correctIndex: 2,
+            explanation: 'Giải thích mock thứ ba.',
+          },
+        ],
+      })
+    }
+
+    // RAG answer
+    return JSON.stringify({
+      answer: 'Đây là câu trả lời mock từ LLM giả lập.',
+      sources: ['Mock source từ context bài học.'],
+    })
   }
 }

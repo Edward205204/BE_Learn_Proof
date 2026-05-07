@@ -35,10 +35,14 @@ Return the output strictly as a JSON object matching this schema:
     }
   ]
 }`,
-      userTemplate: `Lesson Context:
+      userTemplate: `Lesson Title: {{lessonTitle}}
+Target Level: {{targetLevel}}
+Lesson Description: {{lessonDesc}}
+
+Context:
 {{context}}
 
-Generate the quiz now.`,
+Generate a quiz with {{questionCount}} questions now.`,
     },
   }
 

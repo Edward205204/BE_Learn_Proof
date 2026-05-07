@@ -111,6 +111,33 @@ export class QuizController {
     return this.quizCmsService.deleteQuiz(quizId, user.userId)
   }
 
+  // --- AI Quiz ---
+
+  @Post('lessons/:id/generate-ai')
+  generateAiQuiz(@Param('id') lessonId: string, @ActiveUser() user: TokenPayload) {
+    return this.quizCmsService.generateAiQuiz(lessonId, user.userId)
+  }
+
+  @Get('lessons/:id/drafts')
+  getDraftsByLesson(@Param('id') lessonId: string, @ActiveUser() user: TokenPayload) {
+    return this.quizCmsService.getDraftsByLesson(lessonId, user.userId)
+  }
+
+  @Get('drafts/:draftId')
+  getDraftById(@Param('draftId') draftId: string, @ActiveUser() user: TokenPayload) {
+    return this.quizCmsService.getDraftById(draftId, user.userId)
+  }
+
+  @Patch('drafts/:draftId/publish')
+  publishDraft(@Param('draftId') draftId: string, @ActiveUser() user: TokenPayload) {
+    return this.quizCmsService.publishDraft(draftId, user.userId)
+  }
+
+  @Patch('drafts/:draftId/reject')
+  rejectDraft(@Param('draftId') draftId: string, @Body() body: { reviewNote?: string }, @ActiveUser() user: TokenPayload) {
+    return this.quizCmsService.rejectDraft(draftId, user.userId, body.reviewNote)
+  }
+
   // Learner
 
   @Post(':quizId/submit')
