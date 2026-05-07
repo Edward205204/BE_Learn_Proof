@@ -157,7 +157,7 @@ async function main() {
       },
     })
 
-    await createCourseContent(prisma, course.id, randomCategory.slug);
+    await createCourseContent(prisma, course.id, randomCategory.slug)
 
     // Tạo thêm dữ liệu biểu đồ cho 7 ngày gần nhất cho mỗi khóa học
     const today = new Date()
@@ -512,7 +512,7 @@ async function main() {
         createdAt: course.createdAt,
       },
     })
-    await createCourseContent(prisma, newCourse.id, course.category.slug);
+    await createCourseContent(prisma, newCourse.id, course.category.slug)
   }
 
   console.log(`--- Seed ${mockCourseMap.size} mock courses thành công! ---`)

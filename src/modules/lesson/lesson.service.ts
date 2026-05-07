@@ -7,7 +7,7 @@ import { QuizLearnerService } from '../quiz/quiz-learner.service'
 import { Transactional } from '@nestjs-cls/transactional'
 import { LessonType } from 'src/generated/prisma/enums'
 
-const MIN_STUDY_SECONDS = 5 * 60 // 5 phút
+const MIN_STUDY_SECONDS = 3 * 60 // 3 phút
 
 @Injectable()
 export class LessonService {
@@ -85,7 +85,7 @@ export class LessonService {
       }
     }
 
-    // Ghi lại lần đầu học để tính 5 phút (chỉ tạo nếu chưa có)
+    // Ghi lại lần đầu học để tính 3 phút (chỉ tạo nếu chưa có)
     await this.lessonRepo.touchProgress(userId, lessonId)
 
     if (lesson.type === LessonType.QUIZ) {
@@ -110,14 +110,14 @@ export class LessonService {
     const enrolled = await this.lessonRepo.checkEnrolled(userId, courseId)
     if (!enrolled) throw new ForbiddenException('Bạn chưa đăng ký khóa học này')
 
-    // Kiểm tra quy tắc 5 phút
+    // Kiểm tra quy tắc 3 phút
     const progress = await this.lessonRepo.getProgress(userId, lessonId)
     if (progress) {
       const studiedSeconds = Math.floor((Date.now() - new Date(progress.startedAt).getTime()) / 1000)
       if (studiedSeconds < MIN_STUDY_SECONDS) {
         const remaining = MIN_STUDY_SECONDS - studiedSeconds
         throw new BadRequestException(
-          `Bạn cần học bài học này ít nhất 5 phút. Còn lại: ${Math.ceil(remaining / 60)} phút ${remaining % 60} giây.`,
+          `Bạn cần học bài học này ít nhất 3 phút. Còn lại: ${Math.ceil(remaining / 60)} phút ${remaining % 60} giây.`,
         )
       }
     }
