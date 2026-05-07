@@ -89,4 +89,12 @@ export class CertificateService {
   async getMyCertificates(userId: string) {
     return this.certRepo.getMyCertificates(userId)
   }
+
+  async getPublicCertificate(certificateHash: string) {
+    const cert = await this.certRepo.getPublicCertificate(certificateHash)
+    if (!cert || cert.status !== CertMintStatus.COMPLETED) {
+      throw new NotFoundException('Chứng chỉ không tồn tại hoặc chưa được xác nhận trên Blockchain')
+    }
+    return cert
+  }
 }

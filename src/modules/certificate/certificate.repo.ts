@@ -45,4 +45,27 @@ export class CertificateRepo {
       orderBy: { issuedAt: 'desc' },
     })
   }
+
+  getPublicCertificate(certificateHash: string) {
+    return this.txHost.tx.certificate.findUnique({
+      where: { certificateHash },
+      include: {
+        user: {
+          select: {
+            fullName: true,
+            avatar: true,
+          },
+        },
+        course: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            thumbnail: true,
+            shortDesc: true,
+          },
+        },
+      },
+    })
+  }
 }
