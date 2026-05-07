@@ -11,6 +11,7 @@ import {
 import envConfig from '../src/shared/config'
 import { Pool } from 'pg'
 import { hash } from 'bcrypt'
+import { createCourseContent } from './seed-data'
 
 const pool = new Pool({ connectionString: envConfig.DATABASE_URL })
 const adapter = new PrismaPg(pool)
@@ -153,34 +154,10 @@ async function main() {
         //     completionRate: Math.floor(Math.random() * 40 + 10),
         //   },
         // },
-        // Mỗi khóa tạo sẵn 1 Chapter và 2 Lessons để test luồng học
-        chapters: {
-          create: {
-            title: 'Chương 1: Giới thiệu tổng quan',
-            order: 1,
-            lessons: {
-              create: [
-                {
-                  title: 'Bài 1: Lộ trình học tập',
-                  videoId: 'lQCRGJtCpVo',
-                  type: LessonType.VIDEO,
-                  provider: VideoProviderEnum.YOUTUBE,
-                  order: 1,
-                  duration: 300,
-                  // analytics: { create: { totalViews: 1000, avgWatchTime: 200, dropOffCount: 10 } },
-                },
-                {
-                  title: 'Bài 2: Thực hành cơ bản',
-                  type: LessonType.TEXT,
-                  order: 2,
-                  textContent: 'Nội dung bài học chữ...',
-                },
-              ],
-            },
-          },
-        },
       },
     })
+
+    await createCourseContent(prisma, course.id, randomCategory.slug);
 
     // Tạo thêm dữ liệu biểu đồ cho 7 ngày gần nhất cho mỗi khóa học
     const today = new Date()
@@ -518,7 +495,7 @@ async function main() {
   // Tạo courses, dùng instructor.id làm creatorId
   for (const course of Array.from(mockCourseMap.values())) {
     const categoryId = mockCategoryIdMap.get(course.category.slug)!
-    await prisma.course.create({
+    const newCourse = await prisma.course.create({
       data: {
         title: course.title,
         slug: course.slug,
@@ -533,17 +510,9 @@ async function main() {
         categoryId,
         creatorId: instructor.id,
         createdAt: course.createdAt,
-        // overallAnalytics: course.overallAnalytics
-        //   ? {
-        //       create: {
-        //         avgRating: course.overallAnalytics.avgRating,
-        //         totalStudents: course.overallAnalytics.totalStudents,
-        //         avgInterestScore: course.overallAnalytics.avgInterestScore,
-        //       },
-        //     }
-        //   : undefined,
       },
     })
+    await createCourseContent(prisma, newCourse.id, course.category.slug);
   }
 
   console.log(`--- Seed ${mockCourseMap.size} mock courses thành công! ---`)
