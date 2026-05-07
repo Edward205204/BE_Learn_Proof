@@ -55,6 +55,11 @@ export class LessonController {
     return this.lessonService.updateLesson(lessonId, body)
   }
 
+  @Delete(':lessonId')
+  deleteLesson(@Param('lessonId') lessonId: string) {
+    return this.lessonService.deleteLesson(lessonId)
+  }
+
   @Post(':lessonId/complete')
   @ZodSerializerDto(MarkLessonCompleteResponseSchema)
   markLessonComplete(
