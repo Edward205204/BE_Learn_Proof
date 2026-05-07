@@ -50,6 +50,23 @@ const configSchema = z.object({
   PUBLIC_CLOUD_STORE_URL: z.string().optional(),
   CLOUDINARY_ACCOUNT_ID: z.string(),
   R2_BUCKET_NAME: z.string().default('learn-proof'),
+
+  REDIS_HOST: z.string().default('localhost'),
+  REDIS_PORT: z.coerce.number().default(6379),
+
+  LLM_API_KEY: z.string(),
+  LLM_BASE_URL: z.string().default('https://openrouter.ai/api/v1'),
+  LLM_HTTP_REFERER: z.string().optional(),
+  LLM_X_TITLE: z.string().default('Learn Proof'),
+
+  LLM_EMBEDDING_MODEL: z.string().default('openai/text-embedding-3-small'),
+  LLM_CHAT_MODEL_CHEAP: z.string().default('openai/gpt-4o-mini'),
+  LLM_CHAT_MODEL_STRONG: z.string().default('openai/gpt-4o'),
+
+  AI_MAX_INPUT_TOKENS: z.coerce.number().default(4000),
+  AI_CHUNK_SIZE: z.coerce.number().default(500),
+  AI_CHUNK_OVERLAP: z.coerce.number().default(50),
+  AI_TOP_K: z.coerce.number().default(5),
 })
 
 const configServer = configSchema.safeParse(process.env)

@@ -27,8 +27,11 @@ import { DashboardModule } from './modules/dashboard/dashboard.module'
 import { VideoModule } from './modules/video/video.module'
 import { CertificateModule } from './modules/certificate/certificate.module'
 
+import { AiModule } from './modules/ai/ai.module'
+
 @Module({
   imports: [
+    AiModule,
     AuthModule,
     SharedModule,
     CoursesModule,

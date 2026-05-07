@@ -11,8 +11,19 @@ import { MailService } from './services/mail.service'
 import { SlugService } from './services/slug.service'
 import { SystemSettingsService } from './services/system-settings.service'
 import { MaintenanceGuard } from './guards/maintenance.guard'
+import { ChunkingService } from './services/chunking.service'
+import { VectorStoreService } from './services/vector-store.service'
 
-const sharedServices = [PrismaService, HashingService, TokenService, MailService, SlugService, SystemSettingsService]
+const sharedServices = [
+  PrismaService,
+  HashingService,
+  TokenService,
+  MailService,
+  SlugService,
+  SystemSettingsService,
+  ChunkingService,
+  VectorStoreService,
+]
 
 @Global()
 @Module({

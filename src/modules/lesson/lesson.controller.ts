@@ -69,4 +69,9 @@ export class LessonController {
   ) {
     return this.lessonService.markLessonComplete(user.userId, lessonId, courseId)
   }
+
+  @Post(':lessonId/ask')
+  askLesson(@Param('lessonId') lessonId: string, @ActiveUser() user: TokenPayload, @Body('question') question: string) {
+    return this.lessonService.askLesson(lessonId, user.userId, question)
+  }
 }

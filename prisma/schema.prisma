@@ -6,7 +6,7 @@ generator client {
 
 datasource db {
   provider   = "postgresql"
-  extensions = [pg_trgm(schema: "public"), unaccent(schema: "public")]
+  extensions = [pg_trgm(schema: "public"), unaccent(schema: "public"), vector(schema: "public")]
 }
 
 enum Role {
@@ -237,6 +237,15 @@ model Lesson {
   chapterId String
   chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
+  lessonDesc         String?  @db.Text
+  learningObjectives String[] @default([])
+  targetLevel        String?
+  keywords           String[] @default([])
+  aiSummary          String?  @db.Text
+  transcript         String?  @db.Text
+  transcriptSource   String?
+  transcriptStatus   String?
+
   quizzes Quiz[]
 
   progress    Progress[]
@@ -245,6 +254,10 @@ model Lesson {
   heartbeats  LessonHeartbeat[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+
+  chunks     LessonChunk[]
+  aiJobs     AiJob[]
+  quizDrafts QuizDraft[]
 
   @@index([chapterId, order])
   @@index([title(ops: raw("gin_trgm_ops")), shortDesc(ops: raw("gin_trgm_ops"))], type: Gin)
@@ -545,4 +558,77 @@ model SystemSetting {
   updatedAt DateTime @updatedAt
 
   @@map("system_settings")
+}
+
+enum AiJobType {
+  LESSON_INDEX
+  QUIZ_GENERATION
+  RAG_ASK
+}
+
+enum AiJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum QuizDraftStatus {
+  DRAFT_AI
+  PUBLISHED
+  REJECTED
+}
+
+model LessonChunk {
+  id         String   @id @default(cuid())
+  lessonId   String
+  lesson     Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  chunkIndex Int
+  content    String   @db.Text
+  embedding  Unsupported("vector(1536)")
+  metadata   Json?
+  version    Int      @default(1)
+  createdAt  DateTime @default(now())
+
+  @@index([lessonId])
+}
+
+model AiJob {
+  id          String      @id @default(cuid())
+  type        AiJobType
+  status      AiJobStatus @default(QUEUED)
+  lessonId    String
+  lesson      Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  requestedBy String
+  model       String?
+  tokenInput  Int?
+  tokenOutput Int?
+  latencyMs   Int?
+  retries     Int         @default(0)
+  error       String?     @db.Text
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  quizDrafts  QuizDraft[]
+
+  @@index([lessonId, type])
+  @@index([status])
+}
+
+model QuizDraft {
+  id              String          @id @default(cuid())
+  lessonId        String
+  lesson          Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  aiJobId         String
+  aiJob           AiJob           @relation(fields: [aiJobId], references: [id])
+  status          QuizDraftStatus @default(DRAFT_AI)
+  rawOutput       Json
+  validatedOutput Json?
+  reviewerId      String?
+  reviewNote      String?         @db.Text
+  promptVersion   String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([lessonId])
+  @@index([status])
 }

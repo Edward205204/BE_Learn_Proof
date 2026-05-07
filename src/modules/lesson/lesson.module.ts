@@ -9,8 +9,28 @@ import { QuizLessonStrategy } from './strategies/quiz-lesson.strategy'
 import { TextLessonStrategy } from './strategies/text-lesson.strategy'
 import { VideoLessonStrategy } from './strategies/video-lesson.strategy'
 
+import { BullModule } from '@nestjs/bullmq'
+import envConfig from '../../shared/config'
+import { AiModule } from '../ai/ai.module'
+import { IndexingProcessor } from './processors/indexing.processor'
+
 @Module({
-  imports: [QuizModule],
+  imports: [
+    BullModule.forRootAsync({
+      useFactory: () => ({
+        connection: { host: envConfig.REDIS_HOST, port: envConfig.REDIS_PORT },
+        defaultJobOptions: {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 2000 },
+          removeOnComplete: { count: 100 },
+          removeOnFail: { count: 500 },
+        },
+      }),
+    }),
+    BullModule.registerQueue({ name: 'lesson-indexing' }),
+    QuizModule,
+    AiModule,
+  ],
   providers: [
     LessonService,
     LessonRepo,
@@ -19,6 +39,7 @@ import { VideoLessonStrategy } from './strategies/video-lesson.strategy'
     QuizLessonStrategy,
     TextLessonStrategy,
     VideoLessonStrategy,
+    IndexingProcessor,
   ],
   controllers: [LessonController],
   exports: [LessonService],

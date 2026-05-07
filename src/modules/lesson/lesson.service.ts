@@ -6,6 +6,14 @@ import { LessonNotFoundException } from './error.model'
 import { QuizLearnerService } from '../quiz/quiz-learner.service'
 import { Transactional } from '@nestjs-cls/transactional'
 import { LessonType } from 'src/generated/prisma/enums'
+import { InjectQueue } from '@nestjs/bullmq'
+import { Queue } from 'bullmq'
+import { PrismaService } from 'src/shared/services/prisma.service'
+import { LlmService } from '../ai/llm.service'
+import { EmbeddingService } from '../ai/embedding.service'
+import { PromptTemplateService } from '../ai/prompt-template.service'
+import { VectorStoreService } from 'src/shared/services/vector-store.service'
+import { AiJobType, AiJobStatus } from 'src/generated/prisma/enums'
 
 const MIN_STUDY_SECONDS = 3 * 60 // 3 phút
 
@@ -15,6 +23,12 @@ export class LessonService {
     private readonly lessonRepo: LessonRepo,
     private readonly registry: LessonStrategyRegistry,
     private readonly quizLearnerService: QuizLearnerService,
+    private readonly prisma: PrismaService,
+    private readonly llmService: LlmService,
+    private readonly embeddingService: EmbeddingService,
+    private readonly promptTemplateService: PromptTemplateService,
+    private readonly vectorStoreService: VectorStoreService,
+    @InjectQueue('lesson-indexing') private readonly lessonIndexingQueue: Queue,
   ) {}
 
   async createLesson(body: CreateLessonBodyType, userId: string) {
@@ -24,7 +38,11 @@ export class LessonService {
     }
 
     const lessonStrategy = this.registry.resolve(body.type)
-    return lessonStrategy.create(body)
+    const result = await lessonStrategy.create(body)
+
+    await this.lessonIndexingQueue.add('index', { lessonId: result.id }, { jobId: `index:${result.id}:${Date.now()}` })
+
+    return result
   }
 
   private calculateNewOrder(prevOrder: number | null, nextOrder: number | null) {
@@ -47,8 +65,12 @@ export class LessonService {
     return this.lessonRepo.updateLessonOrder(body.lessonId, newOrder, body.targetChapterId)
   }
 
-  updateLesson(lessonId: string, body: UpdateLessonBodyType) {
-    return this.lessonRepo.updateLesson(lessonId, body)
+  async updateLesson(lessonId: string, body: UpdateLessonBodyType) {
+    const result = await this.lessonRepo.updateLesson(lessonId, body)
+
+    await this.lessonIndexingQueue.add('index', { lessonId: result.id }, { jobId: `index:${result.id}:${Date.now()}` })
+
+    return result
   }
 
   toggleLessonLock(lessonId: string, isLocked: boolean) {
@@ -126,5 +148,75 @@ export class LessonService {
 
     const { total, completed } = await this.lessonRepo.countCourseProgress(userId, courseId)
     return { lessonId, completed: true, courseCompleted: total > 0 && total === completed }
+  }
+
+  async askLesson(lessonId: string, userId: string, question: string) {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      include: {
+        chapter: {
+          select: { courseId: true },
+        },
+      },
+    })
+    if (!lesson) throw new LessonNotFoundException()
+
+    const enrolled = await this.lessonRepo.checkEnrolled(userId, lesson.chapter.courseId)
+    if (!enrolled) throw new ForbiddenException('Bạn chưa đăng ký khóa học này')
+
+    const aiJob = await this.prisma.aiJob.create({
+      data: {
+        type: AiJobType.RAG_ASK,
+        status: AiJobStatus.PROCESSING,
+        lessonId,
+        requestedBy: userId,
+      },
+    })
+
+    try {
+      const questionEmbedding = await this.embeddingService.generateEmbedding(question)
+      const topKChunks = await this.vectorStoreService.searchSimilar(questionEmbedding, { lessonId, topK: 5 })
+      const context = topKChunks.map((c) => c.content).join('\n\n')
+
+      const template = this.promptTemplateService.getTemplate('rag_answer_v1')
+      const systemPrompt = template.systemPrompt
+      const userPrompt = this.promptTemplateService.render(template.userTemplate, {
+        lessonTitle: lesson.title,
+        targetLevel: lesson.targetLevel || 'BEGINNER',
+        context,
+        question,
+      })
+
+      const response = await this.llmService.chatCompletion({
+        systemPrompt,
+        userPrompt,
+        model: 'cheap',
+      })
+
+      await this.prisma.aiJob.update({
+        where: { id: aiJob.id },
+        data: {
+          status: AiJobStatus.COMPLETED,
+          tokenInput: response.inputTokens,
+          tokenOutput: response.outputTokens,
+          latencyMs: response.latencyMs,
+          model: response.model,
+        },
+      })
+
+      return {
+        answer: response.content,
+        sources: topKChunks.map((c) => ({ content: c.content, score: c.score })),
+      }
+    } catch (error: any) {
+      await this.prisma.aiJob.update({
+        where: { id: aiJob.id },
+        data: {
+          status: AiJobStatus.FAILED,
+          error: error.message || 'Unknown error',
+        },
+      })
+      throw error
+    }
   }
 }
