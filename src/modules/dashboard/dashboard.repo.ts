@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common'
+import { Prisma } from '@prisma/client'
 import { PrismaService } from 'src/shared/services/prisma.service'
 import { PaymentStatus, CourseStatus } from 'src/generated/prisma/enums'
 
@@ -29,8 +30,8 @@ export class DashboardRepo {
         SUM(amount) as revenue
       FROM "Transaction"
       WHERE status = 'COMPLETED'
-      ${fromDate ? `AND "createdAt" >= '${fromDate}'` : ``}
-      ${toDate ? `AND "createdAt" <= '${toDate}'` : ``}
+      ${fromDate ? Prisma.sql`AND "createdAt" >= ${fromDate}::timestamp` : Prisma.empty}
+      ${toDate ? Prisma.sql`AND "createdAt" <= ${toDate}::timestamp` : Prisma.empty}
       GROUP BY month
       ORDER BY month ASC
     `

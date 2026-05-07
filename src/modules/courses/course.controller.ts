@@ -141,6 +141,12 @@ export class CourseController {
     return this.courseManagerService.renameChapter(chapterId, body.title, user.userId)
   }
 
+  @Get('manager/dashboard')
+  @ApiBearerAuth('access-token')
+  getInstructorDashboard(@ActiveUser() user: TokenPayload, @Query('range') range?: string) {
+    return this.courseManagerService.getInstructorDashboard(user.userId, range)
+  }
+
   @Get('manager/my-courses')
   @ApiBearerAuth('access-token')
   // @ZodSerializerDto(GetSearchSuggestionsResponseSchema)
