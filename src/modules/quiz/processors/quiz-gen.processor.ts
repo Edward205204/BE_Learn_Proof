@@ -56,7 +56,7 @@ export class QuizGenProcessor extends WorkerHost {
         systemPrompt: template.systemPrompt,
         userPrompt: userPrompt,
         responseFormat: 'json',
-        model: 'cheap',
+        model: 'strong',
       })
 
       let questions: any[] = []

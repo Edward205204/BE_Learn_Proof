@@ -1,4 +1,10 @@
-import { ForbiddenException, Injectable, NotFoundException, ConflictException } from '@nestjs/common'
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common'
 import { QuizRepo } from './quiz.repo'
 import { CreateQuizType, QuestionType } from './quiz.model'
 import {
@@ -150,7 +156,7 @@ export class QuizCmsService {
   async publishDraft(draftId: string, userId: string) {
     const draft = await this.quizRepo.findDraftById(draftId)
     if (!draft) throw new NotFoundException('Bản nháp không tồn tại')
-    if (draft.status !== 'DRAFT_AI') throw new ConflictException('Chỉ bản nháp DRAFT_AI mới có thể được publish')
+    if (draft.status !== 'DRAFT_AI') throw new BadRequestException('Chỉ bản nháp DRAFT_AI mới có thể được publish')
 
     await this.requireLessonOwner(draft.lessonId, userId)
 
@@ -164,7 +170,7 @@ export class QuizCmsService {
   async rejectDraft(draftId: string, userId: string, reviewNote?: string) {
     const draft = await this.quizRepo.findDraftById(draftId)
     if (!draft) throw new NotFoundException('Bản nháp không tồn tại')
-    if (draft.status !== 'DRAFT_AI') throw new ConflictException('Chỉ bản nháp DRAFT_AI mới có thể được reject')
+    if (draft.status !== 'DRAFT_AI') throw new BadRequestException('Chỉ bản nháp DRAFT_AI mới có thể được reject')
 
     await this.requireLessonOwner(draft.lessonId, userId)
 

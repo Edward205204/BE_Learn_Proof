@@ -1,8 +1,7 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { IStorageService } from '../storage.interface'
 import * as fs from 'fs'
 import * as path from 'path'
-import { Stream } from 'stream'
 
 @Injectable()
 export class LocalStorageService implements IStorageService {
@@ -16,6 +15,7 @@ export class LocalStorageService implements IStorageService {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async uploadFile(file: Buffer, filename: string, mimeType: string): Promise<string> {
     const filePath = path.join(this.uploadDir, filename)
     // NOTE: mimeType could be used here to save to specific folders or store metadata
@@ -23,18 +23,24 @@ export class LocalStorageService implements IStorageService {
     return filename
   }
 
-  async getFileStream(filename: string): Promise<Stream> {
+  async getFileStream(filename: string) {
     const filePath = path.join(this.uploadDir, filename)
-    if (!fs.existsSync(filePath)) {
+    try {
+      await fs.promises.access(filePath)
+      return fs.createReadStream(filePath)
+    } catch (error) {
+      this.logger.error(error)
       throw new NotFoundException('File not found')
     }
-    return fs.createReadStream(filePath)
   }
 
   async deleteFile(filename: string): Promise<void> {
     const filePath = path.join(this.uploadDir, filename)
-    if (fs.existsSync(filePath)) {
+    try {
+      await fs.promises.access(filePath)
       await fs.promises.unlink(filePath)
+    } catch {
+      // File không tồn tại thì thôi, không cần làm gì
     }
   }
 }

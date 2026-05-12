@@ -134,7 +134,11 @@ export class QuizController {
   }
 
   @Patch('drafts/:draftId/reject')
-  rejectDraft(@Param('draftId') draftId: string, @Body() body: { reviewNote?: string }, @ActiveUser() user: TokenPayload) {
+  rejectDraft(
+    @Param('draftId') draftId: string,
+    @Body() body: { reviewNote?: string },
+    @ActiveUser() user: TokenPayload,
+  ) {
     return this.quizCmsService.rejectDraft(draftId, user.userId, body.reviewNote)
   }
 

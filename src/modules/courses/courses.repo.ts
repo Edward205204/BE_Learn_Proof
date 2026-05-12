@@ -786,29 +786,29 @@ export class CourseRepo {
   }
 
   async getInstructorDashboard(creatorId: string, range: string = '6m') {
-    let interval = "6 months";
-    let trunc = "month";
+    let interval = '6 months'
+    let trunc = 'month'
 
     switch (range) {
       case 'today':
-        interval = '1 day';
-        trunc = 'hour';
-        break;
+        interval = '1 day'
+        trunc = 'hour'
+        break
       case '7d':
-        interval = '7 days';
-        trunc = 'day';
-        break;
+        interval = '7 days'
+        trunc = 'day'
+        break
       case '30d':
-        interval = '30 days';
-        trunc = 'day';
-        break;
+        interval = '30 days'
+        trunc = 'day'
+        break
       case '1y':
-        interval = '1 year';
-        trunc = 'month';
-        break;
+        interval = '1 year'
+        trunc = 'month'
+        break
       default:
-        interval = '6 months';
-        trunc = 'month';
+        interval = '6 months'
+        trunc = 'month'
     }
 
     const [courseStats, revenueAgg, enrollmentCount, topCourses, recentReviews, revenueChart] = await Promise.all([
