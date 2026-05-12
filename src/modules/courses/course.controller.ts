@@ -14,7 +14,6 @@ import {
   UpdateCourseBaseInfoDto,
   RenameChapterDto,
   UpdateCourseStatusDto,
-  DeleteChapterDto,
 } from './courses.dto'
 import { Auth, IsPublic } from 'src/shared/decorators/auth.decorator'
 import { AuthType, ConditionGuard } from 'src/shared/constants/auth.constant'

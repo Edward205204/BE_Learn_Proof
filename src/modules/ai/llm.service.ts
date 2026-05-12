@@ -104,6 +104,7 @@ export class LlmService {
           try {
             JSON.parse(content)
           } catch (error) {
+            console.error('LLMService error', error)
             throw new LlmInvalidJsonException('LLM did not return valid JSON')
           }
         }

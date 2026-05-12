@@ -9,12 +9,7 @@ import {
 } from '../courses.model'
 import { CourseRepo } from '../courses.repo'
 import { SlugService } from 'src/shared/services/slug.service'
-import {
-  CategoryNotFoundException,
-  CourseNotMatchException,
-  CourseNotDraftException,
-  CourseNotFoundException,
-} from '../error.model'
+import { CategoryNotFoundException, CourseNotMatchException, CourseNotFoundException } from '../error.model'
 import { CourseStatus } from 'src/generated/prisma/enums'
 import { UpdateCourseStatusDto } from '../courses.dto'
 

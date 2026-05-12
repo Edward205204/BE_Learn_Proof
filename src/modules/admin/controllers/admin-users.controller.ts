@@ -1,9 +1,9 @@
-import { Controller, Get, Param, Patch, Query, Body, ForbiddenException } from '@nestjs/common'
+import { Controller, Get, Param, Patch, Query, Body } from '@nestjs/common'
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
 import { ZodSerializerDto } from 'nestjs-zod'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 import { TokenPayload } from 'src/shared/types/jwt.type'
-import { Role } from 'src/generated/prisma/enums'
+
 import { AdminUsersService } from '../services/admin-users.service'
 import { checkAdmin } from '../admin.util'
 import { GetUsersQueryDTO, UpdateUserRoleBodyDTO } from '../admin.dto'

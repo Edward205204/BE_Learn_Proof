@@ -22,7 +22,7 @@ export class QuizGenProcessor extends WorkerHost {
   }
 
   async process(job: Job<{ lessonId: string; aiJobId: string; requestedBy: string }>): Promise<any> {
-    const { lessonId, aiJobId, requestedBy } = job.data
+    const { lessonId, aiJobId } = job.data
 
     try {
       await this.txHost.tx.aiJob.update({
@@ -64,6 +64,7 @@ export class QuizGenProcessor extends WorkerHost {
         const parsed = JSON.parse(llmResult.content)
         questions = parsed.questions || []
       } catch (err) {
+        console.error('Failed to parse LLM output', err)
         throw new Error('Failed to parse LLM output')
       }
 

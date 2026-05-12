@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Delete, Param, Body } from '@nestjs/common'
 import { ApiBearerAuth } from '@nestjs/swagger'
 import { CartService } from './cart.service'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'

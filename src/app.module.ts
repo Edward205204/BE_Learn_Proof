@@ -5,7 +5,7 @@ import CustomZodValidationPipe from './shared/pipes/z-validation.pipe'
 import { ZodSerializerInterceptor } from 'nestjs-zod'
 import { DatabaseExceptionFilter } from './shared/filters/database-exc.filter'
 import { HttpExceptionFilter } from './shared/filters/http-exc.filter'
-import { TransformInterceptor } from './shared/interceptor/transform.interceptor'
+
 import { SharedModule } from './shared/shared.module'
 import { CoursesModule } from './modules/courses/courses.module'
 import { QuizModule } from './modules/quiz/quiz.module'
