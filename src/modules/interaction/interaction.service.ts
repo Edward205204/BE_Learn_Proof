@@ -22,8 +22,8 @@ export class InteractionService {
     }
   }
 
-  async getAllComments(page = 1, limit = 10) {
-    const res = await this.repo.findAllComments(page, limit)
+  async getAllComments(page = 1, limit = 10, creatorId?: string) {
+    const res = await this.repo.findAllComments(page, limit, creatorId)
 
     return {
       ...res,
@@ -93,15 +93,19 @@ export class InteractionService {
     })
   }
 
-  async deleteComment(id: string, userId: string) {
+  async deleteComment(id: string, userId: string, role: Role) {
     const comment = await this.repo.findCommentById(id)
 
     if (!comment) {
       throw new NotFoundException('Comment khong ton tai')
     }
 
-    if (comment.userId !== userId) {
+    if (role === Role.LEARNER && comment.userId !== userId) {
       throw new ForbiddenException('Ban khong co quyen xoa binh luan nay')
+    }
+
+    if (role === Role.CONTENT_MANAGER && comment.course?.creatorId !== userId) {
+      throw new ForbiddenException('Ban khong co quyen xoa binh luan tren khoa hoc nay')
     }
 
     return this.repo.updateComment(id, {
@@ -150,15 +154,22 @@ export class InteractionService {
     })
   }
 
-  async deleteReply(id: string, userId: string) {
+  async deleteReply(id: string, userId: string, role: Role) {
     const reply = await this.repo.findReplyById(id)
 
     if (!reply) {
       throw new NotFoundException('Reply khong ton tai')
     }
 
-    if (reply.userId !== userId) {
+    if (role === Role.LEARNER && reply.userId !== userId) {
       throw new ForbiddenException('Ban khong co quyen xoa phan hoi nay')
+    }
+
+    if (role === Role.CONTENT_MANAGER) {
+      const discussion = await this.repo.findCommentById(reply.discussionId)
+      if (discussion?.course?.creatorId !== userId) {
+        throw new ForbiddenException('Ban khong co quyen xoa phan hoi tren khoa hoc nay')
+      }
     }
 
     return this.repo.updateReply(id, {
@@ -169,6 +180,15 @@ export class InteractionService {
   // --- REVIEW ---
   async getCourseReviews(courseId: string, page = 1, limit = 10) {
     const res = await this.repo.findCourseReviews(courseId, page, limit)
+    return {
+      ...res,
+      page,
+      limit,
+    }
+  }
+
+  async getAllReviews(page = 1, limit = 10, creatorId?: string) {
+    const res = await this.repo.findAllReviews(page, limit, creatorId)
     return {
       ...res,
       page,
@@ -210,5 +230,52 @@ export class InteractionService {
     if (!review) throw new NotFoundException('Ban chua danh gia khoa hoc nay')
 
     return this.repo.deleteReview(review.id)
+  }
+
+  async deleteReviewById(reviewId: string, userId: string, role: Role) {
+    const review = await this.repo.findReviewById(reviewId)
+    if (!review) throw new NotFoundException('Danh gia khong ton tai')
+
+    if (role === Role.LEARNER && review.userId !== userId) {
+      throw new ForbiddenException('Ban khong co quyen xoa danh gia nay')
+    }
+
+    if (role === Role.CONTENT_MANAGER && review.course?.creatorId !== userId) {
+      throw new ForbiddenException('Ban khong co quyen xoa danh gia tren khoa hoc nay')
+    }
+
+    return this.repo.deleteReview(reviewId)
+  }
+
+  async replyToReview(reviewId: string, content: string, userId: string) {
+    const review = await this.repo.findReviewById(reviewId)
+    if (!review) throw new NotFoundException('Danh gia khong ton tai')
+
+    if (review.course?.creatorId !== userId) {
+      throw new ForbiddenException('Ban khong co quyen phan hoi danh gia tren khoa hoc nay')
+    }
+
+    return this.repo.updateReview(reviewId, {
+      instructorReply: content,
+      instructorReplyAt: new Date(),
+    })
+  }
+
+  async learnerReplyToReview(reviewId: string, content: string, userId: string) {
+    const review = await this.repo.findReviewById(reviewId)
+    if (!review) throw new NotFoundException('Danh gia khong ton tai')
+
+    if (review.userId !== userId) {
+      throw new ForbiddenException('Day khong phai danh gia cua ban')
+    }
+
+    if (!review.instructorReply) {
+      throw new BadRequestException('Ban chi co the phan hoi khi giang vien da tra loi danh gia')
+    }
+
+    return this.repo.updateReview(reviewId, {
+      learnerReply: content,
+      learnerReplyAt: new Date(),
+    })
   }
 }

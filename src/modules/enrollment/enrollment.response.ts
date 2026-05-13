@@ -9,6 +9,9 @@ export const MyEnrollmentItemSchema = z.object({
   enrolledAt: z.date(),
   completedAt: z.date().nullable(),
   lastCaughtUpAt: z.date().nullable(),
+  totalLessons: z.number().optional(),
+  completedLessons: z.number().optional(),
+  progressPercent: z.number().optional(),
   course: z.object({
     id: z.string(),
     title: z.string(),
@@ -20,10 +23,18 @@ export const MyEnrollmentItemSchema = z.object({
       fullName: z.string(),
       avatar: z.string().nullable(),
     }),
-    category: z.object({
-      name: z.string(),
-      slug: z.string(),
-    }),
+    category: z
+      .object({
+        name: z.string(),
+        slug: z.string(),
+      })
+      .nullable(),
+    overallAnalytics: z
+      .object({
+        avgRating: z.number(),
+        totalStudents: z.number(),
+      })
+      .optional(),
   }),
 })
 
@@ -35,3 +46,9 @@ export const EnrollmentStatusResponseSchema = z.object({
 })
 
 export const MarkCompletedResponseSchema = EnrollmentIdResponseSchema
+
+export const CourseProgressResponseSchema = z.object({
+  totalLessons: z.number(),
+  completedLessons: z.number(),
+  progressPercent: z.number(),
+})

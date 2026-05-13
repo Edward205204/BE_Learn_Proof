@@ -25,13 +25,13 @@ export class TextLessonStrategy implements LessonStrategy {
       type: LessonType.TEXT,
       title: data.title,
       shortDesc: data?.shortDesc ?? null,
-      fullDesc: data?.fullDesc ?? null,
       order: order,
       videoId: null,
       provider: null,
       duration: null,
       chapterId: data.chapterId,
       textContent,
+      videoKey: null,
     })
 
     if (data?.quizData) {

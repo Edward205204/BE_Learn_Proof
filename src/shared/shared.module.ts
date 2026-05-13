@@ -9,8 +9,21 @@ import { APP_GUARD } from '@nestjs/core'
 import { AuthenticationGuard } from 'src/shared/guards/authentication.guard'
 import { MailService } from './services/mail.service'
 import { SlugService } from './services/slug.service'
+import { SystemSettingsService } from './services/system-settings.service'
+import { MaintenanceGuard } from './guards/maintenance.guard'
+import { ChunkingService } from './services/chunking.service'
+import { VectorStoreService } from './services/vector-store.service'
 
-const sharedServices = [PrismaService, HashingService, TokenService, MailService, SlugService]
+const sharedServices = [
+  PrismaService,
+  HashingService,
+  TokenService,
+  MailService,
+  SlugService,
+  SystemSettingsService,
+  ChunkingService,
+  VectorStoreService,
+]
 
 @Global()
 @Module({
@@ -21,6 +34,10 @@ const sharedServices = [PrismaService, HashingService, TokenService, MailService
     {
       provide: APP_GUARD,
       useClass: AuthenticationGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: MaintenanceGuard,
     },
   ],
   exports: sharedServices,

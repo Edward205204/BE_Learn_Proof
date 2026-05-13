@@ -10,14 +10,14 @@ export enum LessonType {
 
 export enum LessonProvider {
   YOUTUBE = 'YOUTUBE',
-  BUNNY = 'BUNNY',
+  CLOUDINARY = 'CLOUDINARY',
   SELF_HOSTED = 'SELF_HOSTED',
 }
 
 export const LessonTypeEnum = z.enum(Object.values(LessonType) as [LessonType, ...LessonType[]])
 export type LessonTypeEnumTS = z.infer<typeof LessonTypeEnum>
 
-export const VideoProviderEnum = z.enum(['YOUTUBE', 'BUNNY', 'SELF_HOSTED'])
+export const VideoProviderEnum = z.enum(['YOUTUBE', 'CLOUDINARY', 'SELF_HOSTED'])
 
 export type VideoProviderEnumTS = z.infer<typeof VideoProviderEnum>
 
@@ -26,9 +26,9 @@ export const UpdateLessonSchema = z
     type: LessonTypeEnum,
     title: z.string().optional(),
     shortDesc: z.string().optional(),
-    fullDesc: z.string().optional(),
     duration: z.number().optional(),
     textContent: z.string().optional(),
+    isLocked: z.boolean().optional(),
   })
   .strict()
   .superRefine((data, ctx) => {
@@ -54,9 +54,9 @@ export const CreateLessonSchema = z
     type: LessonTypeEnum,
     title: z.string().min(1, 'Phải có tiêu đề bài học'),
     shortDesc: z.string().optional(),
-    fullDesc: z.string().optional(),
     chapterId: z.string(),
     videoId: z.string().optional(),
+    videoKey: z.string().optional(),
     duration: z.coerce.number().optional(),
     textContent: z.string().optional(),
     quizData: z.array(QuestionSchema).min(1, 'Phải có ít nhất một câu hỏi').optional(),

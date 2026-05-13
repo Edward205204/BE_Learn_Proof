@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions", "fullTextSearch", "fullTextIndex"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [pg_trgm(schema: "public"), unaccent(schema: "public"), vector(schema: "public")]
 }
 
 enum Role {
@@ -29,10 +31,27 @@ enum LessonType {
   VIDEO
   TEXT
   QUIZ
+  CODING
+  PRACTICE
+  ROLE_PLAY
+}
+
+enum CourseLanguage {
+  VIETNAMESE
+  ENGLISH
+  JAPANESE
+  KOREAN
 }
 
 enum PaymentStatus {
   PENDING
+  COMPLETED
+  FAILED
+}
+
+enum CertMintStatus {
+  PENDING
+  MINTING
   COMPLETED
   FAILED
 }
@@ -47,23 +66,33 @@ enum VerificationCodeType {
   FORGOT_PASSWORD
 }
 
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
 enum VideoProviderEnum {
   YOUTUBE
-  BUNNY
+  CLOUDINARY
   SELF_HOSTED
 }
 
 // thuộc modules user - start
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  password  String
-  fullName  String
-  avatar    String?
-  bio       String?   @db.Text
-  headline  String?
-  website   String?
-  role      Role      @default(LEARNER)
+  id                    String       @id @default(cuid())
+  email                 String       @unique
+  walletAddress         String?      @unique
+  password              String
+  fullName              String
+  avatar                String?
+  bio                   String?      @db.Text
+  headline              String?
+  website               String?
+  role                  Role         @default(LEARNER)
+  provider              AuthProvider @default(LOCAL)
+  isBanned              Boolean      @default(false)
+  isOnboardingCompleted Boolean      @default(false)
+
   deletedAt DateTime?
 
   coursesCreated Course[]          @relation("CourseCreator")
@@ -78,6 +107,7 @@ model User {
   certificates   Certificate[]
   heartbeats     LessonHeartbeat[]
   quizAttempts   QuizAttempt[]
+  auditLogs      AuditLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -138,8 +168,10 @@ model Course {
   isCompleted           Boolean        @default(false)
   publishedLessonsCount Int            @default(0) // @denormalized số lượng bài học đã public - cần sync
   totalPlannedLessons   Int?
+  language              CourseLanguage @default(VIETNAMESE)
+  avgRating             Float          @default(0)
+  totalReviews          Int            @default(0)
   shortDesc             String
-  fullDesc              String
   thumbnail             String?
   status                CourseStatus   @default(DRAFT)
   isFree                Boolean        @default(true)
@@ -167,6 +199,8 @@ model Course {
   @@index([creatorId, createdAt])
   @@index([creatorId, status, createdAt])
   @@index([categoryId])
+  @@index([categoryId, level, isFree, status])
+  @@index([title(ops: raw("gin_trgm_ops")), shortDesc(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 model Chapter {
@@ -187,7 +221,6 @@ model Lesson {
   id        String     @id @default(cuid())
   title     String
   shortDesc String?    @db.Text
-  fullDesc  String?    @db.Text // Context cho AI
   type      LessonType
   order     Float
 
@@ -196,8 +229,22 @@ model Lesson {
   textContent String?            @db.Text
   duration    Int?
 
+  // Cloudinary video key
+  videoKey String?
+  // cloudinaryVideoUrl String?
+
+  isLocked    Boolean           @default(false)
   chapterId String
   chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  lessonDesc         String?  @db.Text
+  learningObjectives String[] @default([])
+  targetLevel        String?
+  keywords           String[] @default([])
+  aiSummary          String?  @db.Text
+  transcript         String?  @db.Text
+  transcriptSource   String?
+  transcriptStatus   String?
 
   quizzes Quiz[]
 
@@ -208,7 +255,12 @@ model Lesson {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
+  chunks     LessonChunk[]
+  aiJobs     AiJob[]
+  quizDrafts QuizDraft[]
+
   @@index([chapterId, order])
+  @@index([title(ops: raw("gin_trgm_ops")), shortDesc(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 // thuộc modules lesson - end
@@ -299,6 +351,7 @@ model Progress {
   userId      String
   lessonId    String
   isCompleted Boolean  @default(false)
+  startedAt   DateTime @default(now())
   lastAccess  DateTime @updatedAt
   lesson      Lesson   @relation(fields: [lessonId], references: [id])
   user        User     @relation(fields: [userId], references: [id])
@@ -358,11 +411,18 @@ model Reply {
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  rating    Int      @default(5)
-  comment   String?
-  userId    String
-  courseId  String
+  id       String  @id @default(cuid())
+  rating   Int     @default(5)
+  comment  String?
+  userId   String
+  courseId String
+
+  instructorReply   String?   @db.Text
+  instructorReplyAt DateTime?
+
+  learnerReply   String?   @db.Text
+  learnerReplyAt DateTime?
+
   createdAt DateTime @default(now())
   course    Course   @relation(fields: [courseId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
@@ -370,27 +430,45 @@ model Review {
   @@unique([userId, courseId])
 }
 
+enum PaymentProvider {
+  VNPAY
+}
+
 model Transaction {
-  id        String        @id @default(cuid())
-  userId    String
-  courseId  String
-  amount    Float
-  status    PaymentStatus @default(PENDING)
-  provider  String
-  createdAt DateTime      @default(now())
-  course    Course        @relation(fields: [courseId], references: [id])
-  user      User          @relation(fields: [userId], references: [id])
+  id       String          @id @default(cuid())
+  userId   String
+  courseId String
+  amount   Float
+  status   PaymentStatus   @default(PENDING)
+  provider PaymentProvider @default(VNPAY)
+
+  txnRef       String // mã bạn gửi sang VNPay
+  vnpTxnNo     String? // mã giao dịch VNPay trả về
+  responseCode String? // vnp_ResponseCode
+  payDate      DateTime? // thời điểm thanh toán thành công
+
+  createdAt DateTime @default(now())
+  course    Course   @relation(fields: [courseId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([courseId, createdAt])
+  @@index([status, createdAt])
+  @@index([txnRef])
 }
 
 model Certificate {
-  id              String   @id @default(cuid())
+  id              String         @id @default(cuid())
   userId          String
   courseId        String
-  issuedAt        DateTime @default(now())
-  certificateHash String   @unique
+  issuedAt        DateTime       @default(now())
+  certificateHash String         @unique
+  tokenId         String?        @unique
+  ipfsHash        String?
   txHash          String?
-  course          Course   @relation(fields: [courseId], references: [id])
-  user            User     @relation(fields: [userId], references: [id])
+  status          CertMintStatus @default(PENDING)
+  course          Course         @relation(fields: [courseId], references: [id])
+  user            User           @relation(fields: [userId], references: [id])
 }
 
 // model CourseOverallAnalytics {
@@ -458,4 +536,99 @@ model WishlistItem {
   createdAt DateTime @default(now())
 
   @@unique([userId, courseId])
+}
+
+// @Change thay đổi cho admin modules.Rules: Thêm bảng AuditLog để lưu vết thao tác của Admin
+model AuditLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String // Ví dụ: UPDATE_ROLE, BAN_USER, DELETE_COURSE
+  entity    String // Ví dụ: USER, COURSE
+  entityId  String   @map("entity_id")
+  details   Json? // Dữ liệu chi tiết về thay đổi
+  createdAt DateTime @default(now()) @map("created_at")
+  admin     User     @relation(fields: [adminId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+enum AiJobType {
+  LESSON_INDEX
+  QUIZ_GENERATION
+  RAG_ASK
+}
+
+enum AiJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum QuizDraftStatus {
+  DRAFT_AI
+  PUBLISHED
+  REJECTED
+}
+
+model LessonChunk {
+  id         String   @id @default(cuid())
+  lessonId   String
+  lesson     Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  chunkIndex Int
+  content    String   @db.Text
+  embedding  Unsupported("vector(1536)")
+  metadata   Json?
+  version    Int      @default(1)
+  createdAt  DateTime @default(now())
+
+  @@index([lessonId])
+}
+
+model AiJob {
+  id          String      @id @default(cuid())
+  type        AiJobType
+  status      AiJobStatus @default(QUEUED)
+  lessonId    String
+  lesson      Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  requestedBy String
+  model       String?
+  tokenInput  Int?
+  tokenOutput Int?
+  latencyMs   Int?
+  retries     Int         @default(0)
+  error       String?     @db.Text
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  quizDrafts  QuizDraft[]
+
+  @@index([lessonId, type])
+  @@index([status])
+}
+
+model QuizDraft {
+  id              String          @id @default(cuid())
+  lessonId        String
+  lesson          Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  aiJobId         String
+  aiJob           AiJob           @relation(fields: [aiJobId], references: [id])
+  status          QuizDraftStatus @default(DRAFT_AI)
+  rawOutput       Json
+  validatedOutput Json?
+  reviewerId      String?
+  reviewNote      String?         @db.Text
+  promptVersion   String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([lessonId])
+  @@index([status])
 }

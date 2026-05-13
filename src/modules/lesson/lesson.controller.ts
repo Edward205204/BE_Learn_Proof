@@ -21,8 +21,8 @@ export class LessonController {
 
   @Post()
   @ZodSerializerDto(LessonBasicResponseSchema)
-  createLesson(@Body() body: CreateLessonDto) {
-    return this.lessonService.createLesson(body)
+  createLesson(@Body() body: CreateLessonDto, @ActiveUser() user: TokenPayload) {
+    return this.lessonService.createLesson(body, user.userId)
   }
 
   @Patch('reorder')
@@ -31,10 +31,22 @@ export class LessonController {
     return this.lessonService.reorderLesson(body)
   }
 
+  @Get(':lessonId/learn')
+  @ZodSerializerDto(LessonLearnerResponseSchema)
+  getLessonForLearner(@Param('lessonId') lessonId: string, @ActiveUser() user: TokenPayload) {
+    return this.lessonService.getLessonForLearner(lessonId, user.userId)
+  }
+
   @Get(':lessonId')
   @ZodSerializerDto(LessonDetailResponseSchema)
   getLessonDetail(@Param('lessonId') lessonId: string) {
     return this.lessonService.getLessonDetail(lessonId)
+  }
+
+  @Patch(':lessonId/lock')
+  @ZodSerializerDto(LessonBasicResponseSchema)
+  toggleLessonLock(@Param('lessonId') lessonId: string, @Body('isLocked') isLocked: boolean) {
+    return this.lessonService.toggleLessonLock(lessonId, isLocked)
   }
 
   @Patch(':lessonId')
@@ -44,17 +56,8 @@ export class LessonController {
   }
 
   @Delete(':lessonId')
-  @ZodSerializerDto(LessonBasicResponseSchema)
   deleteLesson(@Param('lessonId') lessonId: string) {
     return this.lessonService.deleteLesson(lessonId)
-  }
-
-  // Learner
-
-  @Get(':lessonId/learn')
-  @ZodSerializerDto(LessonLearnerResponseSchema)
-  getLessonForLearner(@Param('lessonId') lessonId: string) {
-    return this.lessonService.getLessonForLearner(lessonId)
   }
 
   @Post(':lessonId/complete')
@@ -65,5 +68,10 @@ export class LessonController {
     @Body('courseId') courseId: string,
   ) {
     return this.lessonService.markLessonComplete(user.userId, lessonId, courseId)
+  }
+
+  @Post(':lessonId/ask')
+  askLesson(@Param('lessonId') lessonId: string, @ActiveUser() user: TokenPayload, @Body('question') question: string) {
+    return this.lessonService.askLesson(lessonId, user.userId, question)
   }
 }

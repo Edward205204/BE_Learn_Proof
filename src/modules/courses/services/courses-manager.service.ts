@@ -9,23 +9,28 @@ import {
 } from '../courses.model'
 import { CourseRepo } from '../courses.repo'
 import { SlugService } from 'src/shared/services/slug.service'
-import {
-  CategoryNotFoundException,
-  CourseNotMatchException,
-  CourseNotDraftException,
-  CourseNotFoundException,
-} from '../error.model'
+import { CategoryNotFoundException, CourseNotMatchException, CourseNotFoundException } from '../error.model'
 import { CourseStatus } from 'src/generated/prisma/enums'
 import { UpdateCourseStatusDto } from '../courses.dto'
 
 @Injectable()
 export class CoursesManagerService {
+  private static readonly MIN_LESSONS_TO_COMPLETE = 10
+  private static readonly MAX_DRAFT_COURSES = 10
+
   constructor(
     private readonly courseRepo: CourseRepo,
     private readonly slugService: SlugService,
   ) {}
 
   async createCourse(body: CreateCourseSt1Dto, creatorId: string) {
+    const draftCoursesCount = await this.courseRepo.countCoursesByCreatorAndStatus(creatorId, CourseStatus.DRAFT)
+    if (draftCoursesCount >= CoursesManagerService.MAX_DRAFT_COURSES) {
+      throw new BadRequestException(
+        `Bạn đã tạo quá số lượng khóa học nháp (tối đa ${CoursesManagerService.MAX_DRAFT_COURSES}). Vui lòng hoàn thiện và publish bớt khóa học trước khi tạo mới.`,
+      )
+    }
+
     const category = await this.courseRepo.findCategoryUnique({ id: body.categoryId })
     if (!category) {
       throw new CategoryNotFoundException()
@@ -41,10 +46,6 @@ export class CoursesManagerService {
       throw new CourseNotFoundException()
     }
 
-    if (course.status !== CourseStatus.DRAFT) {
-      throw new CourseNotDraftException()
-    }
-
     const data = await this.courseRepo.syncChaptersFrame(courseId, body)
     return data
   }
@@ -55,12 +56,22 @@ export class CoursesManagerService {
       throw new CourseNotFoundException()
     }
 
-    if (course.status !== CourseStatus.DRAFT) {
-      throw new CourseNotDraftException()
-    }
-
     const data = await this.courseRepo.finishCreateCourse(courseId, { ...body, creatorId })
     return data
+  }
+
+  async completeCourse(courseId: string, creatorId: string) {
+    const course = await this.courseRepo.getCourseUnique({ creatorId, id: courseId })
+    if (!course) throw new CourseNotFoundException()
+
+    const lessonsCount = await this.courseRepo.countLessonsByCourse(courseId)
+    if (lessonsCount < CoursesManagerService.MIN_LESSONS_TO_COMPLETE) {
+      throw new BadRequestException(
+        `Khóa học cần tối thiểu ${CoursesManagerService.MIN_LESSONS_TO_COMPLETE} bài học để được đánh dấu hoàn thiện.`,
+      )
+    }
+
+    return this.courseRepo.completeCourse(courseId, creatorId)
   }
 
   async getCourseBaseInfo(courseId: string, creatorId: string) {
@@ -78,10 +89,6 @@ export class CoursesManagerService {
   async updateCourseBaseInfo(courseId: string, body: CreateCourseSt1Dto, creatorId: string) {
     const course = await this.courseRepo.getCourseUnique({ creatorId, id: courseId })
     if (!course) throw new CourseNotFoundException()
-
-    if (course.status !== CourseStatus.DRAFT) {
-      throw new CourseNotDraftException()
-    }
 
     const category = await this.courseRepo.findCategoryUnique({ id: body.categoryId })
     if (!category) {
@@ -185,5 +192,24 @@ export class CoursesManagerService {
     }
 
     return this.courseRepo.deleteChapter(chapterId)
+  }
+
+  async deleteCourse(courseId: string, creatorId: string) {
+    const course = await this.courseRepo.getCourseUnique({ creatorId, id: courseId })
+    if (!course) throw new CourseNotFoundException()
+
+    // Kiểm tra xem khóa học đã có người đăng ký chưa
+    const enrollCount = await this.courseRepo.countEnrollmentsByCourse(courseId)
+    if (enrollCount > 0) {
+      throw new BadRequestException(
+        `Không thể xóa khóa học vì đã có ${enrollCount} học viên đăng ký. Hãy chuyển sang trạng thái Lưu trữ (ARCHIVED) thay vì xóa.`,
+      )
+    }
+
+    return this.courseRepo.deleteCourse(courseId, creatorId)
+  }
+
+  async getInstructorDashboard(creatorId: string, range?: string) {
+    return this.courseRepo.getInstructorDashboard(creatorId, range)
   }
 }

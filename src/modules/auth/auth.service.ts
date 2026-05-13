@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 import {
   AuthResType,
   ForgotPasswordBodyType,
@@ -28,8 +28,9 @@ import { MailService } from 'src/shared/services/mail.service'
 import { addMilliseconds } from 'date-fns'
 import ms, { StringValue } from 'ms'
 import envConfig from 'src/shared/config'
-import { generateOTP } from './auth.util'
+import { generateOTP, ADMIN_EMAILS } from './auth.util'
 import { TokenPayload } from 'src/shared/types/jwt.type'
+import { SystemSettingsService } from 'src/shared/services/system-settings.service'
 
 @Injectable()
 export class AuthService {
@@ -38,6 +39,7 @@ export class AuthService {
     private readonly tokenService: TokenService,
     private readonly hashingService: HashingService,
     private readonly mailService: MailService,
+    private readonly systemSettingsService: SystemSettingsService,
   ) {}
 
   async generateAndSaveTokens(payload: { userId: string; role: Role }) {
@@ -65,7 +67,20 @@ export class AuthService {
     const isPasswordValid = await this.hashingService.compare(password, user.password)
     if (!isPasswordValid) throw new EmailOrPasswordInvalidException()
 
-    const { accessToken, refreshToken } = await this.generateAndSaveTokens({ userId: user.id, role: user.role })
+    // Tự động nâng cấp quyền Admin nếu email nằm trong danh sách
+    let role = user.role
+    if (ADMIN_EMAILS.includes(user.email) && role !== Role.ADMIN) {
+      await this.authRepo.updateUser({ where: { id: user.id }, data: { role: Role.ADMIN } })
+      role = Role.ADMIN
+    }
+
+    // Kiểm tra chế độ bảo trì
+    const isMaintenance = await this.systemSettingsService.getSetting('MAINTENANCE_MODE', false)
+    if (isMaintenance && role !== Role.ADMIN) {
+      throw new ForbiddenException('Hệ thống hiện đang trong quá trình bảo trì. Vui lòng quay lại sau.')
+    }
+
+    const { accessToken, refreshToken } = await this.generateAndSaveTokens({ userId: user.id, role })
 
     return {
       tokens: {
@@ -81,12 +96,25 @@ export class AuthService {
         headline: user.headline ?? null,
         website: user.website ?? null,
         role: user.role,
+        isOnboardingCompleted: user.isOnboardingCompleted,
       },
     }
   }
 
   async register(body: RegisterBodyType): Promise<AuthResType> {
+    const isMaintenance = await this.systemSettingsService.getSetting('MAINTENANCE_MODE', false)
     const { email, fullName, password, code } = body
+    const isAdminEmail = ADMIN_EMAILS.includes(email)
+
+    if (isMaintenance && !isAdminEmail) {
+      throw new ForbiddenException('Hệ thống hiện đang trong quá trình bảo trì. Đăng ký tạm đóng.')
+    }
+
+    const allowRegistration = await this.systemSettingsService.getSetting('ALLOW_REGISTRATION', true)
+    if (!allowRegistration) {
+      throw new ForbiddenException('Registration is currently disabled by administrator.')
+    }
+
     const user = await this.authRepo.findUserUnique({ email })
     if (user) throw new EmailAlreadyExistsException()
 
@@ -97,10 +125,13 @@ export class AuthService {
 
     const hashedPassword = await this.hashingService.hash(password)
 
+    const role = isAdminEmail ? Role.ADMIN : Role.LEARNER
+
     const newUser = await this.authRepo.createUser({
       email,
       fullName,
       password: hashedPassword,
+      role,
     })
     const { accessToken, refreshToken } = await this.generateAndSaveTokens({ userId: newUser.id, role: newUser.role })
     return {
@@ -112,7 +143,19 @@ export class AuthService {
   }
 
   async sendOtpForRegister(body: SendOtpBodyType) {
+    const isMaintenance = await this.systemSettingsService.getSetting('MAINTENANCE_MODE', false)
     const { email } = body
+    const isAdminEmail = ADMIN_EMAILS.includes(email)
+
+    if (isMaintenance && !isAdminEmail) {
+      throw new ForbiddenException('Hệ thống hiện đang trong quá trình bảo trì.')
+    }
+
+    const allowRegistration = await this.systemSettingsService.getSetting('ALLOW_REGISTRATION', true)
+    if (!allowRegistration) {
+      throw new ForbiddenException('Registration is currently disabled by administrator.')
+    }
+
     const user = await this.authRepo.findUserUnique({ email })
 
     if (user) throw new EmailAlreadyExistsAndCannotSendOtpException()
@@ -208,6 +251,7 @@ export class AuthService {
       headline: user.headline,
       website: user.website,
       role: user.role,
+      isOnboardingCompleted: user.isOnboardingCompleted,
     }
   }
 
@@ -221,6 +265,7 @@ export class AuthService {
         ...(data.bio !== undefined && { bio: data.bio || null }),
         ...(data.headline !== undefined && { headline: data.headline || null }),
         ...(data.website !== undefined && { website: data.website || null }),
+        ...(data.isOnboardingCompleted !== undefined && { isOnboardingCompleted: data.isOnboardingCompleted }),
       },
     })
     return {
@@ -232,6 +277,24 @@ export class AuthService {
       headline: updated.headline,
       website: updated.website,
       role: updated.role,
+      isOnboardingCompleted: updated.isOnboardingCompleted,
     }
+  }
+
+  // --- API nội bộ dành cho Admin Module (Gắn với quy tắc Ghi DB) ---
+
+  async updateUserRole(userId: string, role: Role) {
+    const user = await this.authRepo.findUserUnique({ id: userId })
+    if (!user) throw new UserNotFoundException()
+
+    const updated = await this.authRepo.updateUser({
+      where: { id: userId },
+      data: { role },
+    })
+    return { id: updated.id, role: updated.role }
+  }
+
+  async getMaintenanceStatus() {
+    return this.systemSettingsService.getSetting('MAINTENANCE_MODE', false)
   }
 }

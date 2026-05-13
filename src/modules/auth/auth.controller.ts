@@ -20,6 +20,9 @@ import envConfig from 'src/shared/config'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 import { TokenPayload } from 'src/shared/types/jwt.type'
 
+import { BypassMaintenance } from 'src/shared/decorators/maintenance.decorator'
+
+@BypassMaintenance()
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -112,5 +115,11 @@ export class AuthController {
           : 'Đã xảy ra lỗi khi đăng nhập bằng Google, vui lòng thử lại bằng cách khác'
       return res.redirect(`${envConfig.GOOGLE_CLIENT_REDIRECT_URI}?errorMessage=${message}`)
     }
+  }
+
+  @Get('maintenance-status')
+  @IsPublic()
+  getMaintenanceStatus() {
+    return this.authService.getMaintenanceStatus()
   }
 }

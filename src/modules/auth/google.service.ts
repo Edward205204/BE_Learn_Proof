@@ -8,8 +8,8 @@ import { AuthRepo } from './auth.repo'
 import { v4 as uuidv4 } from 'uuid'
 import { HashingService } from 'src/shared/services/hashing.service'
 import { AuthService } from './auth.service'
-import { User } from 'src/generated/prisma/client'
-import { StringFieldUpdateOperationsInput } from 'src/generated/prisma/models'
+import { Role } from 'src/generated/prisma/client'
+import { ADMIN_EMAILS } from './auth.util'
 
 @Injectable()
 export class GoogleService {
@@ -56,33 +56,47 @@ export class GoogleService {
       })
 
       const { data } = await oauth2.userinfo.get()
+      const email = data.email
+      const name = data.name
 
-      if (!data.email) {
+      if (!email) {
         throw new UnauthorizedException('Không thể lấy thông tin email từ Google')
       }
 
       // 3. Tìm hoặc Tạo user
-      const user = await this.authRepo.findUserUnique({
-        email: data.email,
-      })
+      let user = await this.authRepo.findUserUnique({ email })
 
-      const finalUser =
-        user ||
-        (await (async () => {
-          const randomPassword = uuidv4()
-          const hashedPassword = await this.hashingService.hash(randomPassword)
+      if (!user) {
+        const randomPassword = uuidv4()
+        const hashedPassword = await this.hashingService.hash(randomPassword)
 
-          return await this.authRepo.createUser({
-            email: data.email as string,
-            fullName: data.name ?? '',
-            password: hashedPassword,
-            avatar: data.picture ?? '',
-          })
-        })())
+        user = await this.authRepo.createUser({
+          email: email,
+          fullName: name ?? 'Người dùng Google',
+          password: hashedPassword,
+          avatar: data.picture ?? '',
+          role: ADMIN_EMAILS.includes(email) ? Role.ADMIN : Role.LEARNER,
+          provider: 'GOOGLE',
+        })
+      }
+
+      // Lúc này TypeScript vẫn có thể nghĩ user là null nếu logic phức tạp,
+      // chúng ta gán vào hằng số để khẳng định user tồn tại (Narrowing)
+      const GoogleUser = user
+      if (!GoogleUser) {
+        throw new UnauthorizedException('Không thể xác thực hoặc tạo người dùng')
+      }
+
+      // Tự động nâng cấp quyền Admin nếu email nằm trong danh sách
+      let role = GoogleUser.role
+      if (ADMIN_EMAILS.includes(GoogleUser.email) && role !== Role.ADMIN) {
+        await this.authRepo.updateUser({ where: { id: GoogleUser.id }, data: { role: Role.ADMIN } })
+        role = Role.ADMIN
+      }
 
       return await this.authService.generateAndSaveTokens({
-        userId: finalUser.id,
-        role: finalUser.role,
+        userId: GoogleUser.id,
+        role: role,
       })
     } catch (error) {
       console.error('Google Auth Error:', error)

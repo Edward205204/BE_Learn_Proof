@@ -5,7 +5,7 @@ import CustomZodValidationPipe from './shared/pipes/z-validation.pipe'
 import { ZodSerializerInterceptor } from 'nestjs-zod'
 import { DatabaseExceptionFilter } from './shared/filters/database-exc.filter'
 import { HttpExceptionFilter } from './shared/filters/http-exc.filter'
-import { TransformInterceptor } from './shared/interceptor/transform.interceptor'
+
 import { SharedModule } from './shared/shared.module'
 import { CoursesModule } from './modules/courses/courses.module'
 import { QuizModule } from './modules/quiz/quiz.module'
@@ -19,9 +19,19 @@ import { ClsPluginTransactional } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 import { EnrollmentModule } from './modules/enrollment/enrollment.module'
 import { LessonModule } from './modules/lesson/lesson.module'
+import { AdminModule } from './modules/admin/admin.module'
+import { BlockchainModule } from './modules/blockchain/blockchain.module'
+import { IpfsModule } from './modules/ipfs/ipfs.module'
+import { PaymentModule } from './modules/payment/payment.module'
+import { DashboardModule } from './modules/dashboard/dashboard.module'
+import { VideoModule } from './modules/video/video.module'
+import { CertificateModule } from './modules/certificate/certificate.module'
+
+import { AiModule } from './modules/ai/ai.module'
 
 @Module({
   imports: [
+    AiModule,
     AuthModule,
     SharedModule,
     CoursesModule,
@@ -31,6 +41,7 @@ import { LessonModule } from './modules/lesson/lesson.module'
     CartModule,
     WishlistModule,
     LessonModule,
+    AdminModule,
 
     ClsModule.forRoot({
       global: true,
@@ -46,7 +57,14 @@ import { LessonModule } from './modules/lesson/lesson.module'
     }),
 
     EnrollmentModule,
+    BlockchainModule,
+    IpfsModule,
+    PaymentModule,
+    DashboardModule,
+    VideoModule,
+    CertificateModule,
   ],
+
   controllers: [],
   providers: [
     {

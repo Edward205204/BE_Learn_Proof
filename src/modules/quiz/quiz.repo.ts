@@ -18,6 +18,15 @@ export class QuizRepo {
     })
   }
 
+  findLessonOwner(lessonId: string) {
+    return this.txHost.tx.lesson.findUnique({
+      where: { id: lessonId },
+      select: {
+        chapter: { select: { course: { select: { creatorId: true } } } },
+      },
+    })
+  }
+
   // cross-read: quiz → lesson → chapter → course → enrollment
   findQuizCourseEnrollment(quizId: string, userId: string) {
     return this.txHost.tx.quiz.findUnique({
@@ -239,6 +248,83 @@ export class QuizRepo {
   createQuizAttempt(body: { userId: string; quizId: string; score: number; correct: number; total: number }) {
     return this.txHost.tx.quizAttempt.create({
       data: body,
+    })
+  }
+
+  // --- AI Quiz Draft Methods ---
+
+  findDraftAiJobForLesson(lessonId: string) {
+    return this.txHost.tx.aiJob.findFirst({
+      where: {
+        lessonId,
+        type: 'QUIZ_GENERATION',
+        status: { in: ['QUEUED', 'PROCESSING'] },
+      },
+    })
+  }
+
+  findDraftQuizForLesson(lessonId: string) {
+    return this.txHost.tx.quizDraft.findFirst({
+      where: { lessonId, status: 'DRAFT_AI' },
+    })
+  }
+
+  createAiJob(data: { lessonId: string; requestedBy: string; type: any }) {
+    return this.txHost.tx.aiJob.create({
+      data,
+    })
+  }
+
+  findDraftsByLessonId(lessonId: string) {
+    return this.txHost.tx.quizDraft.findMany({
+      where: { lessonId },
+      include: { aiJob: true },
+      orderBy: { createdAt: 'desc' },
+    })
+  }
+
+  findDraftById(draftId: string) {
+    return this.txHost.tx.quizDraft.findUnique({
+      where: { id: draftId },
+      include: { aiJob: true },
+    })
+  }
+
+  updateDraftStatus(draftId: string, status: any, data?: { reviewNote?: string; reviewerId?: string }) {
+    return this.txHost.tx.quizDraft.update({
+      where: { id: draftId },
+      data: {
+        status,
+        ...data,
+      },
+    })
+  }
+
+  async replaceQuizFromDraft(draftId: string, lessonId: string, rawOutput: any) {
+    // Delete existing quiz for lesson
+    await this.txHost.tx.quiz.deleteMany({
+      where: { lessonId },
+    })
+
+    const questionsData = rawOutput.map((q: any) => ({
+      content: q.question,
+      isEdit: false,
+      answers: {
+        create: q.options.map((opt: string, index: number) => ({
+          content: opt,
+          isCorrect: index === q.correctIndex,
+        })),
+      },
+    }))
+
+    // Create new quiz
+    return this.txHost.tx.quiz.create({
+      data: {
+        lessonId,
+        questions: {
+          create: questionsData,
+        },
+      },
     })
   }
 }

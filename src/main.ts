@@ -17,4 +17,5 @@ async function bootstrap() {
   app.enableCors({ origin: envConfig.FE_URL, credentials: true })
   await app.listen(envConfig.PORT)
 }
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 bootstrap()

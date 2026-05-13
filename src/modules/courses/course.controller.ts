@@ -14,9 +14,9 @@ import {
   UpdateCourseBaseInfoDto,
   RenameChapterDto,
   UpdateCourseStatusDto,
-  DeleteChapterDto,
 } from './courses.dto'
-import { IsPublic } from 'src/shared/decorators/auth.decorator'
+import { Auth, IsPublic } from 'src/shared/decorators/auth.decorator'
+import { AuthType, ConditionGuard } from 'src/shared/constants/auth.constant'
 import {
   AllSlugsResponseSchema,
   CourseDetailResponseSchema,
@@ -43,17 +43,17 @@ export class CourseController {
   ) {}
 
   @Get()
-  @IsPublic()
+  @Auth([AuthType.Bearer, AuthType.None], { condition: ConditionGuard.Or })
   @ZodSerializerDto(GetCoursesResponseSchema)
-  getCourses(@Query() query: GetCoursesQueryDTO) {
-    return this.courseService.getCourses(query)
+  getCourses(@Query() query: GetCoursesQueryDTO, @ActiveUser() user: TokenPayload) {
+    return this.courseService.getCourses({ ...query, userId: user?.userId })
   }
 
   @Get('home-sections')
-  @IsPublic()
+  @Auth([AuthType.Bearer, AuthType.None], { condition: ConditionGuard.Or })
   @ZodSerializerDto(HomeSectionsResponseSchema)
-  getHomeSections() {
-    return this.courseService.getHomeSections()
+  getHomeSections(@ActiveUser() user: TokenPayload) {
+    return this.courseService.getHomeSections(user?.userId)
   }
 
   @Get('search/suggestions')
@@ -105,6 +105,13 @@ export class CourseController {
     return this.courseManagerService.publishCourse(id, body, user.userId)
   }
 
+  @Patch(':courseId/complete')
+  @ApiBearerAuth('access-token')
+  @ZodSerializerDto(CreateCourseFullResponseSchema)
+  completeCourse(@Param('courseId') courseId: string, @ActiveUser() user: TokenPayload) {
+    return this.courseManagerService.completeCourse(courseId, user.userId)
+  }
+
   @Patch('base-info/:id')
   @ApiBearerAuth('access-token')
   @ZodSerializerDto(CreateCourseFullResponseSchema)
@@ -133,6 +140,12 @@ export class CourseController {
     return this.courseManagerService.renameChapter(chapterId, body.title, user.userId)
   }
 
+  @Get('manager/dashboard')
+  @ApiBearerAuth('access-token')
+  getInstructorDashboard(@ActiveUser() user: TokenPayload, @Query('range') range?: string) {
+    return this.courseManagerService.getInstructorDashboard(user.userId, range)
+  }
+
   @Get('manager/my-courses')
   @ApiBearerAuth('access-token')
   // @ZodSerializerDto(GetSearchSuggestionsResponseSchema)
@@ -154,10 +167,10 @@ export class CourseController {
   }
 
   @Get(':slug')
-  @IsPublic()
+  @Auth([AuthType.Bearer, AuthType.None], { condition: ConditionGuard.Or })
   @ZodSerializerDto(CourseDetailResponseSchema)
-  getCourseDetail(@Param() params: GetCourseDetailQueryDTO) {
-    return this.courseService.getCourseDetail(params.slug)
+  getCourseDetail(@Param() params: GetCourseDetailQueryDTO, @ActiveUser() user: TokenPayload) {
+    return this.courseService.getCourseDetail(params.slug, user?.userId)
   }
 
   // lấy data cơ bản của khóa học và chapters để edit
@@ -167,7 +180,6 @@ export class CourseController {
   getCourseBaseInfo(@Param() param: GetCourseParamByIdDTO, @ActiveUser() user: TokenPayload) {
     return this.courseManagerService.getCourseBaseInfo(param.id, user.userId)
   }
-  @Patch(':courseId/status')
   @Patch(':courseId/status')
   @ApiBearerAuth('access-token')
   updateCourseStatus(
@@ -180,11 +192,21 @@ export class CourseController {
 
   @Delete(':courseId/delete/chapter/:chapterId')
   @ApiBearerAuth('access-token')
-  deleteChapter(@Param('courseId') param: DeleteChapterDto, @ActiveUser() user: TokenPayload) {
+  deleteChapter(
+    @Param('courseId') courseId: string,
+    @Param('chapterId') chapterId: string,
+    @ActiveUser() user: TokenPayload,
+  ) {
     return this.courseManagerService.deleteChapter({
       userId: user.userId,
-      coursesId: param.coursesId,
-      chapterId: param.chapterId,
+      coursesId: courseId,
+      chapterId: chapterId,
     })
+  }
+
+  @Delete(':courseId')
+  @ApiBearerAuth('access-token')
+  deleteCourse(@Param('courseId') courseId: string, @ActiveUser() user: TokenPayload) {
+    return this.courseManagerService.deleteCourse(courseId, user.userId)
   }
 }
