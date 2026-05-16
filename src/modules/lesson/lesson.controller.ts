@@ -74,4 +74,13 @@ export class LessonController {
   askLesson(@Param('lessonId') lessonId: string, @ActiveUser() user: TokenPayload, @Body('question') question: string) {
     return this.lessonService.askLesson(lessonId, user.userId, question)
   }
+
+  @Post(':lessonId/generate-content')
+  generateContent(
+    @Param('lessonId') lessonId: string,
+    @ActiveUser() user: TokenPayload,
+    @Body('keywords') keywords?: string,
+  ) {
+    return this.lessonService.generateLessonContent(lessonId, user.userId, keywords)
+  }
 }

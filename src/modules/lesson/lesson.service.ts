@@ -219,4 +219,42 @@ export class LessonService {
       throw error
     }
   }
+
+  async generateLessonContent(lessonId: string, userId: string, keywords?: string) {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      include: {
+        chapter: {
+          include: {
+            course: {
+              select: { creatorId: true },
+            },
+          },
+        },
+      },
+    })
+    if (!lesson) throw new LessonNotFoundException()
+
+    if (lesson.chapter.course.creatorId !== userId) {
+      throw new ForbiddenException('Bạn không có quyền thao tác trên bài học này')
+    }
+
+    const template = this.promptTemplateService.getTemplate('lesson_content_gen_v1')
+    const systemPrompt = template.systemPrompt
+    const userPrompt = this.promptTemplateService.render(template.userTemplate, {
+      lessonTitle: lesson.title,
+      targetLevel: lesson.targetLevel || 'BEGINNER',
+      keywords: keywords || 'None',
+    })
+
+    const response = await this.llmService.chatCompletion({
+      systemPrompt,
+      userPrompt,
+      model: 'strong',
+    })
+
+    return {
+      content: response.content,
+    }
+  }
 }

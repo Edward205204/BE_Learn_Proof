@@ -44,9 +44,21 @@ Context:
 
 Generate a quiz with {{questionCount}} questions now.`,
     },
+    lesson_content_gen_v1: {
+      version: 'v1',
+      systemPrompt: `You are an expert educational content creator. Your goal is to write a detailed, engaging, and structured lesson content based on a title and optional keywords.
+Use Markdown for formatting (headings, lists, bold text, code blocks).
+The content should be professional, clear, and easy to follow.
+Do NOT include any preamble or concluding remarks, just the lesson content itself.`,
+      userTemplate: `Lesson Title: {{lessonTitle}}
+Target Level: {{targetLevel}}
+Keywords: {{keywords}}
+
+Write a comprehensive lesson content for this topic now.`,
+    },
   }
 
-  getTemplate(name: 'rag_answer_v1' | 'quiz_gen_v1') {
+  getTemplate(name: 'rag_answer_v1' | 'quiz_gen_v1' | 'lesson_content_gen_v1') {
     return this.templates[name]
   }
 
