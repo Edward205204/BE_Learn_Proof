@@ -6,6 +6,7 @@ import { PaymentStatus } from 'src/generated/prisma/client'
 import { VnpayReturnQueryType } from './payment.model'
 import { EnrollmentService } from '../enrollment/enrollment.service'
 import { CartService } from '../cart/cart.service'
+import { NotificationsService } from '../notifications/notifications.service'
 
 @Injectable()
 export class PaymentService {
@@ -14,6 +15,7 @@ export class PaymentService {
     private readonly paymentRepo: PaymentRepo,
     private readonly enrollmentService: EnrollmentService,
     private readonly cartService: CartService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   @Transactional()
@@ -111,6 +113,16 @@ export class PaymentService {
     const userId = transactions[0].userId
     await this.enrollmentService.grantEnrollmentsAfterPayment(userId, courseIds)
     await this.cartService.removePurchasedItems(userId, courseIds)
+
+    // Gửi thông báo thanh toán thành công
+    this.notificationsService.notify({
+      userId,
+      type: 'PAYMENT',
+      title: 'Thanh toán thành công ✅',
+      message: `Bạn đã đăng ký thành công ${courseIds.length} khóa học. Hãy bắt đầu học ngay!`,
+      link: '/courses/list',
+    }).catch(() => {}) // fire-and-forget, không block response
+
     return {
       success: true,
       message: 'Thanh toán thành công, đã kích hoạt khóa học',

@@ -108,6 +108,7 @@ model User {
   heartbeats     LessonHeartbeat[]
   quizAttempts   QuizAttempt[]
   auditLogs      AuditLog[]
+  notifications  Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -579,6 +580,13 @@ enum QuizDraftStatus {
   REJECTED
 }
 
+enum NotificationType {
+  PAYMENT
+  COURSE_UPDATE
+  MESSAGE
+  SYSTEM
+}
+
 model LessonChunk {
   id         String   @id @default(cuid())
   lessonId   String
@@ -631,4 +639,19 @@ model QuizDraft {
 
   @@index([lessonId])
   @@index([status])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
 }

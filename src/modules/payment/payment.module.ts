@@ -5,9 +5,10 @@ import { VnpayInitService } from './vnpay.init.service'
 import { PaymentRepo } from './payment.repo'
 import { EnrollmentModule } from '../enrollment/enrollment.module'
 import { CartModule } from '../cart/cart.module'
+import { NotificationsModule } from '../notifications/notifications.module'
 
 @Module({
-  imports: [EnrollmentModule, CartModule],
+  imports: [EnrollmentModule, CartModule, NotificationsModule],
   providers: [PaymentService, PaymentRepo, VnpayInitService],
   controllers: [PaymentController],
 })

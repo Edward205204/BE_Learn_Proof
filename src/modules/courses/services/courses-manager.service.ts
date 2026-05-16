@@ -12,6 +12,8 @@ import { SlugService } from 'src/shared/services/slug.service'
 import { CategoryNotFoundException, CourseNotMatchException, CourseNotFoundException } from '../error.model'
 import { CourseStatus } from 'src/generated/prisma/enums'
 import { UpdateCourseStatusDto } from '../courses.dto'
+import { NotificationsService } from 'src/modules/notifications/notifications.service'
+import { EnrollmentService } from 'src/modules/enrollment/enrollment.service'
 
 @Injectable()
 export class CoursesManagerService {
@@ -21,6 +23,8 @@ export class CoursesManagerService {
   constructor(
     private readonly courseRepo: CourseRepo,
     private readonly slugService: SlugService,
+    private readonly notificationsService: NotificationsService,
+    private readonly enrollmentService: EnrollmentService,
   ) {}
 
   async createCourse(body: CreateCourseSt1Dto, creatorId: string) {
@@ -175,7 +179,27 @@ export class CoursesManagerService {
       }
     }
 
-    return this.courseRepo.updateCourseStatus(courseId, nextStatus)
+    const updated = await this.courseRepo.updateCourseStatus(courseId, nextStatus)
+
+    // Gửi thông báo cho học viên khi khóa học chuyển sang PUBLISHED hoặc ARCHIVED
+    if (nextStatus === CourseStatus.PUBLISHED || nextStatus === CourseStatus.ARCHIVED) {
+      const enrolledUserIds = await this.enrollmentService.getEnrolledUserIdsByCourse(courseId)
+      if (enrolledUserIds.length > 0) {
+        const isPublished = nextStatus === CourseStatus.PUBLISHED
+        this.notificationsService
+          .notifyMany(enrolledUserIds, {
+            type: 'COURSE_UPDATE',
+            title: isPublished ? 'Khóa học đã mở trở lại 🎉' : 'Khóa học tạm đóng',
+            message: isPublished
+              ? `Khóa học bạn đang học đã được kích hoạt trở lại. Hãy tiếp tục học ngay!`
+              : `Một khóa học bạn đang học đã bị tạm đình chỉ. Nội dung vẫn được lưu lại.`,
+            link: '/courses/list',
+          })
+          .catch(() => {})
+      }
+    }
+
+    return updated
   }
 
   async deleteChapter(body: DeleteChapterBodySchemaType & { userId: string }) {
