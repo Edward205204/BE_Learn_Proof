@@ -51,8 +51,23 @@ export class CertificateService {
       // 6. Gọi Smart Contract để mint (địa chỉ nhận = địa chỉ ví của backend do user chưa có wallet)
       this.logger.log(`Minting certificate for user ${userId}, course ${courseId}...`)
 
-      // ipfsUri có thể để trống hoặc link metadata JSON sau này
-      const ipfsUri = `https://learnproof.edu.vn/certificate/${certificateId}`
+      // Build chuẩn metadata của 1 NFT/SBT (có thể xem trên bất kỳ NFT Viewer nào)
+      const metadata = {
+        name: `LearnProof Certificate - ${courseId.slice(0, 8).toUpperCase()}`,
+        description: `Chứng chỉ hoàn thành khóa học được cấp bởi nền tảng LearnProof.`,
+        image: `${process.env.FE_URL ?? 'http://localhost:3001'}/certificate/${certificateId}/image`,
+        attributes: [
+          { trait_type: 'User ID', value: userId },
+          { trait_type: 'Course ID', value: courseId },
+          { trait_type: 'Certificate ID', value: certificateId },
+          { trait_type: 'Issued At', value: new Date().toISOString() },
+          { trait_type: 'Platform', value: 'LearnProof' },
+        ],
+      }
+
+      // Upload metadata lên Pinata IPFS để lấy link phi tập trung
+      const ipfsUri = await this.blockchainService.uploadMetadataToIPFS(metadata)
+      this.logger.log(`📦 Metadata IPFS URI: ${ipfsUri}`)
 
       // Dùng địa chỉ ví BE (Admin Wallet) làm người nhận (vì user chưa có MetaMask)
       // Khi hệ thống hỗ trợ wallet user sau này sẽ thay thế

@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { ethers } from 'ethers'
 import * as path from 'path'
 import * as fs from 'fs'
+import axios from 'axios'
 
 @Injectable()
 export class BlockchainService implements OnModuleInit {
@@ -89,5 +90,62 @@ export class BlockchainService implements OnModuleInit {
    */
   isValidAddress(address: string): boolean {
     return ethers.isAddress(address)
+  }
+
+  /**
+   * Upload file ảnh (Buffer) lên IPFS thông qua Pinata
+   * @param imageBuffer Buffer của file ảnh
+   * @param fileName Tên file, ví dụ: 'certificate.png'
+   * @returns Link ipfs:// trỏ tới ảnh
+   */
+  async uploadImageToIPFS(imageBuffer: Buffer, fileName: string): Promise<string> {
+    const FormData = (await import('form-data')).default
+    const form = new FormData()
+    form.append('file', imageBuffer, { filename: fileName, contentType: 'image/png' })
+    form.append('pinataOptions', JSON.stringify({ cidVersion: 1 }))
+    form.append('pinataMetadata', JSON.stringify({ name: fileName }))
+
+    const response = await axios.post(
+      'https://api.pinata.cloud/pinning/pinFileToIPFS',
+      form,
+      {
+        headers: {
+          ...form.getHeaders(),
+          pinata_api_key: process.env.PINATA_API_KEY,
+          pinata_secret_api_key: process.env.PINATA_SECRET_API_KEY,
+        },
+      },
+    )
+
+    const cid = response.data.IpfsHash
+    this.logger.log(`🖼️ Ảnh đã được upload lên IPFS: ${cid}`)
+    return `ipfs://${cid}`
+  }
+
+  /**
+   * Upload metadata JSON lên IPFS thông qua Pinata
+   * @param metadata Object dữ liệu metadata của chứng chỉ
+   * @returns Link ipfs:// trỏ tới metadata
+   */
+  async uploadMetadataToIPFS(metadata: Record<string, unknown>): Promise<string> {
+    const response = await axios.post(
+      'https://api.pinata.cloud/pinning/pinJSONToIPFS',
+      {
+        pinataOptions: { cidVersion: 1 },
+        pinataMetadata: { name: (metadata.name as string) ?? 'LearnProof Certificate' },
+        pinataContent: metadata,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          pinata_api_key: process.env.PINATA_API_KEY,
+          pinata_secret_api_key: process.env.PINATA_SECRET_API_KEY,
+        },
+      },
+    )
+
+    const cid = response.data.IpfsHash
+    this.logger.log(`📄 Metadata đã được upload lên IPFS: ${cid}`)
+    return `ipfs://${cid}`
   }
 }
