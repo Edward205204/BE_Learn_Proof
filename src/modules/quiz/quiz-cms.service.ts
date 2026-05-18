@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common'
 import { QuizRepo } from './quiz.repo'
 import { CreateQuizType, QuestionType } from './quiz.model'
+import { AiJobStatus, AiJobType, QuizDraftStatus } from 'src/generated/prisma/enums'
+import type { AiOutputLanguage } from 'src/modules/ai/prompt-template.service'
 import {
   QuestionHasMultipleCorrectAnswersException,
   QuestionMissingCorrectAnswerException,
@@ -117,7 +119,7 @@ export class QuizCmsService {
   }
 
   @Transactional()
-  async generateAiQuiz(lessonId: string, userId: string) {
+  async generateAiQuiz(lessonId: string, userId: string, language: AiOutputLanguage = 'vi') {
     await this.requireLessonOwner(lessonId, userId)
 
     const existingDraftAi = await this.quizRepo.findDraftQuizForLesson(lessonId)
@@ -125,17 +127,37 @@ export class QuizCmsService {
       throw new ConflictException('Đã tồn tại một bản nháp AI cho lesson này.')
     }
 
+    const activeJob = await this.quizRepo.findDraftAiJobForLesson(lessonId)
+    if (activeJob) {
+      throw new ConflictException('Đã có yêu cầu sinh quiz đang được xử lý cho lesson này.')
+    }
+
     const aiJob = await this.quizRepo.createAiJob({
       lessonId,
       requestedBy: userId,
-      type: 'QUIZ_GENERATION',
+      type: AiJobType.QUIZ_GENERATION,
     })
 
-    await this.quizQueue.add(`quiz-gen:${lessonId}`, {
-      lessonId,
-      aiJobId: aiJob.id,
-      requestedBy: userId,
-    })
+    try {
+      await this.quizQueue.add(
+        `quiz-gen:${lessonId}`,
+        {
+          lessonId,
+          aiJobId: aiJob.id,
+          requestedBy: userId,
+          language,
+        },
+        {
+          jobId: `quizgen:${lessonId}:${aiJob.id}`,
+          attempts: 3,
+        },
+      )
+    } catch (error: any) {
+      await this.quizRepo.updateAiJobStatus(aiJob.id, AiJobStatus.FAILED, {
+        error: error?.message || 'Failed to enqueue quiz generation job',
+      })
+      throw error
+    }
 
     return { jobId: aiJob.id }
   }
@@ -152,16 +174,41 @@ export class QuizCmsService {
     return draft
   }
 
+  async getLessonQuizOverview(lessonId: string, userId: string) {
+    await this.requireLessonOwner(lessonId, userId)
+
+    const [quiz, drafts, activeJob] = await Promise.all([
+      this.quizRepo.findQuizByLessonId(lessonId),
+      this.quizRepo.findDraftsByLessonId(lessonId),
+      this.quizRepo.findDraftAiJobForLesson(lessonId),
+    ])
+
+    return {
+      lessonId,
+      quiz,
+      drafts,
+      activeJob,
+    }
+  }
+
   @Transactional()
   async publishDraft(draftId: string, userId: string) {
     const draft = await this.quizRepo.findDraftById(draftId)
     if (!draft) throw new NotFoundException('Bản nháp không tồn tại')
-    if (draft.status !== 'DRAFT_AI') throw new BadRequestException('Chỉ bản nháp DRAFT_AI mới có thể được publish')
+    if (draft.status !== QuizDraftStatus.DRAFT_AI) {
+      throw new BadRequestException('Chỉ bản nháp DRAFT_AI mới có thể được publish')
+    }
 
     await this.requireLessonOwner(draft.lessonId, userId)
 
-    await this.quizRepo.replaceQuizFromDraft(draftId, draft.lessonId, draft.validatedOutput || draft.rawOutput)
-    await this.quizRepo.updateDraftStatus(draftId, 'PUBLISHED', { reviewerId: userId })
+    const output = (draft.validatedOutput || draft.rawOutput) as {
+      question: string
+      options: string[]
+      correctIndex: number
+    }[]
+
+    await this.quizRepo.replaceQuizFromDraft(draftId, draft.lessonId, output)
+    await this.quizRepo.updateDraftStatus(draftId, QuizDraftStatus.PUBLISHED, { reviewerId: userId })
 
     return true
   }
@@ -170,11 +217,13 @@ export class QuizCmsService {
   async rejectDraft(draftId: string, userId: string, reviewNote?: string) {
     const draft = await this.quizRepo.findDraftById(draftId)
     if (!draft) throw new NotFoundException('Bản nháp không tồn tại')
-    if (draft.status !== 'DRAFT_AI') throw new BadRequestException('Chỉ bản nháp DRAFT_AI mới có thể được reject')
+    if (draft.status !== QuizDraftStatus.DRAFT_AI) {
+      throw new BadRequestException('Chỉ bản nháp DRAFT_AI mới có thể được reject')
+    }
 
     await this.requireLessonOwner(draft.lessonId, userId)
 
-    await this.quizRepo.updateDraftStatus(draftId, 'REJECTED', { reviewerId: userId, reviewNote })
+    await this.quizRepo.updateDraftStatus(draftId, QuizDraftStatus.REJECTED, { reviewerId: userId, reviewNote })
 
     return true
   }

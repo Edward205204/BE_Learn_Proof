@@ -4,9 +4,19 @@ import { LessonType, VideoProviderEnum } from '../src/generated/prisma/enums'
 type TemplateLesson = {
   title: string
   type: (typeof LessonType)[keyof typeof LessonType]
+  shortDesc?: string
   duration?: number
   videoId?: string
+  videoKey?: string
   textContent?: string
+  lessonDesc?: string
+  learningObjectives?: string[]
+  targetLevel?: string
+  keywords?: string[]
+  aiSummary?: string
+  transcript?: string
+  transcriptSource?: string
+  transcriptStatus?: string
   quizData?: {
     question: string
     answers: { content: string; isCorrect: boolean }[]
@@ -70,6 +80,37 @@ Hãy đọc kỹ tài liệu, ghi chú lại những điểm chính và thực h
     },
   ]
 
+  const mobileTemplates: TemplateChapter[] = [
+    {
+      title: 'Chương 1: Nền tảng Mobile App',
+      lessons: [
+        {
+          title: 'Giới thiệu lộ trình xây dựng ứng dụng mobile chuyên sâu',
+          type: LessonType.VIDEO,
+          duration: 1080,
+          videoId: 'wxxszUSs4Kk',
+          shortDesc: 'Tổng quan lộ trình học, công nghệ cần chuẩn bị và cách tiếp cận dự án mobile thực chiến.',
+          lessonDesc:
+            'Bài học mở đầu giúp học viên hiểu toàn bộ lộ trình của khóa học, cách tư duy khi xây dựng ứng dụng mobile, các công nghệ chính sẽ dùng xuyên suốt và tiêu chí để triển khai một sản phẩm đủ chất lượng đưa vào thực tế.',
+          learningObjectives: [
+            'Hiểu cấu trúc tổng thể của khóa học Master Mobile App',
+            'Nắm được tư duy xây dựng ứng dụng mobile theo hướng sản phẩm',
+            'Biết các công cụ, thư viện và quy trình làm việc chính',
+            'Xác định được đầu ra thực tế sau khi hoàn thành khóa học',
+          ],
+          targetLevel: 'BEGINNER',
+          keywords: ['mobile app', 'react native', 'flutter', 'app architecture', 'ui ux', 'deployment'],
+          aiSummary:
+            'Bài video giới thiệu lộ trình học chuyên sâu về mobile app, định hướng từ nền tảng đến thực chiến, nhấn mạnh tư duy kiến trúc, quy trình phát triển và các kỹ năng cần có để hoàn thiện một sản phẩm ứng dụng di động.',
+          transcript:
+            'Trong bài học này, chúng ta sẽ bắt đầu với bức tranh tổng quan của khóa học Master Mobile App. Học viên sẽ được giới thiệu mục tiêu đầu ra, các mốc kiến thức cần nắm, cách tổ chức dự án, và tiêu chí để đánh giá một ứng dụng mobile sẵn sàng đưa vào thực tế.\n\nTiếp theo, bài học trình bày những công nghệ cốt lõi sẽ được sử dụng xuyên suốt khóa học, bao gồm cách chia lớp giao diện, quản lý trạng thái, kết nối API, xử lý điều hướng và tối ưu trải nghiệm người dùng. Đây là nền tảng quan trọng để tránh việc học rời rạc theo từng tính năng nhỏ.\n\nCuối cùng, bài học hướng dẫn học viên cách học theo dự án, cách đọc tài liệu, cách ghi chú các pattern phổ biến và cách tận dụng phần thực hành để biến kiến thức thành kỹ năng thật. Sau bài này, học viên sẽ có một bản đồ rõ ràng để đi tiếp các chương sau một cách chủ động hơn.',
+          transcriptSource: 'youtube',
+          transcriptStatus: 'AVAILABLE',
+        },
+      ],
+    },
+  ]
+
   const defaultTemplates: TemplateChapter[] = [
     {
       title: 'Chương 1: Khởi đầu',
@@ -126,6 +167,9 @@ Hãy đọc kỹ tài liệu, ghi chú lại những điểm chính và thực h
   if (categorySlug === 'blockchain' || categorySlug === 'web3' || categorySlug === 'smart-contract') {
     return blockchainTemplates
   }
+  if (categorySlug === 'mobile') {
+    return mobileTemplates
+  }
   return defaultTemplates
 }
 
@@ -149,11 +193,21 @@ export async function createCourseContent(prisma: PrismaClient, courseId: string
           title: lessonData.title,
           type: lessonData.type,
           order: lessonOrder++,
+          shortDesc: lessonData.shortDesc,
           chapterId: chapter.id,
           duration: lessonData.duration,
           videoId: lessonData.videoId,
           provider: lessonData.videoId ? VideoProviderEnum.YOUTUBE : undefined,
+          videoKey: lessonData.videoKey,
           textContent: lessonData.textContent,
+          lessonDesc: lessonData.lessonDesc,
+          learningObjectives: lessonData.learningObjectives ?? [],
+          targetLevel: lessonData.targetLevel,
+          keywords: lessonData.keywords ?? [],
+          aiSummary: lessonData.aiSummary,
+          transcript: lessonData.transcript,
+          transcriptSource: lessonData.transcriptSource,
+          transcriptStatus: lessonData.transcriptStatus,
         },
       })
 

@@ -71,8 +71,13 @@ export class LessonController {
   }
 
   @Post(':lessonId/ask')
-  askLesson(@Param('lessonId') lessonId: string, @ActiveUser() user: TokenPayload, @Body('question') question: string) {
-    return this.lessonService.askLesson(lessonId, user.userId, question)
+  askLesson(
+    @Param('lessonId') lessonId: string,
+    @ActiveUser() user: TokenPayload,
+    @Body('question') question: string,
+    @Body('language') language?: 'vi' | 'en',
+  ) {
+    return this.lessonService.askLesson(lessonId, user.userId, question, language)
   }
 
   @Post(':lessonId/generate-content')
@@ -80,7 +85,8 @@ export class LessonController {
     @Param('lessonId') lessonId: string,
     @ActiveUser() user: TokenPayload,
     @Body('keywords') keywords?: string,
+    @Body('language') language?: 'vi' | 'en',
   ) {
-    return this.lessonService.generateLessonContent(lessonId, user.userId, keywords)
+    return this.lessonService.generateLessonContent(lessonId, user.userId, keywords, language)
   }
 }

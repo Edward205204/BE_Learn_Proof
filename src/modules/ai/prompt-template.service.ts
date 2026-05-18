@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common'
 
+export type AiOutputLanguage = 'vi' | 'en'
+
 @Injectable()
 export class PromptTemplateService {
   private templates = {
@@ -10,6 +12,7 @@ If the context does not contain the answer, say "I don't have enough information
 Do NOT invent information or bring in outside knowledge.`,
       userTemplate: `Lesson Title: {{lessonTitle}}
 Target Level: {{targetLevel}}
+Output Language: {{outputLanguage}}
 
 Context:
 {{context}}
@@ -24,6 +27,8 @@ The quiz MUST contain at least 3 questions.
 Each question MUST have at least 4 options ("A", "B", "C", "D").
 Each question MUST have exactly one correct option index (0-indexed).
 Provide an explanation for why the correct option is correct.
+If existing quiz questions are provided, do not repeat or closely rephrase them. Create new questions that expand coverage and make the quiz more diverse.
+All question text, options, and explanations must be written in the selected output language.
 Return the output strictly as a JSON object matching this schema:
 {
   "questions": [
@@ -37,10 +42,23 @@ Return the output strictly as a JSON object matching this schema:
 }`,
       userTemplate: `Lesson Title: {{lessonTitle}}
 Target Level: {{targetLevel}}
+Output Language: {{outputLanguage}}
 Lesson Description: {{lessonDesc}}
 
 Context:
 {{context}}
+
+Existing Quiz Questions:
+These are question texts only. Do not copy their answer options.
+{{existingQuestions}}
+
+Questions to Avoid in This Generation:
+{{avoidQuestions}}
+
+Question Coverage Plan:
+Use these styles first, and try to make each question cover a different style:
+{{coveragePlan}}
+If a style is already covered by existing questions, prefer a different style.
 
 Generate a quiz with {{questionCount}} questions now.`,
     },
@@ -49,9 +67,11 @@ Generate a quiz with {{questionCount}} questions now.`,
       systemPrompt: `You are an expert educational content creator. Your goal is to write a detailed, engaging, and structured lesson content based on a title and optional keywords.
 Use Markdown for formatting (headings, lists, bold text, code blocks).
 The content should be professional, clear, and easy to follow.
+Write the content in the selected output language.
 Do NOT include any preamble or concluding remarks, just the lesson content itself.`,
       userTemplate: `Lesson Title: {{lessonTitle}}
 Target Level: {{targetLevel}}
+Output Language: {{outputLanguage}}
 Keywords: {{keywords}}
 
 Write a comprehensive lesson content for this topic now.`,
@@ -68,5 +88,9 @@ Write a comprehensive lesson content for this topic now.`,
       result = result.replace(new RegExp(`{{${key}}}`, 'g'), value)
     }
     return result
+  }
+
+  getOutputLanguageLabel(language: AiOutputLanguage = 'vi') {
+    return language === 'en' ? 'English' : 'Tiếng Việt'
   }
 }

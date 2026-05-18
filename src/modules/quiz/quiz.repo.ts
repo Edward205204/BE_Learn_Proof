@@ -3,6 +3,7 @@ import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 import { CreateQuizType, QuestionType } from './quiz.model'
 import { PrismaClient } from 'src/generated/prisma/client'
+import { AiJobStatus, AiJobType, QuizDraftStatus } from 'src/generated/prisma/enums'
 
 @Injectable()
 export class QuizRepo {
@@ -257,21 +258,43 @@ export class QuizRepo {
     return this.txHost.tx.aiJob.findFirst({
       where: {
         lessonId,
-        type: 'QUIZ_GENERATION',
-        status: { in: ['QUEUED', 'PROCESSING'] },
+        type: AiJobType.QUIZ_GENERATION,
+        status: { in: [AiJobStatus.QUEUED, AiJobStatus.PROCESSING] },
       },
+      orderBy: { createdAt: 'desc' },
     })
   }
 
   findDraftQuizForLesson(lessonId: string) {
     return this.txHost.tx.quizDraft.findFirst({
-      where: { lessonId, status: 'DRAFT_AI' },
+      where: { lessonId, status: QuizDraftStatus.DRAFT_AI },
+      orderBy: { createdAt: 'desc' },
     })
   }
 
-  createAiJob(data: { lessonId: string; requestedBy: string; type: any }) {
+  createAiJob(data: { lessonId: string; requestedBy: string; type: AiJobType }) {
     return this.txHost.tx.aiJob.create({
       data,
+    })
+  }
+
+  updateAiJobStatus(
+    aiJobId: string,
+    status: AiJobStatus,
+    data?: {
+      model?: string
+      tokenInput?: number
+      tokenOutput?: number
+      latencyMs?: number
+      error?: string
+    },
+  ) {
+    return this.txHost.tx.aiJob.update({
+      where: { id: aiJobId },
+      data: {
+        status,
+        ...data,
+      },
     })
   }
 
@@ -286,11 +309,26 @@ export class QuizRepo {
   findDraftById(draftId: string) {
     return this.txHost.tx.quizDraft.findUnique({
       where: { id: draftId },
-      include: { aiJob: true },
+      include: {
+        aiJob: true,
+        lesson: {
+          select: {
+            id: true,
+            title: true,
+            shortDesc: true,
+            type: true,
+            targetLevel: true,
+          },
+        },
+      },
     })
   }
 
-  updateDraftStatus(draftId: string, status: any, data?: { reviewNote?: string; reviewerId?: string }) {
+  updateDraftStatus(
+    draftId: string,
+    status: QuizDraftStatus,
+    data?: { reviewNote?: string; reviewerId?: string },
+  ) {
     return this.txHost.tx.quizDraft.update({
       where: { id: draftId },
       data: {
@@ -300,17 +338,21 @@ export class QuizRepo {
     })
   }
 
-  async replaceQuizFromDraft(draftId: string, lessonId: string, rawOutput: any) {
+  async replaceQuizFromDraft(
+    draftId: string,
+    lessonId: string,
+    rawOutput: { question: string; options: string[]; correctIndex: number }[],
+  ) {
     // Delete existing quiz for lesson
     await this.txHost.tx.quiz.deleteMany({
       where: { lessonId },
     })
 
-    const questionsData = rawOutput.map((q: any) => ({
+    const questionsData = rawOutput.map((q) => ({
       content: q.question,
       isEdit: false,
       answers: {
-        create: q.options.map((opt: string, index: number) => ({
+        create: q.options.map((opt, index) => ({
           content: opt,
           isCorrect: index === q.correctIndex,
         })),

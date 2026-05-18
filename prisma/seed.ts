@@ -125,16 +125,20 @@ async function main() {
   const statuses = [CourseStatus.PUBLISHED, CourseStatus.DRAFT]
 
   for (let i = 1; i <= 30; i++) {
-    const randomCategory = categories[Math.floor(Math.random() * categories.length)]
-    const randomLevel = levels[Math.floor(Math.random() * levels.length)]
-    const randomStatus = statuses[i % 5 === 0 ? 1 : 0] // Cứ 5 bài thì có 1 bài Draft
-    const price = Math.floor(Math.random() * 10) * 100000 + 199000 // Giá từ 199k đến 1tr1
+    const randomCategory =
+      i === 1 ? categories.find((cat) => cat.slug === 'mobile')! : categories[Math.floor(Math.random() * categories.length)]
+    const randomLevel = i === 1 ? CourseLevel.INTERMEDIATE : levels[Math.floor(Math.random() * levels.length)]
+    const randomStatus = i === 1 ? CourseStatus.PUBLISHED : statuses[i % 5 === 0 ? 1 : 0] // Cứ 5 bài thì có 1 bài Draft
+    const price = i === 1 ? 499000 : Math.floor(Math.random() * 10) * 100000 + 199000 // Giá từ 199k đến 1tr1
 
     const course = await prisma.course.create({
       data: {
         title: `Khóa học chuyên sâu số ${i}: Master ${randomCategory.name}`,
         slug: `khoa-hoc-so-${i}-${randomCategory.slug}`,
-        shortDesc: `Mô tả ngắn gọn cho khóa học thứ ${i}. Đây là kiến thức thực chiến.`,
+        shortDesc:
+          i === 1
+            ? 'Lộ trình Mobile App chuyên sâu với một bài học mở đầu giàu ngữ cảnh AI, giúp hệ thống hiểu rõ mục tiêu, công nghệ và hướng triển khai của khóa học.'
+            : `Mô tả ngắn gọn cho khóa học thứ ${i}. Đây là kiến thức thực chiến.`,
         // fullDesc: `Nội dung chi tiết của khóa học ${i}. Bao gồm đầy đủ tài liệu và bài tập...`,
         level: randomLevel,
         status: randomStatus,

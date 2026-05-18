@@ -34,7 +34,7 @@ export class ChunkingService {
   }
 
   buildContext(lesson: any): string {
-    const parts = [lesson.lessonDesc]
+    const parts = [lesson.shortDesc, lesson.lessonDesc]
     if (lesson.textContent) parts.push(lesson.textContent)
     if (lesson.transcript) parts.push(lesson.transcript)
     return parts.filter(Boolean).join('\n\n')

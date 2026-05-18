@@ -114,8 +114,12 @@ export class QuizController {
   // --- AI Quiz ---
 
   @Post('lessons/:id/generate-ai')
-  generateAiQuiz(@Param('id') lessonId: string, @ActiveUser() user: TokenPayload) {
-    return this.quizCmsService.generateAiQuiz(lessonId, user.userId)
+  generateAiQuiz(
+    @Param('id') lessonId: string,
+    @ActiveUser() user: TokenPayload,
+    @Body('language') language?: 'vi' | 'en',
+  ) {
+    return this.quizCmsService.generateAiQuiz(lessonId, user.userId, language)
   }
 
   @Get('lessons/:id/drafts')
@@ -126,6 +130,11 @@ export class QuizController {
   @Get('drafts/:draftId')
   getDraftById(@Param('draftId') draftId: string, @ActiveUser() user: TokenPayload) {
     return this.quizCmsService.getDraftById(draftId, user.userId)
+  }
+
+  @Get('lessons/:id/overview')
+  getLessonQuizOverview(@Param('id') lessonId: string, @ActiveUser() user: TokenPayload) {
+    return this.quizCmsService.getLessonQuizOverview(lessonId, user.userId)
   }
 
   @Patch('drafts/:draftId/publish')

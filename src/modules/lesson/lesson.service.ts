@@ -14,6 +14,7 @@ import { EmbeddingService } from '../ai/embedding.service'
 import { PromptTemplateService } from '../ai/prompt-template.service'
 import { VectorStoreService } from 'src/shared/services/vector-store.service'
 import { AiJobType, AiJobStatus } from 'src/generated/prisma/enums'
+import type { AiOutputLanguage } from '../ai/prompt-template.service'
 
 const MIN_STUDY_SECONDS = 3 * 60 // 3 phút
 
@@ -150,7 +151,7 @@ export class LessonService {
     return { lessonId, completed: true, courseCompleted: total > 0 && total === completed }
   }
 
-  async askLesson(lessonId: string, userId: string, question: string) {
+  async askLesson(lessonId: string, userId: string, question: string, language: AiOutputLanguage = 'vi') {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
       include: {
@@ -183,6 +184,7 @@ export class LessonService {
       const userPrompt = this.promptTemplateService.render(template.userTemplate, {
         lessonTitle: lesson.title,
         targetLevel: lesson.targetLevel || 'BEGINNER',
+        outputLanguage: this.promptTemplateService.getOutputLanguageLabel(language),
         context,
         question,
       })
@@ -220,7 +222,7 @@ export class LessonService {
     }
   }
 
-  async generateLessonContent(lessonId: string, userId: string, keywords?: string) {
+  async generateLessonContent(lessonId: string, userId: string, keywords?: string, language: AiOutputLanguage = 'vi') {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
       include: {
@@ -244,6 +246,7 @@ export class LessonService {
     const userPrompt = this.promptTemplateService.render(template.userTemplate, {
       lessonTitle: lesson.title,
       targetLevel: lesson.targetLevel || 'BEGINNER',
+      outputLanguage: this.promptTemplateService.getOutputLanguageLabel(language),
       keywords: keywords || 'None',
     })
 
