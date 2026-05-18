@@ -29,9 +29,11 @@ import { CertificateModule } from './modules/certificate/certificate.module'
 
 import { AiModule } from './modules/ai/ai.module'
 import { NotificationsModule } from './modules/notifications/notifications.module'
+import { QueueModule } from './shared/queue/queue.module'
 
 @Module({
   imports: [
+    QueueModule,
     AiModule,
     AuthModule,
     SharedModule,

@@ -46,16 +46,22 @@ export class VectorStoreService {
       lessonId: string
       topK?: number
       minScore?: number
+      sourceIn?: string[]
     },
   ): Promise<{ content: string; score: number; metadata: object }[]> {
     const topK = options.topK || 5
     const embeddingStr = `[${queryEmbedding.join(',')}]`
+    const sourceFilter =
+      options.sourceIn && options.sourceIn.length > 0
+        ? `AND "metadata"->>'source' IN (${options.sourceIn.map((source) => `'${this.escapeSqlString(source)}'`).join(', ')})`
+        : ''
 
     // Distance using <=> (cosine distance). 1 - distance = cosine similarity
     const results = await this.prisma.$queryRawUnsafe<any[]>(
       `SELECT "content", "metadata", 1 - ("embedding" <=> $1::vector) as "score"
        FROM "LessonChunk"
        WHERE "lessonId" = $2
+       ${sourceFilter}
        ORDER BY "embedding" <=> $1::vector
        LIMIT $3`,
       embeddingStr,
@@ -73,5 +79,9 @@ export class VectorStoreService {
       score: r.score,
       metadata: r.metadata ? (typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata) : null,
     }))
+  }
+
+  private escapeSqlString(value: string) {
+    return value.replace(/'/g, "''")
   }
 }

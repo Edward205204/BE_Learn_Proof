@@ -565,6 +565,7 @@ enum AiJobType {
   LESSON_INDEX
   QUIZ_GENERATION
   RAG_ASK
+  LESSON_CONTENT_GENERATION
 }
 
 enum AiJobStatus {
@@ -614,6 +615,7 @@ model AiJob {
   latencyMs   Int?
   retries     Int         @default(0)
   error       String?     @db.Text
+  result      Json?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   quizDrafts  QuizDraft[]
