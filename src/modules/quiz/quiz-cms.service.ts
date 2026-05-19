@@ -43,6 +43,10 @@ export class QuizCmsService {
     return this.quizRepo.createQuiz(body)
   }
 
+  async createEmptyQuiz(lessonId: string) {
+    return this.quizRepo.createEmptyQuiz(lessonId)
+  }
+
   private getDraftQuestions(draft: { validatedOutput: unknown; rawOutput: unknown }) {
     const payload = draft.validatedOutput ?? draft.rawOutput
     const filterPending = (questions: AiQuizQuestionReviewType[]) =>
