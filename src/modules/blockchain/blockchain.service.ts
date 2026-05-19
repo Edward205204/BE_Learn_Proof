@@ -105,17 +105,13 @@ export class BlockchainService implements OnModuleInit {
     form.append('pinataOptions', JSON.stringify({ cidVersion: 1 }))
     form.append('pinataMetadata', JSON.stringify({ name: fileName }))
 
-    const response = await axios.post(
-      'https://api.pinata.cloud/pinning/pinFileToIPFS',
-      form,
-      {
-        headers: {
-          ...form.getHeaders(),
-          pinata_api_key: process.env.PINATA_API_KEY,
-          pinata_secret_api_key: process.env.PINATA_SECRET_API_KEY,
-        },
+    const response = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', form, {
+      headers: {
+        ...form.getHeaders(),
+        pinata_api_key: process.env.PINATA_API_KEY,
+        pinata_secret_api_key: process.env.PINATA_SECRET_API_KEY,
       },
-    )
+    })
 
     const cid = response.data.IpfsHash
     this.logger.log(`🖼️ Ảnh đã được upload lên IPFS: ${cid}`)
