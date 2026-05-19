@@ -4,6 +4,7 @@ import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-pr
 import { CreateQuizType, QuestionType } from './quiz.model'
 import { PrismaClient } from 'src/generated/prisma/client'
 import { AiJobStatus, AiJobType, QuizDraftStatus } from 'src/generated/prisma/enums'
+import { randomUUID } from 'crypto'
 
 @Injectable()
 export class QuizRepo {
@@ -246,6 +247,14 @@ export class QuizRepo {
     })
   }
 
+  findQuizIdByLessonId(lessonId: string) {
+    return this.txHost.tx.quiz.findFirst({
+      where: { lessonId },
+      select: { id: true },
+      orderBy: { createdAt: 'desc' },
+    })
+  }
+
   createQuizAttempt(body: { userId: string; quizId: string; score: number; correct: number; total: number }) {
     return this.txHost.tx.quizAttempt.create({
       data: body,
@@ -338,35 +347,44 @@ export class QuizRepo {
     })
   }
 
-  async replaceQuizFromDraft(
-    draftId: string,
-    lessonId: string,
-    rawOutput: { question: string; options: string[]; correctIndex: number }[],
-  ) {
-    // Delete existing quiz for lesson
-    await this.txHost.tx.quiz.deleteMany({
-      where: { lessonId },
-    })
+  async appendQuizFromDraft(lessonId: string, rawOutput: { question: string; options: string[]; correctIndex: number }[]) {
+    const existingQuiz = await this.findQuizIdByLessonId(lessonId)
 
-    const questionsData = rawOutput.map((q) => ({
-      content: q.question,
+    const quizId =
+      existingQuiz?.id ??
+      (await this.txHost.tx.quiz.create({
+        data: { lessonId },
+        select: { id: true },
+      })).id
+
+    if (rawOutput.length === 0) {
+      return { quizId, insertedQuestions: 0 }
+    }
+
+    const questions = rawOutput.map((item) => ({
+      id: randomUUID(),
+      content: item.question,
       isEdit: false,
-      answers: {
-        create: q.options.map((opt, index) => ({
-          content: opt,
-          isCorrect: index === q.correctIndex,
-        })),
-      },
+      quizId,
     }))
 
-    // Create new quiz
-    return this.txHost.tx.quiz.create({
-      data: {
-        lessonId,
-        questions: {
-          create: questionsData,
-        },
-      },
+    const answers = rawOutput.flatMap((item, questionIndex) =>
+      item.options.map((option, answerIndex) => ({
+        id: randomUUID(),
+        content: option,
+        isCorrect: answerIndex === item.correctIndex,
+        questionId: questions[questionIndex].id,
+      })),
+    )
+
+    await this.txHost.tx.question.createMany({
+      data: questions,
     })
+
+    await this.txHost.tx.answer.createMany({
+      data: answers,
+    })
+
+    return { quizId, insertedQuestions: questions.length }
   }
 }

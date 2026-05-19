@@ -207,7 +207,7 @@ export class QuizCmsService {
       correctIndex: number
     }[]
 
-    await this.quizRepo.replaceQuizFromDraft(draftId, draft.lessonId, output)
+    await this.quizRepo.appendQuizFromDraft(draft.lessonId, output)
     await this.quizRepo.updateDraftStatus(draftId, QuizDraftStatus.PUBLISHED, { reviewerId: userId })
 
     return true

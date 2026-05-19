@@ -83,7 +83,7 @@ export class QuizGenProcessor extends WorkerHost {
     return union === 0 ? 0 : intersection / union
   }
 
-  private isTooSimilar(candidate: string, references: string[]) {
+  private isTooSimilar(candidate: string, references: string[], similarityThreshold = 0.45) {
     const normalizedCandidate = this.normalizeText(candidate)
     if (!normalizedCandidate) return true
 
@@ -94,21 +94,19 @@ export class QuizGenProcessor extends WorkerHost {
       if (normalizedCandidate.includes(normalizedReference) || normalizedReference.includes(normalizedCandidate)) {
         return true
       }
-      return this.similarity(candidate, reference) >= 0.45
+      return this.similarity(candidate, reference) >= similarityThreshold
     })
   }
 
-  private filterUniqueQuestions(questions: any[], existingQuestions: string[]) {
+  private filterUniqueQuestions(questions: any[], existingQuestions: string[], similarityThreshold = 0.45) {
     const unique: any[] = []
     const seen = new Set<string>()
-    const existingStyles = new Set(existingQuestions.map((question) => this.detectQuestionStyle(question)))
 
     for (const question of questions) {
       const normalizedQuestion = this.normalizeText(question.question || '')
       if (!normalizedQuestion || seen.has(normalizedQuestion)) continue
-      if (this.isTooSimilar(question.question || '', existingQuestions)) continue
-      if (existingStyles.has(this.detectQuestionStyle(question.question || ''))) continue
-      if (unique.some((item) => this.isTooSimilar(question.question || '', [item.question || '']))) continue
+      if (this.isTooSimilar(question.question || '', existingQuestions, similarityThreshold)) continue
+      if (unique.some((item) => this.isTooSimilar(question.question || '', [item.question || ''], similarityThreshold))) continue
 
       seen.add(normalizedQuestion)
       unique.push(question)
@@ -237,7 +235,11 @@ export class QuizGenProcessor extends WorkerHost {
         })
 
         llmResult = result.llmResult
-        const filteredQuestions = this.filterUniqueQuestions(result.questions, existingQuestionsList)
+        const filteredQuestions = this.filterUniqueQuestions(
+          result.questions,
+          existingQuestionsList,
+          attempt === 1 ? 0.45 : 0.6,
+        )
         if (filteredQuestions.length >= 3) {
           generatedQuestions = filteredQuestions.slice(0, 5)
           break
