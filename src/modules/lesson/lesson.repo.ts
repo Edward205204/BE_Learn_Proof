@@ -35,7 +35,8 @@ export class LessonRepo {
   }
 
   findLessonOrder(lessonId: string | null) {
-    return this.txHost.tx.lesson.findUnique({ where: { id: lessonId ?? undefined }, select: { order: true } })
+    if (!lessonId) return Promise.resolve(null)
+    return this.txHost.tx.lesson.findUnique({ where: { id: lessonId }, select: { order: true } })
   }
 
   updateLessonOrder(lessonId: string, newOrder: number, targetChapterId: string) {
