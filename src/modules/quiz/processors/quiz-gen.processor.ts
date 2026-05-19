@@ -106,7 +106,8 @@ export class QuizGenProcessor extends WorkerHost {
       const normalizedQuestion = this.normalizeText(question.question || '')
       if (!normalizedQuestion || seen.has(normalizedQuestion)) continue
       if (this.isTooSimilar(question.question || '', existingQuestions, similarityThreshold)) continue
-      if (unique.some((item) => this.isTooSimilar(question.question || '', [item.question || ''], similarityThreshold))) continue
+      if (unique.some((item) => this.isTooSimilar(question.question || '', [item.question || ''], similarityThreshold)))
+        continue
 
       seen.add(normalizedQuestion)
       unique.push(question)
@@ -118,15 +119,15 @@ export class QuizGenProcessor extends WorkerHost {
   private formatQuestionsForPrompt(questions: string[]) {
     if (questions.length === 0) return 'None'
 
-    const preview = questions.slice(0, 20).map((question, index) => `${index + 1}. ${question}`).join('\n')
-    const tail = questions.length > 20 ? `\n... and ${questions.length - 20} more questions` : ''
+    const preview = questions
+      .slice(0, 50)
+      .map((question, index) => `${index + 1}. ${question}`)
+      .join('\n')
+    const tail = questions.length > 50 ? `\n... and ${questions.length - 50} more questions` : ''
     return `${preview}${tail}`
   }
 
-  private async updateAiJobStatus(
-    aiJobId: string,
-    data: any,
-  ) {
+  private async updateAiJobStatus(aiJobId: string, data: any) {
     const result = await this.txHost.tx.aiJob.updateMany({
       where: { id: aiJobId },
       data,
@@ -177,7 +178,9 @@ export class QuizGenProcessor extends WorkerHost {
     }
   }
 
-  async process(job: Job<{ lessonId: string; aiJobId: string; requestedBy: string; language?: 'vi' | 'en' }>): Promise<any> {
+  async process(
+    job: Job<{ lessonId: string; aiJobId: string; requestedBy: string; language?: 'vi' | 'en' }>,
+  ): Promise<any> {
     const { lessonId, aiJobId, language = 'vi' } = job.data
 
     try {
@@ -199,6 +202,16 @@ export class QuizGenProcessor extends WorkerHost {
           textContent: true,
           transcript: true,
           targetLevel: true,
+          type: true,
+          order: true,
+          chapterId: true,
+          chapter: {
+            select: {
+              id: true,
+              order: true,
+              courseId: true,
+            },
+          },
         },
       })
 
@@ -206,45 +219,108 @@ export class QuizGenProcessor extends WorkerHost {
         throw new Error('Lesson not found')
       }
 
-      const existingQuiz = await this.txHost.tx.quiz.findFirst({
-        where: { lessonId },
-        select: {
-          questions: {
-            orderBy: { createdAt: 'asc' },
-            select: {
-              content: true,
+      let existingQuestionsList: string[] = []
+      let context = ''
+      let questionCountStr = '5'
+      let expectedQuestions = 5
+
+      if (lesson.type === 'QUIZ') {
+        questionCountStr = '20'
+        expectedQuestions = 20
+
+        const lastChapter = await this.txHost.tx.chapter.findFirst({
+          where: { courseId: lesson.chapter.courseId },
+          orderBy: { order: 'desc' },
+        })
+        const isLastChapter = lastChapter?.id === lesson.chapter.id
+
+        const lastLessonInChapter = await this.txHost.tx.lesson.findFirst({
+          where: { chapterId: lesson.chapter.id },
+          orderBy: { order: 'desc' },
+        })
+        const isLastLesson = lastLessonInChapter?.id === lesson.id
+
+        const scope = isLastChapter && isLastLesson ? 'COURSE' : 'CHAPTER'
+
+        let sourceLessons: any[] = []
+        if (scope === 'COURSE') {
+          sourceLessons = await this.txHost.tx.lesson.findMany({
+            where: {
+              chapter: { courseId: lesson.chapter.courseId },
+              type: { in: ['VIDEO', 'TEXT'] },
+            },
+            orderBy: [{ chapter: { order: 'asc' } }, { order: 'asc' }],
+          })
+        } else {
+          sourceLessons = await this.txHost.tx.lesson.findMany({
+            where: {
+              chapterId: lesson.chapter.id,
+              order: { lt: lesson.order },
+              type: { in: ['VIDEO', 'TEXT'] },
+            },
+            orderBy: { order: 'asc' },
+          })
+        }
+
+        const fullContext = sourceLessons
+          .map((l) => this.chunkingService.buildContext(l))
+          .filter(Boolean)
+          .join('\n\n---\n\n')
+
+        context = fullContext.length > 30000 ? fullContext.slice(fullContext.length - 30000) : fullContext
+
+        const sourceLessonIds = sourceLessons.map((l) => l.id)
+        sourceLessonIds.push(lessonId)
+
+        const relatedQuizzes = await this.txHost.tx.quiz.findMany({
+          where: { lessonId: { in: sourceLessonIds } },
+          select: { questions: { select: { content: true } } },
+        })
+
+        existingQuestionsList = relatedQuizzes.flatMap((q) => q.questions.map((question) => question.content))
+      } else {
+        const fullContext = this.chunkingService.buildContext(lesson)
+        context = fullContext.length > 12000 ? fullContext.slice(0, 12000) : fullContext
+
+        const existingQuiz = await this.txHost.tx.quiz.findFirst({
+          where: { lessonId },
+          select: {
+            questions: {
+              orderBy: { createdAt: 'asc' },
+              select: { content: true },
             },
           },
-        },
-      })
+        })
 
-      const existingQuestionsList = existingQuiz?.questions?.map((question) => question.content) || []
+        existingQuestionsList = existingQuiz?.questions?.map((question) => question.content) || []
+      }
+
       const existingQuestions = this.formatQuestionsForPrompt(existingQuestionsList)
-
-      // Build context
-      const fullContext = this.chunkingService.buildContext(lesson)
-      const context = fullContext.length > 12000 ? fullContext.slice(0, 12000) : fullContext
 
       const template = this.promptTemplateService.getTemplate('quiz_gen_v1')
       const outputLanguage = this.promptTemplateService.getOutputLanguageLabel(language)
       const avoidQuestionsBase = existingQuestionsList
-      const coveragePlan = this.getMissingStyles(existingQuestionsList)
-        .slice(0, 5)
-        .join(', ')
-        || 'definition, purpose, mechanism, advantage, scenario'
+      const coveragePlan =
+        this.getMissingStyles(existingQuestionsList).join(', ') ||
+        'definition, purpose, mechanism, advantage, scenario'
       let generatedQuestions: any[] = []
-      let llmResult:
-        | { content: string; inputTokens: number; outputTokens: number; model: string; latencyMs: number }
-        | null = null
+      let llmResult: {
+        content: string
+        inputTokens: number
+        outputTokens: number
+        model: string
+        latencyMs: number
+      } | null = null
       let lastError: Error | null = null
 
       for (let attempt = 1; attempt <= 2; attempt++) {
-        const avoidQuestions = attempt === 1
-          ? 'None'
-          : this.formatQuestionsForPrompt([
-              ...avoidQuestionsBase,
-              ...generatedQuestions.map((question) => question.question || ''),
-            ])
+        const avoidQuestions =
+          attempt === 1
+            ? 'None'
+            : this.formatQuestionsForPrompt([
+                ...avoidQuestionsBase,
+                ...generatedQuestions.map((question) => question.question || ''),
+              ])
 
         const result = await this.generateQuizDraft({
           template,
@@ -256,26 +332,19 @@ export class QuizGenProcessor extends WorkerHost {
           existingQuestions,
           avoidQuestions,
           coveragePlan,
-          questionCount: '5',
+          questionCount: questionCountStr,
         })
 
         llmResult = result.llmResult
-        const references = [
-          ...existingQuestionsList,
-          ...generatedQuestions.map((question) => question.question || ''),
-        ]
-        const filteredQuestions = this.filterUniqueQuestions(
-          result.questions,
-          references,
-          attempt === 1 ? 0.45 : 0.6,
-        )
+        const references = [...existingQuestionsList, ...generatedQuestions.map((question) => question.question || '')]
+        const filteredQuestions = this.filterUniqueQuestions(result.questions, references, attempt === 1 ? 0.45 : 0.6)
 
         if (filteredQuestions.length > 0) {
           generatedQuestions.push(...filteredQuestions)
-          generatedQuestions = generatedQuestions.slice(0, 5)
+          generatedQuestions = generatedQuestions.slice(0, expectedQuestions)
         }
 
-        if (generatedQuestions.length >= 3) {
+        if (generatedQuestions.length >= (expectedQuestions === 20 ? 15 : 3)) {
           break
         }
 

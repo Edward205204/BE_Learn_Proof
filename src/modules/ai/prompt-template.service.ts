@@ -47,7 +47,7 @@ Answer:`,
     quiz_gen_v1: {
       version: 'v1',
       systemPrompt: `You are an expert curriculum designer. Based on the provided lesson context, generate a multiple-choice quiz.
-The quiz MUST contain at least 3 questions.
+The quiz MUST contain exactly the requested number of questions.
 Each question MUST have at least 4 options ("A", "B", "C", "D").
 Each question MUST have exactly one correct option index (0-indexed).
 Provide an explanation for why the correct option is correct.
@@ -80,11 +80,11 @@ Questions to Avoid in This Generation:
 {{avoidQuestions}}
 
 Question Coverage Plan:
-Use these styles first, and try to make each question cover a different style:
+Use these styles to diversify the questions:
 {{coveragePlan}}
-If a style is already covered by existing questions, prefer a different style.
+You must cycle through these styles to generate exactly {{questionCount}} questions.
 
-Generate a quiz with {{questionCount}} questions now.`,
+Generate a quiz with exactly {{questionCount}} questions now.`,
     },
     lesson_content_gen_v1: {
       version: 'v1',
