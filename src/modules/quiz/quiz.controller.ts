@@ -174,6 +174,12 @@ export class QuizController {
     @Body() body: UpdateDraftQuestionDto,
     @ActiveUser() user: TokenPayload,
   ) {
+    console.log('[QuizController] updateDraftQuestion', {
+      draftId,
+      questionIndex,
+      userId: user.userId,
+      body
+    })
     return this.quizCmsService.updateDraftQuestion(draftId, user.userId, Number(questionIndex), body)
   }
 

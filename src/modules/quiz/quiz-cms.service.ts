@@ -18,6 +18,7 @@ import {
 import { Transactional } from '@nestjs-cls/transactional'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
+import { isNotFoundPrismaError } from 'src/shared/helpers'
 
 @Injectable()
 export class QuizCmsService {
@@ -334,6 +335,12 @@ export class QuizCmsService {
 
   @Transactional()
   async updateDraftQuestion(draftId: string, userId: string, questionIndex: number, body: AiQuizQuestionType) {
+    console.log('[QuizCmsService] updateDraftQuestion:start', {
+      draftId,
+      userId,
+      questionIndex,
+      body
+    })
     const draft = await this.quizRepo.findDraftById(draftId)
     if (!draft) throw new NotFoundException('Bản nháp không tồn tại')
     if (draft.status !== QuizDraftStatus.DRAFT_AI) {
@@ -344,6 +351,13 @@ export class QuizCmsService {
 
     const questions = this.getDraftQuestions(draft)
     const question = questions[questionIndex]
+    console.log('[QuizCmsService] updateDraftQuestion:resolved', {
+      draftStatus: draft.status,
+      questionsLength: questions.length,
+      questionIndex,
+      question,
+      linkedQuizQuestionId: question?.quizQuestionId ?? null
+    })
     if (!question) {
       throw new BadRequestException('Câu hỏi không tồn tại trong bản nháp')
     }
@@ -362,13 +376,47 @@ export class QuizCmsService {
         : item,
     )
 
+    let shouldClearSyncedQuestionId = false
     if (question.quizQuestionId) {
-      await this.quizRepo.updateContentOfQuestion(question.quizQuestionId, body.question)
-      await this.quizRepo.deleteAnswersByQuestionId(question.quizQuestionId)
-      await this.quizRepo.createAnswersForQuestion(question.quizQuestionId, body.options, body.correctIndex)
+      try {
+        console.log('[QuizCmsService] updateDraftQuestion:sync-live-question', {
+          quizQuestionId: question.quizQuestionId,
+          questionIndex
+        })
+        await this.quizRepo.updateContentOfQuestion(question.quizQuestionId, body.question)
+        await this.quizRepo.deleteAnswersByQuestionId(question.quizQuestionId)
+        await this.quizRepo.createAnswersForQuestion(question.quizQuestionId, body.options, body.correctIndex)
+      } catch (error) {
+        console.log('[QuizCmsService] updateDraftQuestion:sync-live-question-failed', {
+          quizQuestionId: question.quizQuestionId,
+          questionIndex,
+          errorName: error instanceof Error ? error.name : typeof error,
+          errorMessage: error instanceof Error ? error.message : String(error)
+        })
+        if (!isNotFoundPrismaError(error)) {
+          throw error
+        }
+        shouldClearSyncedQuestionId = true
+      }
     }
 
-    await this.quizRepo.updateDraftValidatedOutput(draftId, nextQuestions)
+    const persistedQuestions = shouldClearSyncedQuestionId
+      ? nextQuestions.map((item, index) =>
+          index === questionIndex
+            ? {
+                ...item,
+                quizQuestionId: null,
+              }
+            : item,
+        )
+      : nextQuestions
+
+    await this.quizRepo.updateDraftValidatedOutput(draftId, persistedQuestions)
+    console.log('[QuizCmsService] updateDraftQuestion:done', {
+      draftId,
+      questionIndex,
+      clearedSyncedQuestionId: shouldClearSyncedQuestionId
+    })
 
     return true
   }
