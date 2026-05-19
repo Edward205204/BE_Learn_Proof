@@ -81,14 +81,14 @@ export class LessonService {
       })
     }
 
-    const stableJobId = `index:${lessonId}`
+    const stableJobId = `index_${lessonId}`
     let bullJobId = stableJobId
     const existingJob = await this.lessonIndexingQueue.getJob(stableJobId)
 
     if (existingJob) {
       const state = await existingJob.getState()
       if (state === 'active') {
-        bullJobId = `index:${lessonId}:${aiJob.id}`
+        bullJobId = `index_${lessonId}_${aiJob.id}`
       } else {
         await existingJob.remove()
       }
@@ -452,7 +452,7 @@ export class LessonService {
       await this.lessonAiQueue.add(
         'rag-ask',
         { lessonId, aiJobId: aiJob.id, requestedBy: userId, question, language },
-        { jobId: `rag-ask:${aiJob.id}`, attempts: 3 },
+        { jobId: `rag_ask_${aiJob.id}`, attempts: 3 },
       )
     } catch (error: any) {
       await this.prisma.aiJob.update({
@@ -495,7 +495,7 @@ export class LessonService {
       await this.lessonAiQueue.add(
         'lesson-content-generation',
         { lessonId, aiJobId: aiJob.id, requestedBy: userId, keywords, language },
-        { jobId: `lesson-content-generation:${aiJob.id}`, attempts: 3 },
+        { jobId: `lesson_content_generation_${aiJob.id}`, attempts: 3 },
       )
     } catch (error: any) {
       await this.prisma.aiJob.update({

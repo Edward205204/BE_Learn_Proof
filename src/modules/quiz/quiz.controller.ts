@@ -153,18 +153,20 @@ export class QuizController {
   acceptDraftQuestion(
     @Param('draftId') draftId: string,
     @Param('questionIndex') questionIndex: string,
+    @Body() body: unknown,
     @ActiveUser() user: TokenPayload,
   ) {
-    return this.quizCmsService.acceptDraftQuestion(draftId, user.userId, Number(questionIndex))
+    return this.quizCmsService.acceptDraftQuestion(draftId, user.userId, Number(questionIndex), body)
   }
 
   @Patch('drafts/:draftId/questions/:questionIndex/reject')
   rejectDraftQuestion(
     @Param('draftId') draftId: string,
     @Param('questionIndex') questionIndex: string,
+    @Body() body: unknown,
     @ActiveUser() user: TokenPayload,
   ) {
-    return this.quizCmsService.rejectDraftQuestion(draftId, user.userId, Number(questionIndex))
+    return this.quizCmsService.rejectDraftQuestion(draftId, user.userId, Number(questionIndex), body)
   }
 
   @Patch('drafts/:draftId/questions/:questionIndex')
@@ -174,12 +176,6 @@ export class QuizController {
     @Body() body: UpdateDraftQuestionDto,
     @ActiveUser() user: TokenPayload,
   ) {
-    console.log('[QuizController] updateDraftQuestion', {
-      draftId,
-      questionIndex,
-      userId: user.userId,
-      body
-    })
     return this.quizCmsService.updateDraftQuestion(draftId, user.userId, Number(questionIndex), body)
   }
 

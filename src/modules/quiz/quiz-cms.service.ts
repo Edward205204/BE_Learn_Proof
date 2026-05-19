@@ -18,7 +18,6 @@ import {
 import { Transactional } from '@nestjs-cls/transactional'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
-import { isNotFoundPrismaError } from 'src/shared/helpers'
 
 @Injectable()
 export class QuizCmsService {
@@ -46,12 +45,85 @@ export class QuizCmsService {
 
   private getDraftQuestions(draft: { validatedOutput: unknown; rawOutput: unknown }) {
     const payload = draft.validatedOutput ?? draft.rawOutput
-    if (Array.isArray(payload)) return payload as AiQuizQuestionReviewType[]
+    const filterPending = (questions: AiQuizQuestionReviewType[]) =>
+      questions.filter(
+        (question) => !question.quizQuestionId && (!question.reviewStatus || question.reviewStatus === 'PENDING'),
+      )
+
+    if (Array.isArray(payload)) return filterPending(payload as AiQuizQuestionReviewType[])
     if (typeof payload === 'object' && payload && 'questions' in payload) {
       const questions = (payload as { questions?: AiQuizQuestionReviewType[] }).questions
-      return Array.isArray(questions) ? questions : []
+      return Array.isArray(questions) ? filterPending(questions) : []
     }
     return []
+  }
+
+  private async persistRemainingDraftQuestions(
+    draftId: string,
+    questions: AiQuizQuestionReviewType[],
+    emptyStatus: QuizDraftStatus,
+    userId: string,
+  ) {
+    await this.quizRepo.updateDraftValidatedOutput(draftId, questions)
+
+    if (questions.length === 0) {
+      await this.quizRepo.updateDraftStatus(draftId, emptyStatus, { reviewerId: userId })
+    }
+  }
+
+  private isDraftQuestionPayload(body: unknown): body is AiQuizQuestionType {
+    if (!body || typeof body !== 'object') return false
+    const candidate = body as Partial<AiQuizQuestionType>
+
+    return (
+      typeof candidate.question === 'string' &&
+      Array.isArray(candidate.options) &&
+      candidate.options.every((option) => typeof option === 'string') &&
+      typeof candidate.correctIndex === 'number' &&
+      typeof candidate.explanation === 'string'
+    )
+  }
+
+  private findDraftQuestionIndex(questions: AiQuizQuestionReviewType[], questionIndex: number, body?: unknown) {
+    if (!this.isDraftQuestionPayload(body)) return questionIndex
+
+    const matchedIndex = questions.findIndex(
+      (question) =>
+        question.question === body.question &&
+        question.correctIndex === body.correctIndex &&
+        question.explanation === body.explanation &&
+        question.options.length === body.options.length &&
+        question.options.every((option, index) => option === body.options[index]),
+    )
+
+    return matchedIndex >= 0 ? matchedIndex : questionIndex
+  }
+
+  private async sanitizeDraftForReview<
+    T extends { id: string; status: QuizDraftStatus; validatedOutput: unknown; rawOutput: unknown },
+  >(draft: T, userId?: string) {
+    if (draft.status !== QuizDraftStatus.DRAFT_AI) return draft
+
+    const questions = this.getDraftQuestions(draft)
+    const nextStatus = questions.length === 0 ? QuizDraftStatus.PUBLISHED : QuizDraftStatus.DRAFT_AI
+
+    await this.quizRepo.updateDraftValidatedOutput(draft.id, questions)
+
+    if (nextStatus !== draft.status) {
+      await this.quizRepo.updateDraftStatus(draft.id, nextStatus, userId ? { reviewerId: userId } : undefined)
+    }
+
+    return {
+      ...draft,
+      status: nextStatus,
+      validatedOutput: { questions },
+    }
+  }
+
+  private async sanitizeDraftsForReview<
+    T extends { id: string; status: QuizDraftStatus; validatedOutput: unknown; rawOutput: unknown },
+  >(drafts: T[], userId?: string) {
+    return Promise.all(drafts.map((draft) => this.sanitizeDraftForReview(draft, userId)))
   }
 
   async addQuestionForQuiz(quizId: string, questionData: QuestionType, userId: string) {
@@ -128,7 +200,10 @@ export class QuizCmsService {
 
     const existingDraftAi = await this.quizRepo.findDraftQuizForLesson(lessonId)
     if (existingDraftAi) {
-      throw new ConflictException('Đã tồn tại một bản nháp AI cho lesson này.')
+      const sanitizedDraft = await this.sanitizeDraftForReview(existingDraftAi, userId)
+      if (sanitizedDraft.status === QuizDraftStatus.DRAFT_AI) {
+        throw new ConflictException('Đã tồn tại một bản nháp AI cho lesson này.')
+      }
     }
 
     const activeJob = await this.quizRepo.findDraftAiJobForLesson(lessonId)
@@ -144,7 +219,7 @@ export class QuizCmsService {
 
     try {
       await this.quizQueue.add(
-        `quiz-gen:${lessonId}`,
+        `quiz_gen_${lessonId}`,
         {
           lessonId,
           aiJobId: aiJob.id,
@@ -152,7 +227,7 @@ export class QuizCmsService {
           language,
         },
         {
-          jobId: `quizgen:${lessonId}:${aiJob.id}`,
+          jobId: `quizgen_${lessonId}_${aiJob.id}`,
           attempts: 3,
         },
       )
@@ -168,7 +243,8 @@ export class QuizCmsService {
 
   async getDraftsByLesson(lessonId: string, userId: string) {
     await this.requireLessonOwner(lessonId, userId)
-    return this.quizRepo.findDraftsByLessonId(lessonId)
+    const drafts = await this.quizRepo.findDraftsByLessonId(lessonId)
+    return this.sanitizeDraftsForReview(drafts, userId)
   }
 
   async getDraftById(draftId: string, userId: string) {
@@ -186,11 +262,12 @@ export class QuizCmsService {
       this.quizRepo.findDraftsByLessonId(lessonId),
       this.quizRepo.findDraftAiJobForLesson(lessonId),
     ])
+    const sanitizedDrafts = await this.sanitizeDraftsForReview(drafts, userId)
 
     return {
       lessonId,
       quiz,
-      drafts,
+      drafts: sanitizedDrafts,
       activeJob,
     }
   }
@@ -205,43 +282,22 @@ export class QuizCmsService {
 
     await this.requireLessonOwner(draft.lessonId, userId)
 
-    const output = this.getDraftQuestions(draft)
-    const syncedQuestions: AiQuizQuestionReviewType[] = []
+    const questions = this.getDraftQuestions(draft)
 
-    for (const question of output) {
-      if (question.reviewStatus === 'REJECTED') {
-        syncedQuestions.push(question)
-        continue
+    for (const question of questions) {
+      if (!question.quizQuestionId) {
+        await this.quizRepo.appendSingleQuestionToQuiz(draft.lessonId, question)
       }
-
-      if (question.quizQuestionId) {
-        syncedQuestions.push({
-          ...question,
-          reviewStatus: question.reviewStatus ?? 'ACCEPTED',
-        })
-        continue
-      }
-
-      const created = await this.quizRepo.appendSingleQuestionToQuiz(draft.lessonId, question)
-      syncedQuestions.push({
-        ...question,
-        reviewStatus: 'ACCEPTED',
-        quizQuestionId: created.questionId,
-        reviewedAt: new Date().toISOString(),
-      })
     }
 
-    if (syncedQuestions.length > 0) {
-      await this.quizRepo.updateDraftValidatedOutput(draftId, syncedQuestions)
-    }
-
+    await this.quizRepo.updateDraftValidatedOutput(draftId, [])
     await this.quizRepo.updateDraftStatus(draftId, QuizDraftStatus.PUBLISHED, { reviewerId: userId })
 
     return true
   }
 
   @Transactional()
-  async acceptDraftQuestion(draftId: string, userId: string, questionIndex: number) {
+  async acceptDraftQuestion(draftId: string, userId: string, questionIndex: number, body?: unknown) {
     const draft = await this.quizRepo.findDraftById(draftId)
     if (!draft) throw new NotFoundException('Bản nháp không tồn tại')
     if (draft.status !== QuizDraftStatus.DRAFT_AI) {
@@ -251,55 +307,41 @@ export class QuizCmsService {
     await this.requireLessonOwner(draft.lessonId, userId)
 
     const questions = this.getDraftQuestions(draft)
-    const question = questions[questionIndex]
+    const resolvedQuestionIndex = this.findDraftQuestionIndex(questions, questionIndex, body)
+    const question = questions[resolvedQuestionIndex]
     if (!question) {
+      await this.persistRemainingDraftQuestions(draftId, questions, QuizDraftStatus.PUBLISHED, userId)
       throw new BadRequestException('Câu hỏi không tồn tại trong bản nháp')
     }
-    if (question.reviewStatus && question.reviewStatus !== 'PENDING') {
-      throw new BadRequestException('Câu hỏi này đã được review')
-    }
+
+    const nextQuestions: AiQuizQuestionReviewType[] = questions.filter((_, index) => index !== resolvedQuestionIndex)
 
     if (question.quizQuestionId) {
       const existingQuiz = await this.quizRepo.findQuizIdByLessonId(draft.lessonId)
-      const nextQuestions: AiQuizQuestionReviewType[] = questions.map((item, index) =>
-        index === questionIndex
-          ? {
-              ...item,
-              reviewStatus: 'ACCEPTED' as const,
-              reviewedAt: new Date().toISOString(),
-            }
-          : item,
-      )
-      await this.quizRepo.updateDraftValidatedOutput(draftId, nextQuestions)
+      await this.persistRemainingDraftQuestions(draftId, nextQuestions, QuizDraftStatus.PUBLISHED, userId)
       return {
         quizId: existingQuiz?.id ?? null,
         questionId: question.quizQuestionId,
         alreadySynced: true,
+        remainingQuestions: nextQuestions,
+        draftStatus: nextQuestions.length === 0 ? QuizDraftStatus.PUBLISHED : QuizDraftStatus.DRAFT_AI,
       }
     }
 
     const created = await this.quizRepo.appendSingleQuestionToQuiz(draft.lessonId, question)
-    const nextQuestions: AiQuizQuestionReviewType[] = questions.map((item, index) =>
-      index === questionIndex
-        ? {
-            ...item,
-            reviewStatus: 'ACCEPTED' as const,
-            quizQuestionId: created.questionId,
-            reviewedAt: new Date().toISOString(),
-          }
-        : item,
-    )
-    await this.quizRepo.updateDraftValidatedOutput(draftId, nextQuestions)
+    await this.persistRemainingDraftQuestions(draftId, nextQuestions, QuizDraftStatus.PUBLISHED, userId)
 
     return {
       quizId: created.quizId,
       questionId: created.questionId,
       alreadySynced: false,
+      remainingQuestions: nextQuestions,
+      draftStatus: nextQuestions.length === 0 ? QuizDraftStatus.PUBLISHED : QuizDraftStatus.DRAFT_AI,
     }
   }
 
   @Transactional()
-  async rejectDraftQuestion(draftId: string, userId: string, questionIndex: number) {
+  async rejectDraftQuestion(draftId: string, userId: string, questionIndex: number, body?: unknown) {
     const draft = await this.quizRepo.findDraftById(draftId)
     if (!draft) throw new NotFoundException('Bản nháp không tồn tại')
     if (draft.status !== QuizDraftStatus.DRAFT_AI) {
@@ -309,38 +351,25 @@ export class QuizCmsService {
     await this.requireLessonOwner(draft.lessonId, userId)
 
     const questions = this.getDraftQuestions(draft)
-    const question = questions[questionIndex]
+    const resolvedQuestionIndex = this.findDraftQuestionIndex(questions, questionIndex, body)
+    const question = questions[resolvedQuestionIndex]
     if (!question) {
+      await this.persistRemainingDraftQuestions(draftId, questions, QuizDraftStatus.REJECTED, userId)
       throw new BadRequestException('Câu hỏi không tồn tại trong bản nháp')
     }
-    if (question.reviewStatus && question.reviewStatus !== 'PENDING') {
-      throw new BadRequestException('Câu hỏi này đã được review')
+
+    const nextQuestions: AiQuizQuestionReviewType[] = questions.filter((_, index) => index !== resolvedQuestionIndex)
+
+    await this.persistRemainingDraftQuestions(draftId, nextQuestions, QuizDraftStatus.REJECTED, userId)
+
+    return {
+      remainingQuestions: nextQuestions,
+      draftStatus: nextQuestions.length === 0 ? QuizDraftStatus.REJECTED : QuizDraftStatus.DRAFT_AI,
     }
-
-    const nextQuestions: AiQuizQuestionReviewType[] = questions.map((item, index) =>
-      index === questionIndex
-        ? {
-            ...item,
-            reviewStatus: 'REJECTED' as const,
-            reviewedAt: new Date().toISOString(),
-            quizQuestionId: null,
-          }
-        : item,
-    )
-
-    await this.quizRepo.updateDraftValidatedOutput(draftId, nextQuestions)
-
-    return true
   }
 
   @Transactional()
   async updateDraftQuestion(draftId: string, userId: string, questionIndex: number, body: AiQuizQuestionType) {
-    console.log('[QuizCmsService] updateDraftQuestion:start', {
-      draftId,
-      userId,
-      questionIndex,
-      body
-    })
     const draft = await this.quizRepo.findDraftById(draftId)
     if (!draft) throw new NotFoundException('Bản nháp không tồn tại')
     if (draft.status !== QuizDraftStatus.DRAFT_AI) {
@@ -351,13 +380,6 @@ export class QuizCmsService {
 
     const questions = this.getDraftQuestions(draft)
     const question = questions[questionIndex]
-    console.log('[QuizCmsService] updateDraftQuestion:resolved', {
-      draftStatus: draft.status,
-      questionsLength: questions.length,
-      questionIndex,
-      question,
-      linkedQuizQuestionId: question?.quizQuestionId ?? null
-    })
     if (!question) {
       throw new BadRequestException('Câu hỏi không tồn tại trong bản nháp')
     }
@@ -370,53 +392,11 @@ export class QuizCmsService {
             options: body.options,
             correctIndex: body.correctIndex,
             explanation: body.explanation,
-            reviewStatus: item.reviewStatus === 'ACCEPTED' ? 'ACCEPTED' : 'PENDING',
-            reviewedAt: item.reviewStatus === 'ACCEPTED' ? item.reviewedAt ?? new Date().toISOString() : null,
           }
         : item,
     )
 
-    let shouldClearSyncedQuestionId = false
-    if (question.quizQuestionId) {
-      try {
-        console.log('[QuizCmsService] updateDraftQuestion:sync-live-question', {
-          quizQuestionId: question.quizQuestionId,
-          questionIndex
-        })
-        await this.quizRepo.updateContentOfQuestion(question.quizQuestionId, body.question)
-        await this.quizRepo.deleteAnswersByQuestionId(question.quizQuestionId)
-        await this.quizRepo.createAnswersForQuestion(question.quizQuestionId, body.options, body.correctIndex)
-      } catch (error) {
-        console.log('[QuizCmsService] updateDraftQuestion:sync-live-question-failed', {
-          quizQuestionId: question.quizQuestionId,
-          questionIndex,
-          errorName: error instanceof Error ? error.name : typeof error,
-          errorMessage: error instanceof Error ? error.message : String(error)
-        })
-        if (!isNotFoundPrismaError(error)) {
-          throw error
-        }
-        shouldClearSyncedQuestionId = true
-      }
-    }
-
-    const persistedQuestions = shouldClearSyncedQuestionId
-      ? nextQuestions.map((item, index) =>
-          index === questionIndex
-            ? {
-                ...item,
-                quizQuestionId: null,
-              }
-            : item,
-        )
-      : nextQuestions
-
-    await this.quizRepo.updateDraftValidatedOutput(draftId, persistedQuestions)
-    console.log('[QuizCmsService] updateDraftQuestion:done', {
-      draftId,
-      questionIndex,
-      clearedSyncedQuestionId: shouldClearSyncedQuestionId
-    })
+    await this.quizRepo.updateDraftValidatedOutput(draftId, nextQuestions)
 
     return true
   }
