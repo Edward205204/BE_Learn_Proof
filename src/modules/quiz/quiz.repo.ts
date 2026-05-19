@@ -179,6 +179,22 @@ export class QuizRepo {
     })
   }
 
+  deleteAnswersByQuestionId(questionId: string) {
+    return this.txHost.tx.answer.deleteMany({
+      where: { questionId },
+    })
+  }
+
+  createAnswersForQuestion(questionId: string, options: string[], correctIndex: number) {
+    return this.txHost.tx.answer.createMany({
+      data: options.map((content, index) => ({
+        content,
+        isCorrect: index === correctIndex,
+        questionId,
+      })),
+    })
+  }
+
   updateAllAnswerIsFalse(questionId: string) {
     return this.txHost.tx.answer.updateMany({
       where: { questionId },
@@ -207,6 +223,7 @@ export class QuizRepo {
         id: true,
         lessonId: true,
         questions: {
+          orderBy: { createdAt: 'asc' },
           where: { isEdit: false },
           select: {
             id: true,
@@ -230,6 +247,7 @@ export class QuizRepo {
         id: true,
         lessonId: true,
         questions: {
+          orderBy: { createdAt: 'asc' },
           select: {
             id: true,
             isEdit: true,

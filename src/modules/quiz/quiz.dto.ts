@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod'
 import { z } from 'zod'
-import { QuestionSchema, SubmitQuizSchema } from './quiz.model'
+import { AiQuizQuestionSchema, QuestionSchema, SubmitQuizSchema } from './quiz.model'
 
 export class AddQuestionDto extends createZodDto(QuestionSchema) {}
 
@@ -11,3 +11,5 @@ export class EditContentDto extends createZodDto(z.object({ content: z.string().
 export class ChooseCorrectAnswerDto extends createZodDto(z.object({ answerId: z.string() })) {}
 
 export class SubmitQuizDto extends createZodDto(z.object({ submission: SubmitQuizSchema })) {}
+
+export class UpdateDraftQuestionDto extends createZodDto(AiQuizQuestionSchema) {}

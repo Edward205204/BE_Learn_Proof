@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common'
 import { QuizRepo } from './quiz.repo'
-import { CreateQuizType, QuestionType, AiQuizQuestionReviewType } from './quiz.model'
+import { CreateQuizType, QuestionType, AiQuizQuestionReviewType, AiQuizQuestionType } from './quiz.model'
 import { AiJobStatus, AiJobType, QuizDraftStatus } from 'src/generated/prisma/enums'
 import type { AiOutputLanguage } from 'src/modules/ai/prompt-template.service'
 import {
@@ -60,7 +60,6 @@ export class QuizCmsService {
 
   async addAnswerForQuestion(questionId: string, content: string, userId: string, quizId: string) {
     await this.requireQuizOwner(quizId, userId)
-    await this.requireQuestionInEditMode(questionId)
     return this.quizRepo.createAnswer(questionId, content)
   }
 
@@ -70,7 +69,6 @@ export class QuizCmsService {
 
   async deleteQuestionFromQuiz(questionId: string, userId: string, quizId: string) {
     await this.requireQuizOwner(quizId, userId)
-    await this.requireQuestionInEditMode(questionId)
     return this.quizRepo.deleteQuestions(questionId)
   }
 
@@ -81,26 +79,22 @@ export class QuizCmsService {
 
   async deleteAnswer(questionId: string, answerId: string, userId: string, quizId: string) {
     await this.requireQuizOwner(quizId, userId)
-    await this.requireQuestionInEditMode(questionId)
     return this.quizRepo.deleteAnswers(questionId, answerId)
   }
 
   async editQuestion(questionId: string, content: string, userId: string, quizId: string) {
     await this.requireQuizOwner(quizId, userId)
-    await this.requireQuestionInEditMode(questionId)
     return this.quizRepo.updateContentOfQuestion(questionId, content)
   }
 
   async editAnswer(answerId: string, questionId: string, content: string, userId: string, quizId: string) {
     await this.requireQuizOwner(quizId, userId)
-    await this.requireQuestionInEditMode(questionId)
     return this.quizRepo.updateAnswer(answerId, questionId, content)
   }
 
   @Transactional()
   async chooseCorrectAnswer(questionId: string, answerId: string, userId: string, quizId: string) {
     await this.requireQuizOwner(quizId, userId)
-    await this.requireQuestionInEditMode(questionId)
     await this.quizRepo.updateAllAnswerIsFalse(questionId)
     await this.quizRepo.updateCorrectAnswer(answerId, questionId)
     return true
@@ -332,6 +326,47 @@ export class QuizCmsService {
           }
         : item,
     )
+
+    await this.quizRepo.updateDraftValidatedOutput(draftId, nextQuestions)
+
+    return true
+  }
+
+  @Transactional()
+  async updateDraftQuestion(draftId: string, userId: string, questionIndex: number, body: AiQuizQuestionType) {
+    const draft = await this.quizRepo.findDraftById(draftId)
+    if (!draft) throw new NotFoundException('Bản nháp không tồn tại')
+    if (draft.status !== QuizDraftStatus.DRAFT_AI) {
+      throw new BadRequestException('Chỉ bản nháp DRAFT_AI mới có thể được chỉnh sửa')
+    }
+
+    await this.requireLessonOwner(draft.lessonId, userId)
+
+    const questions = this.getDraftQuestions(draft)
+    const question = questions[questionIndex]
+    if (!question) {
+      throw new BadRequestException('Câu hỏi không tồn tại trong bản nháp')
+    }
+
+    const nextQuestions: AiQuizQuestionReviewType[] = questions.map((item, index) =>
+      index === questionIndex
+        ? {
+            ...item,
+            question: body.question,
+            options: body.options,
+            correctIndex: body.correctIndex,
+            explanation: body.explanation,
+            reviewStatus: item.reviewStatus === 'ACCEPTED' ? 'ACCEPTED' : 'PENDING',
+            reviewedAt: item.reviewStatus === 'ACCEPTED' ? item.reviewedAt ?? new Date().toISOString() : null,
+          }
+        : item,
+    )
+
+    if (question.quizQuestionId) {
+      await this.quizRepo.updateContentOfQuestion(question.quizQuestionId, body.question)
+      await this.quizRepo.deleteAnswersByQuestionId(question.quizQuestionId)
+      await this.quizRepo.createAnswersForQuestion(question.quizQuestionId, body.options, body.correctIndex)
+    }
 
     await this.quizRepo.updateDraftValidatedOutput(draftId, nextQuestions)
 
