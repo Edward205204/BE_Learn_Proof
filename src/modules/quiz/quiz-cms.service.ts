@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common'
 import { QuizRepo } from './quiz.repo'
-import { CreateQuizType, QuestionType } from './quiz.model'
+import { CreateQuizType, QuestionType, AiQuizQuestionReviewType } from './quiz.model'
 import { AiJobStatus, AiJobType, QuizDraftStatus } from 'src/generated/prisma/enums'
 import type { AiOutputLanguage } from 'src/modules/ai/prompt-template.service'
 import {
@@ -41,6 +41,16 @@ export class QuizCmsService {
 
   async createQuiz(body: CreateQuizType) {
     return this.quizRepo.createQuiz(body)
+  }
+
+  private getDraftQuestions(draft: { validatedOutput: unknown; rawOutput: unknown }) {
+    const payload = draft.validatedOutput ?? draft.rawOutput
+    if (Array.isArray(payload)) return payload as AiQuizQuestionReviewType[]
+    if (typeof payload === 'object' && payload && 'questions' in payload) {
+      const questions = (payload as { questions?: AiQuizQuestionReviewType[] }).questions
+      return Array.isArray(questions) ? questions : []
+    }
+    return []
   }
 
   async addQuestionForQuiz(quizId: string, questionData: QuestionType, userId: string) {
@@ -201,14 +211,130 @@ export class QuizCmsService {
 
     await this.requireLessonOwner(draft.lessonId, userId)
 
-    const output = (draft.validatedOutput || draft.rawOutput) as {
-      question: string
-      options: string[]
-      correctIndex: number
-    }[]
+    const output = this.getDraftQuestions(draft)
+    const syncedQuestions: AiQuizQuestionReviewType[] = []
 
-    await this.quizRepo.appendQuizFromDraft(draft.lessonId, output)
+    for (const question of output) {
+      if (question.reviewStatus === 'REJECTED') {
+        syncedQuestions.push(question)
+        continue
+      }
+
+      if (question.quizQuestionId) {
+        syncedQuestions.push({
+          ...question,
+          reviewStatus: question.reviewStatus ?? 'ACCEPTED',
+        })
+        continue
+      }
+
+      const created = await this.quizRepo.appendSingleQuestionToQuiz(draft.lessonId, question)
+      syncedQuestions.push({
+        ...question,
+        reviewStatus: 'ACCEPTED',
+        quizQuestionId: created.questionId,
+        reviewedAt: new Date().toISOString(),
+      })
+    }
+
+    if (syncedQuestions.length > 0) {
+      await this.quizRepo.updateDraftValidatedOutput(draftId, syncedQuestions)
+    }
+
     await this.quizRepo.updateDraftStatus(draftId, QuizDraftStatus.PUBLISHED, { reviewerId: userId })
+
+    return true
+  }
+
+  @Transactional()
+  async acceptDraftQuestion(draftId: string, userId: string, questionIndex: number) {
+    const draft = await this.quizRepo.findDraftById(draftId)
+    if (!draft) throw new NotFoundException('Bản nháp không tồn tại')
+    if (draft.status !== QuizDraftStatus.DRAFT_AI) {
+      throw new BadRequestException('Chỉ bản nháp DRAFT_AI mới có thể được review')
+    }
+
+    await this.requireLessonOwner(draft.lessonId, userId)
+
+    const questions = this.getDraftQuestions(draft)
+    const question = questions[questionIndex]
+    if (!question) {
+      throw new BadRequestException('Câu hỏi không tồn tại trong bản nháp')
+    }
+    if (question.reviewStatus && question.reviewStatus !== 'PENDING') {
+      throw new BadRequestException('Câu hỏi này đã được review')
+    }
+
+    if (question.quizQuestionId) {
+      const existingQuiz = await this.quizRepo.findQuizIdByLessonId(draft.lessonId)
+      const nextQuestions: AiQuizQuestionReviewType[] = questions.map((item, index) =>
+        index === questionIndex
+          ? {
+              ...item,
+              reviewStatus: 'ACCEPTED' as const,
+              reviewedAt: new Date().toISOString(),
+            }
+          : item,
+      )
+      await this.quizRepo.updateDraftValidatedOutput(draftId, nextQuestions)
+      return {
+        quizId: existingQuiz?.id ?? null,
+        questionId: question.quizQuestionId,
+        alreadySynced: true,
+      }
+    }
+
+    const created = await this.quizRepo.appendSingleQuestionToQuiz(draft.lessonId, question)
+    const nextQuestions: AiQuizQuestionReviewType[] = questions.map((item, index) =>
+      index === questionIndex
+        ? {
+            ...item,
+            reviewStatus: 'ACCEPTED' as const,
+            quizQuestionId: created.questionId,
+            reviewedAt: new Date().toISOString(),
+          }
+        : item,
+    )
+    await this.quizRepo.updateDraftValidatedOutput(draftId, nextQuestions)
+
+    return {
+      quizId: created.quizId,
+      questionId: created.questionId,
+      alreadySynced: false,
+    }
+  }
+
+  @Transactional()
+  async rejectDraftQuestion(draftId: string, userId: string, questionIndex: number) {
+    const draft = await this.quizRepo.findDraftById(draftId)
+    if (!draft) throw new NotFoundException('Bản nháp không tồn tại')
+    if (draft.status !== QuizDraftStatus.DRAFT_AI) {
+      throw new BadRequestException('Chỉ bản nháp DRAFT_AI mới có thể được review')
+    }
+
+    await this.requireLessonOwner(draft.lessonId, userId)
+
+    const questions = this.getDraftQuestions(draft)
+    const question = questions[questionIndex]
+    if (!question) {
+      throw new BadRequestException('Câu hỏi không tồn tại trong bản nháp')
+    }
+    if (question.reviewStatus && question.reviewStatus !== 'PENDING') {
+      throw new BadRequestException('Câu hỏi này đã được review')
+    }
+
+    const nextQuestions: AiQuizQuestionReviewType[] = questions.map((item, index) =>
+      index === questionIndex
+        ? {
+            ...item,
+            reviewStatus: 'REJECTED' as const,
+            reviewedAt: new Date().toISOString(),
+            quizQuestionId: null,
+          }
+        : item,
+    )
+
+    await this.quizRepo.updateDraftValidatedOutput(draftId, nextQuestions)
 
     return true
   }

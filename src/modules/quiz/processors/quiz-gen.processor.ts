@@ -115,6 +115,14 @@ export class QuizGenProcessor extends WorkerHost {
     return unique
   }
 
+  private formatQuestionsForPrompt(questions: string[]) {
+    if (questions.length === 0) return 'None'
+
+    const preview = questions.slice(0, 20).map((question, index) => `${index + 1}. ${question}`).join('\n')
+    const tail = questions.length > 20 ? `\n... and ${questions.length - 20} more questions` : ''
+    return `${preview}${tail}`
+  }
+
   private async generateQuizDraft(params: {
     template: ReturnType<PromptTemplateService['getTemplate']>
     lessonTitle: string
@@ -196,12 +204,7 @@ export class QuizGenProcessor extends WorkerHost {
       })
 
       const existingQuestionsList = existingQuiz?.questions?.map((question) => question.content) || []
-      const existingQuestions =
-        existingQuestionsList.length > 0
-          ? existingQuestionsList.slice(0, 20).map((question, index) => `${index + 1}. ${question}`).join('\n')
-          : 'None'
-      const existingQuestionsTail =
-        existingQuestionsList.length > 20 ? `\n... and ${existingQuestionsList.length - 20} more questions` : ''
+      const existingQuestions = this.formatQuestionsForPrompt(existingQuestionsList)
 
       // Build context
       const fullContext = this.chunkingService.buildContext(lesson)
@@ -209,7 +212,7 @@ export class QuizGenProcessor extends WorkerHost {
 
       const template = this.promptTemplateService.getTemplate('quiz_gen_v1')
       const outputLanguage = this.promptTemplateService.getOutputLanguageLabel(language)
-      const avoidQuestions = `${existingQuestions}${existingQuestionsTail}`
+      const avoidQuestionsBase = existingQuestionsList
       const coveragePlan = this.getMissingStyles(existingQuestionsList)
         .slice(0, 5)
         .join(', ')
@@ -221,6 +224,13 @@ export class QuizGenProcessor extends WorkerHost {
       let lastError: Error | null = null
 
       for (let attempt = 1; attempt <= 2; attempt++) {
+        const avoidQuestions = attempt === 1
+          ? 'None'
+          : this.formatQuestionsForPrompt([
+              ...avoidQuestionsBase,
+              ...generatedQuestions.map((question) => question.question || ''),
+            ])
+
         const result = await this.generateQuizDraft({
           template,
           lessonTitle: lesson.title,
@@ -228,26 +238,36 @@ export class QuizGenProcessor extends WorkerHost {
           outputLanguage,
           lessonDesc: lesson.lessonDesc || '',
           context,
-          existingQuestions: avoidQuestions,
-          avoidQuestions: attempt === 1 ? 'None' : avoidQuestions,
+          existingQuestions,
+          avoidQuestions,
           coveragePlan,
           questionCount: '5',
         })
 
         llmResult = result.llmResult
+        const references = [
+          ...existingQuestionsList,
+          ...generatedQuestions.map((question) => question.question || ''),
+        ]
         const filteredQuestions = this.filterUniqueQuestions(
           result.questions,
-          existingQuestionsList,
+          references,
           attempt === 1 ? 0.45 : 0.6,
         )
-        if (filteredQuestions.length >= 3) {
-          generatedQuestions = filteredQuestions.slice(0, 5)
+
+        if (filteredQuestions.length > 0) {
+          generatedQuestions.push(...filteredQuestions)
+          generatedQuestions = generatedQuestions.slice(0, 5)
+        }
+
+        if (generatedQuestions.length >= 3) {
           break
         }
 
-        lastError = new Error(
-          `Generated questions are too similar to existing quiz questions. Attempt ${attempt}/2.`,
-        )
+        lastError =
+          generatedQuestions.length > 0
+            ? new Error(`Only ${generatedQuestions.length} unique questions accumulated after attempt ${attempt}/2.`)
+            : new Error(`Generated questions are too similar to existing quiz questions. Attempt ${attempt}/2.`)
         this.logger.warn(lastError.message)
       }
 

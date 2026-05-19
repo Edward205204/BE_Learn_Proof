@@ -142,6 +142,24 @@ export class QuizController {
     return this.quizCmsService.publishDraft(draftId, user.userId)
   }
 
+  @Patch('drafts/:draftId/questions/:questionIndex/accept')
+  acceptDraftQuestion(
+    @Param('draftId') draftId: string,
+    @Param('questionIndex') questionIndex: string,
+    @ActiveUser() user: TokenPayload,
+  ) {
+    return this.quizCmsService.acceptDraftQuestion(draftId, user.userId, Number(questionIndex))
+  }
+
+  @Patch('drafts/:draftId/questions/:questionIndex/reject')
+  rejectDraftQuestion(
+    @Param('draftId') draftId: string,
+    @Param('questionIndex') questionIndex: string,
+    @ActiveUser() user: TokenPayload,
+  ) {
+    return this.quizCmsService.rejectDraftQuestion(draftId, user.userId, Number(questionIndex))
+  }
+
   @Patch('drafts/:draftId/reject')
   rejectDraft(
     @Param('draftId') draftId: string,

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { CreateQuizType, QuestionType } from './quiz.model'
+import { CreateQuizType, QuestionType, AiQuizQuestionReviewType } from './quiz.model'
 import { PrismaClient } from 'src/generated/prisma/client'
 import { AiJobStatus, AiJobType, QuizDraftStatus } from 'src/generated/prisma/enums'
 import { randomUUID } from 'crypto'
@@ -247,6 +247,13 @@ export class QuizRepo {
     })
   }
 
+  createEmptyQuiz(lessonId: string) {
+    return this.txHost.tx.quiz.create({
+      data: { lessonId },
+      select: { id: true, lessonId: true },
+    })
+  }
+
   findQuizIdByLessonId(lessonId: string) {
     return this.txHost.tx.quiz.findFirst({
       where: { lessonId },
@@ -347,6 +354,17 @@ export class QuizRepo {
     })
   }
 
+  updateDraftValidatedOutput(draftId: string, validatedOutput: AiQuizQuestionReviewType[]) {
+    return this.txHost.tx.quizDraft.update({
+      where: { id: draftId },
+      data: {
+        validatedOutput: {
+          questions: validatedOutput,
+        },
+      },
+    })
+  }
+
   async appendQuizFromDraft(lessonId: string, rawOutput: { question: string; options: string[]; correctIndex: number }[]) {
     const existingQuiz = await this.findQuizIdByLessonId(lessonId)
 
@@ -386,5 +404,32 @@ export class QuizRepo {
     })
 
     return { quizId, insertedQuestions: questions.length }
+  }
+
+  async appendSingleQuestionToQuiz(lessonId: string, question: { question: string; options: string[]; correctIndex: number }) {
+    let quiz = await this.findQuizIdByLessonId(lessonId)
+
+    if (!quiz) {
+      quiz = await this.createEmptyQuiz(lessonId)
+    }
+
+    const createdQuestion = await this.txHost.tx.question.create({
+      data: {
+        content: question.question,
+        isEdit: false,
+        quizId: quiz.id,
+        answers: {
+          create: question.options.map((option, answerIndex) => ({
+            content: option,
+            isCorrect: answerIndex === question.correctIndex,
+          })),
+        },
+      },
+    })
+
+    return {
+      quizId: quiz.id,
+      questionId: createdQuestion.id,
+    }
   }
 }

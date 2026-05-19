@@ -43,8 +43,16 @@ export const AiQuizQuestionSchema = z
     path: ['correctIndex'],
   })
 
+export const AiQuizQuestionReviewStatusSchema = z.enum(['PENDING', 'ACCEPTED', 'REJECTED'])
+
+export const AiQuizQuestionReviewSchema = AiQuizQuestionSchema.extend({
+  reviewStatus: AiQuizQuestionReviewStatusSchema.optional(),
+  quizQuestionId: z.string().nullable().optional(),
+  reviewedAt: z.string().nullable().optional(),
+})
+
 export const AiQuizOutputSchema = z.object({
-  questions: z.array(AiQuizQuestionSchema).min(3, 'Quiz AI phải có ít nhất 3 câu hỏi'),
+  questions: z.array(AiQuizQuestionReviewSchema).min(3, 'Quiz AI phải có ít nhất 3 câu hỏi'),
 })
 
 export type SubmitQuizType = z.infer<typeof SubmitQuizSchema>
@@ -54,5 +62,7 @@ export type CreateQuizType = z.infer<typeof CreateQuizSchema>
 export type QuestionType = z.infer<typeof QuestionSchema>
 
 export type AiQuizQuestionType = z.infer<typeof AiQuizQuestionSchema>
+
+export type AiQuizQuestionReviewType = z.infer<typeof AiQuizQuestionReviewSchema>
 
 export type AiQuizOutputType = z.infer<typeof AiQuizOutputSchema>
