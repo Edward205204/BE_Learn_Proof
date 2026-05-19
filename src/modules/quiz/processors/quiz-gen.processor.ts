@@ -123,6 +123,18 @@ export class QuizGenProcessor extends WorkerHost {
     return `${preview}${tail}`
   }
 
+  private async updateAiJobStatus(
+    aiJobId: string,
+    data: any,
+  ) {
+    const result = await this.txHost.tx.aiJob.updateMany({
+      where: { id: aiJobId },
+      data,
+    })
+
+    return result.count
+  }
+
   private async generateQuizDraft(params: {
     template: ReturnType<PromptTemplateService['getTemplate']>
     lessonTitle: string
@@ -169,10 +181,13 @@ export class QuizGenProcessor extends WorkerHost {
     const { lessonId, aiJobId, language = 'vi' } = job.data
 
     try {
-      await this.txHost.tx.aiJob.update({
-        where: { id: aiJobId },
-        data: { status: AiJobStatus.PROCESSING, type: AiJobType.QUIZ_GENERATION },
+      const startedCount = await this.updateAiJobStatus(aiJobId, {
+        status: AiJobStatus.PROCESSING,
+        type: AiJobType.QUIZ_GENERATION,
       })
+      if (startedCount === 0) {
+        throw new Error(`AI job ${aiJobId} was not found before quiz processing started`)
+      }
 
       const lesson = await this.txHost.tx.lesson.findUnique({
         where: { id: lessonId },
@@ -291,26 +306,20 @@ export class QuizGenProcessor extends WorkerHost {
         },
       })
 
-      await this.txHost.tx.aiJob.update({
-        where: { id: aiJobId },
-        data: {
-          status: AiJobStatus.COMPLETED,
-          tokenInput: llmResult.inputTokens,
-          tokenOutput: llmResult.outputTokens,
-          latencyMs: llmResult.latencyMs,
-          model: llmResult.model,
-        },
+      await this.updateAiJobStatus(aiJobId, {
+        status: AiJobStatus.COMPLETED,
+        tokenInput: llmResult.inputTokens,
+        tokenOutput: llmResult.outputTokens,
+        latencyMs: llmResult.latencyMs,
+        model: llmResult.model,
       })
       this.logger.log(`Quiz generation job completed for lesson ${lessonId}`)
     } catch (error: any) {
       this.logger.error(`Failed to process quiz generation for lesson ${lessonId}: ${error.message}`)
-      await this.txHost.tx.aiJob.update({
-        where: { id: aiJobId },
-        data: {
-          status: AiJobStatus.FAILED,
-          error: error.message,
-          retries: job.attemptsMade,
-        },
+      await this.updateAiJobStatus(aiJobId, {
+        status: AiJobStatus.FAILED,
+        error: error.message,
+        retries: job.attemptsMade,
       })
       throw error
     }

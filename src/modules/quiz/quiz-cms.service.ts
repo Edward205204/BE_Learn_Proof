@@ -128,7 +128,6 @@ export class QuizCmsService {
     if (creatorId !== userId) throw new ForbiddenException('Bạn không có quyền thao tác trên lesson này')
   }
 
-  @Transactional()
   async generateAiQuiz(lessonId: string, userId: string, language: AiOutputLanguage = 'vi') {
     await this.requireLessonOwner(lessonId, userId)
 
