@@ -16,7 +16,7 @@ import { VectorStoreService } from 'src/shared/services/vector-store.service'
 import { AiJobType, AiJobStatus } from 'src/generated/prisma/enums'
 import type { AiOutputLanguage } from '../ai/prompt-template.service'
 
-const MIN_STUDY_SECONDS = 3 * 60 // 3 phút
+const MIN_STUDY_SECONDS = 1 * 60 // 1 phút
 const LESSON_INDEXING_DELAY_MS = 2000
 
 type RagAskResult = {
@@ -211,7 +211,7 @@ export class LessonService {
       if (studiedSeconds < MIN_STUDY_SECONDS) {
         const remaining = MIN_STUDY_SECONDS - studiedSeconds
         throw new BadRequestException(
-          `Bạn cần học bài học này ít nhất 3 phút. Còn lại: ${Math.ceil(remaining / 60)} phút ${remaining % 60} giây.`,
+          `Bạn cần học bài học này ít nhất 1 phút. Còn lại: ${Math.ceil(remaining / 60)} phút ${remaining % 60} giây.`,
         )
       }
     }
@@ -350,9 +350,8 @@ export class LessonService {
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-    const asksForDeepExplanation = /(giai thich|chi tiet|chuyen sau|tai sao|vi sao|how|why|explain|deep|detail|example|vi du)/.test(
-      normalized,
-    )
+    const asksForDeepExplanation =
+      /(giai thich|chi tiet|chuyen sau|tai sao|vi sao|how|why|explain|deep|detail|example|vi du)/.test(normalized)
 
     if (asksForDeepExplanation) {
       return language === 'en'
