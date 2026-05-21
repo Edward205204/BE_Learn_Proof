@@ -29,8 +29,40 @@ export const SubmitQuizSchema = z
   })
   .array()
 
+export const AiQuizOptionSchema = z.string().min(1, 'Phương án không được để trống')
+
+export const AiQuizQuestionSchema = z
+  .object({
+    question: z.string().min(10, 'Câu hỏi AI quá ngắn'),
+    options: z.array(AiQuizOptionSchema).min(4, 'Mỗi câu hỏi phải có ít nhất 4 phương án'),
+    correctIndex: z.number().int().min(0, 'correctIndex không hợp lệ'),
+    explanation: z.string().min(1, 'Thiếu phần giải thích'),
+  })
+  .refine((question) => question.correctIndex < question.options.length, {
+    message: 'correctIndex phải nằm trong phạm vi options',
+    path: ['correctIndex'],
+  })
+
+export const AiQuizQuestionReviewStatusSchema = z.enum(['PENDING', 'ACCEPTED', 'REJECTED'])
+
+export const AiQuizQuestionReviewSchema = AiQuizQuestionSchema.extend({
+  reviewStatus: AiQuizQuestionReviewStatusSchema.optional(),
+  quizQuestionId: z.string().nullable().optional(),
+  reviewedAt: z.string().nullable().optional(),
+})
+
+export const AiQuizOutputSchema = z.object({
+  questions: z.array(AiQuizQuestionReviewSchema).min(3, 'Quiz AI phải có ít nhất 3 câu hỏi'),
+})
+
 export type SubmitQuizType = z.infer<typeof SubmitQuizSchema>
 
 export type CreateQuizType = z.infer<typeof CreateQuizSchema>
 
 export type QuestionType = z.infer<typeof QuestionSchema>
+
+export type AiQuizQuestionType = z.infer<typeof AiQuizQuestionSchema>
+
+export type AiQuizQuestionReviewType = z.infer<typeof AiQuizQuestionReviewSchema>
+
+export type AiQuizOutputType = z.infer<typeof AiQuizOutputSchema>

@@ -4,8 +4,11 @@ import { CourseController } from './course.controller'
 import { CourseRepo } from './courses.repo'
 import { LearningCoursesService } from './services/learning-courses.service'
 import { CoursesManagerService } from './services/courses-manager.service'
+import { NotificationsModule } from '../notifications/notifications.module'
+import { EnrollmentModule } from '../enrollment/enrollment.module'
 
 @Module({
+  imports: [NotificationsModule, EnrollmentModule],
   providers: [CourseService, CourseRepo, LearningCoursesService, CoursesManagerService],
   controllers: [CourseController],
   exports: [CourseService],

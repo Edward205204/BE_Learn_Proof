@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { CreateQuizType, QuestionType } from './quiz.model'
+import { CreateQuizType, QuestionType, AiQuizQuestionReviewType } from './quiz.model'
 import { PrismaClient } from 'src/generated/prisma/client'
+import { AiJobStatus, AiJobType, QuizDraftStatus } from 'src/generated/prisma/enums'
+import { randomUUID } from 'crypto'
 
 @Injectable()
 export class QuizRepo {
@@ -177,6 +179,22 @@ export class QuizRepo {
     })
   }
 
+  deleteAnswersByQuestionId(questionId: string) {
+    return this.txHost.tx.answer.deleteMany({
+      where: { questionId },
+    })
+  }
+
+  createAnswersForQuestion(questionId: string, options: string[], correctIndex: number) {
+    return this.txHost.tx.answer.createMany({
+      data: options.map((content, index) => ({
+        content,
+        isCorrect: index === correctIndex,
+        questionId,
+      })),
+    })
+  }
+
   updateAllAnswerIsFalse(questionId: string) {
     return this.txHost.tx.answer.updateMany({
       where: { questionId },
@@ -205,6 +223,7 @@ export class QuizRepo {
         id: true,
         lessonId: true,
         questions: {
+          orderBy: { createdAt: 'asc' },
           where: { isEdit: false },
           select: {
             id: true,
@@ -228,6 +247,7 @@ export class QuizRepo {
         id: true,
         lessonId: true,
         questions: {
+          orderBy: { createdAt: 'asc' },
           select: {
             id: true,
             isEdit: true,
@@ -245,6 +265,21 @@ export class QuizRepo {
     })
   }
 
+  createEmptyQuiz(lessonId: string) {
+    return this.txHost.tx.quiz.create({
+      data: { lessonId },
+      select: { id: true, lessonId: true },
+    })
+  }
+
+  findQuizIdByLessonId(lessonId: string) {
+    return this.txHost.tx.quiz.findFirst({
+      where: { lessonId },
+      select: { id: true },
+      orderBy: { createdAt: 'desc' },
+    })
+  }
+
   createQuizAttempt(body: { userId: string; quizId: string; score: number; correct: number; total: number }) {
     return this.txHost.tx.quizAttempt.create({
       data: body,
@@ -257,21 +292,43 @@ export class QuizRepo {
     return this.txHost.tx.aiJob.findFirst({
       where: {
         lessonId,
-        type: 'QUIZ_GENERATION',
-        status: { in: ['QUEUED', 'PROCESSING'] },
+        type: AiJobType.QUIZ_GENERATION,
+        status: { in: [AiJobStatus.QUEUED, AiJobStatus.PROCESSING] },
       },
+      orderBy: { createdAt: 'desc' },
     })
   }
 
   findDraftQuizForLesson(lessonId: string) {
     return this.txHost.tx.quizDraft.findFirst({
-      where: { lessonId, status: 'DRAFT_AI' },
+      where: { lessonId, status: QuizDraftStatus.DRAFT_AI },
+      orderBy: { createdAt: 'desc' },
     })
   }
 
-  createAiJob(data: { lessonId: string; requestedBy: string; type: any }) {
+  createAiJob(data: { lessonId: string; requestedBy: string; type: AiJobType }) {
     return this.txHost.tx.aiJob.create({
       data,
+    })
+  }
+
+  updateAiJobStatus(
+    aiJobId: string,
+    status: AiJobStatus,
+    data?: {
+      model?: string
+      tokenInput?: number
+      tokenOutput?: number
+      latencyMs?: number
+      error?: string
+    },
+  ) {
+    return this.txHost.tx.aiJob.update({
+      where: { id: aiJobId },
+      data: {
+        status,
+        ...data,
+      },
     })
   }
 
@@ -286,11 +343,26 @@ export class QuizRepo {
   findDraftById(draftId: string) {
     return this.txHost.tx.quizDraft.findUnique({
       where: { id: draftId },
-      include: { aiJob: true },
+      include: {
+        aiJob: true,
+        lesson: {
+          select: {
+            id: true,
+            title: true,
+            shortDesc: true,
+            type: true,
+            targetLevel: true,
+          },
+        },
+      },
     })
   }
 
-  updateDraftStatus(draftId: string, status: any, data?: { reviewNote?: string; reviewerId?: string }) {
+  updateDraftStatus(
+    draftId: string,
+    status: QuizDraftStatus,
+    data?: { reviewNote?: string; reviewerId?: string },
+  ) {
     return this.txHost.tx.quizDraft.update({
       where: { id: draftId },
       data: {
@@ -300,31 +372,82 @@ export class QuizRepo {
     })
   }
 
-  async replaceQuizFromDraft(draftId: string, lessonId: string, rawOutput: any) {
-    // Delete existing quiz for lesson
-    await this.txHost.tx.quiz.deleteMany({
-      where: { lessonId },
-    })
-
-    const questionsData = rawOutput.map((q: any) => ({
-      content: q.question,
-      isEdit: false,
-      answers: {
-        create: q.options.map((opt: string, index: number) => ({
-          content: opt,
-          isCorrect: index === q.correctIndex,
-        })),
-      },
-    }))
-
-    // Create new quiz
-    return this.txHost.tx.quiz.create({
+  updateDraftValidatedOutput(draftId: string, validatedOutput: AiQuizQuestionReviewType[]) {
+    return this.txHost.tx.quizDraft.update({
+      where: { id: draftId },
       data: {
-        lessonId,
-        questions: {
-          create: questionsData,
+        validatedOutput: {
+          questions: validatedOutput,
         },
       },
     })
+  }
+
+  async appendQuizFromDraft(lessonId: string, rawOutput: { question: string; options: string[]; correctIndex: number }[]) {
+    const existingQuiz = await this.findQuizIdByLessonId(lessonId)
+
+    const quizId =
+      existingQuiz?.id ??
+      (await this.txHost.tx.quiz.create({
+        data: { lessonId },
+        select: { id: true },
+      })).id
+
+    if (rawOutput.length === 0) {
+      return { quizId, insertedQuestions: 0 }
+    }
+
+    const questions = rawOutput.map((item) => ({
+      id: randomUUID(),
+      content: item.question,
+      isEdit: false,
+      quizId,
+    }))
+
+    const answers = rawOutput.flatMap((item, questionIndex) =>
+      item.options.map((option, answerIndex) => ({
+        id: randomUUID(),
+        content: option,
+        isCorrect: answerIndex === item.correctIndex,
+        questionId: questions[questionIndex].id,
+      })),
+    )
+
+    await this.txHost.tx.question.createMany({
+      data: questions,
+    })
+
+    await this.txHost.tx.answer.createMany({
+      data: answers,
+    })
+
+    return { quizId, insertedQuestions: questions.length }
+  }
+
+  async appendSingleQuestionToQuiz(lessonId: string, question: { question: string; options: string[]; correctIndex: number }) {
+    let quiz = await this.findQuizIdByLessonId(lessonId)
+
+    if (!quiz) {
+      quiz = await this.createEmptyQuiz(lessonId)
+    }
+
+    const createdQuestion = await this.txHost.tx.question.create({
+      data: {
+        content: question.question,
+        isEdit: false,
+        quizId: quiz.id,
+        answers: {
+          create: question.options.map((option, answerIndex) => ({
+            content: option,
+            isCorrect: answerIndex === question.correctIndex,
+          })),
+        },
+      },
+    })
+
+    return {
+      quizId: quiz.id,
+      questionId: createdQuestion.id,
+    }
   }
 }

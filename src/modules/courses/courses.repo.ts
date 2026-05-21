@@ -540,7 +540,8 @@ export class CourseRepo {
   }
 
   findChapterOrder(chapterId: string | null) {
-    return this.txHost.tx.chapter.findUnique({ where: { id: chapterId ?? undefined }, select: { order: true } })
+    if (!chapterId) return Promise.resolve(null)
+    return this.txHost.tx.chapter.findUnique({ where: { id: chapterId }, select: { order: true } })
   }
 
   updateChapterOrder(chapterId: string, newOrder: number) {

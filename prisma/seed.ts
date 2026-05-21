@@ -1,17 +1,11 @@
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client'
-import {
-  Role,
-  CourseLevel,
-  CourseStatus,
-  LessonType,
-  VideoProviderEnum,
-  PaymentStatus,
-} from '../src/generated/prisma/enums'
+import { Role, CourseLevel, CourseStatus, LessonType, VideoProviderEnum } from '../src/generated/prisma/enums'
 import envConfig from '../src/shared/config'
 import { Pool } from 'pg'
 import { hash } from 'bcrypt'
-import { createCourseContent } from './seed-data'
+import { createCourseContent, createSpecificCoursesFromSeed } from './seed-data'
+import { seedRichDemo } from './seed-rich'
 
 const pool = new Pool({ connectionString: envConfig.DATABASE_URL })
 const adapter = new PrismaPg(pool)
@@ -125,16 +119,22 @@ async function main() {
   const statuses = [CourseStatus.PUBLISHED, CourseStatus.DRAFT]
 
   for (let i = 1; i <= 30; i++) {
-    const randomCategory = categories[Math.floor(Math.random() * categories.length)]
-    const randomLevel = levels[Math.floor(Math.random() * levels.length)]
-    const randomStatus = statuses[i % 5 === 0 ? 1 : 0] // Cứ 5 bài thì có 1 bài Draft
-    const price = Math.floor(Math.random() * 10) * 100000 + 199000 // Giá từ 199k đến 1tr1
+    const randomCategory =
+      i === 1
+        ? categories.find((cat) => cat.slug === 'mobile')!
+        : categories[Math.floor(Math.random() * categories.length)]
+    const randomLevel = i === 1 ? CourseLevel.INTERMEDIATE : levels[Math.floor(Math.random() * levels.length)]
+    const randomStatus = i === 1 ? CourseStatus.PUBLISHED : statuses[i % 5 === 0 ? 1 : 0] // Cứ 5 bài thì có 1 bài Draft
+    const price = i === 1 ? 499000 : Math.floor(Math.random() * 10) * 100000 + 199000 // Giá từ 199k đến 1tr1
 
     const course = await prisma.course.create({
       data: {
         title: `Khóa học chuyên sâu số ${i}: Master ${randomCategory.name}`,
         slug: `khoa-hoc-so-${i}-${randomCategory.slug}`,
-        shortDesc: `Mô tả ngắn gọn cho khóa học thứ ${i}. Đây là kiến thức thực chiến.`,
+        shortDesc:
+          i === 1
+            ? 'Lộ trình Mobile App chuyên sâu với một bài học mở đầu giàu ngữ cảnh AI, giúp hệ thống hiểu rõ mục tiêu, công nghệ và hướng triển khai của khóa học.'
+            : `Mô tả ngắn gọn cho khóa học thứ ${i}. Đây là kiến thức thực chiến.`,
         // fullDesc: `Nội dung chi tiết của khóa học ${i}. Bao gồm đầy đủ tài liệu và bài tập...`,
         level: randomLevel,
         status: randomStatus,
@@ -177,6 +177,16 @@ async function main() {
   }
 
   console.log('--- Seed 30 khóa học thành công! ---')
+
+  // 3.5. Seed 2 khóa học cụ thể từ seed.txt (tác giả: nguyentranminhkhoa1@gmail.com)
+  console.log('--- Đang tạo 2 khóa học từ seed.txt ---')
+  const specialCourseIds = await createSpecificCoursesFromSeed(prisma, instructor.id)
+  console.log('--- Seed 2 khóa học từ seed.txt thành công! ---')
+
+  // 3.6. Enrich dữ liệu demo (learners, extra instructors, reviews, progress...)
+  console.log('--- Bắt đầu làm phong phú hóa dữ liệu demo ---')
+  await seedRichDemo(prisma, instructor.id, specialCourseIds)
+  console.log('--- Đã làm phong phú hóa dữ liệu! ---')
 
   // 4. Seed mock courses từ frontend data
   console.log('--- Đang tạo mock courses cho frontend ---')
@@ -725,55 +735,6 @@ async function seedRealData() {
     },
   })
 
-  // TRANSACTION
-  // await prisma.transaction.createMany({
-  //   data: [
-  //     {
-  //       userId: u3.id,
-  //       courseId: course1.id,
-  //       amount: 299000,
-  //       status: PaymentStatus.COMPLETED,
-  //       provider: 'MOMO',
-  //     },
-  //     {
-  //       userId: u4.id,
-  //       courseId: course1.id,
-  //       amount: 299000,
-  //       status: PaymentStatus.COMPLETED,
-  //       provider: 'VNPAY',
-  //     },
-  //     {
-  //       userId: u5.id,
-  //       courseId: course2.id,
-  //       amount: 399000,
-  //       status: PaymentStatus.COMPLETED,
-  //       provider: 'ZALOPAY',
-  //     },
-  //     {
-  //       userId: u6.id,
-  //       courseId: course2.id,
-  //       amount: 399000,
-  //       status: PaymentStatus.PENDING,
-  //       provider: 'VNPAY',
-  //     },
-  //     {
-  //       userId: u7.id,
-  //       courseId: course3.id,
-  //       amount: 499000,
-  //       status: PaymentStatus.COMPLETED,
-  //       provider: 'MOMO',
-  //     },
-  //     {
-  //       userId: u8.id,
-  //       courseId: course3.id,
-  //       amount: 499000,
-  //       status: PaymentStatus.FAILED,
-  //       provider: 'VNPAY',
-  //     },
-  //   ],
-  // })
-
-  // CERTIFICATE
   await prisma.certificate.createMany({
     data: [
       {

@@ -4,6 +4,7 @@ import { CertMintStatus } from 'src/generated/prisma/client'
 import { BlockchainService } from '../blockchain/blockchain.service'
 import { EnrollmentRepo } from '../enrollment/enrollment.repo'
 import { CertificateRepo } from './certificate.repo'
+import { PrismaService } from 'src/shared/services/prisma.service'
 
 @Injectable()
 export class CertificateService {
@@ -13,6 +14,7 @@ export class CertificateService {
     private readonly certRepo: CertificateRepo,
     private readonly enrollRepo: EnrollmentRepo,
     private readonly blockchainService: BlockchainService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async mintCertificate(userId: string, courseId: string) {
@@ -34,6 +36,15 @@ export class CertificateService {
       return existing
     }
 
+    const [user, course] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId } }),
+      this.prisma.course.findUnique({ where: { id: courseId } }),
+    ])
+
+    if (!user || !course) {
+      throw new BadRequestException('Người dùng hoặc khóa học không tồn tại')
+    }
+
     // 4. Tạo hash duy nhất cho chứng chỉ
     const certHash = '0x' + createHash('sha256').update(`${userId}:${courseId}:${Date.now()}`).digest('hex')
     const certificateId = `CT-${courseId.slice(0, 8).toUpperCase()}`
@@ -51,8 +62,25 @@ export class CertificateService {
       // 6. Gọi Smart Contract để mint (địa chỉ nhận = địa chỉ ví của backend do user chưa có wallet)
       this.logger.log(`Minting certificate for user ${userId}, course ${courseId}...`)
 
-      // ipfsUri có thể để trống hoặc link metadata JSON sau này
-      const ipfsUri = `https://learnproof.edu.vn/certificate/${certificateId}`
+      // Build chuẩn metadata của 1 NFT/SBT (có thể xem trên bất kỳ NFT Viewer nào)
+      const metadata = {
+        name: `LearnProof Certificate - ${course.title}`,
+        description: `Chứng chỉ hoàn thành khóa học được cấp cho ${user.fullName} bởi nền tảng LearnProof.`,
+        image: `${process.env.FE_URL ?? 'http://localhost:3001'}/certificate/${certificateId}/image`,
+        attributes: [
+          { trait_type: 'Student Name', value: user.fullName },
+          { trait_type: 'Course Name', value: course.title },
+          { trait_type: 'User ID', value: userId },
+          { trait_type: 'Course ID', value: courseId },
+          { trait_type: 'Certificate ID', value: certificateId },
+          { trait_type: 'Issued At', value: new Date().toISOString() },
+          { trait_type: 'Platform', value: 'LearnProof' },
+        ],
+      }
+
+      // Upload metadata lên Pinata IPFS để lấy link phi tập trung
+      const ipfsUri = await this.blockchainService.uploadMetadataToIPFS(metadata)
+      this.logger.log(`📦 Metadata IPFS URI: ${ipfsUri}`)
 
       // Dùng địa chỉ ví BE (Admin Wallet) làm người nhận (vì user chưa có MetaMask)
       // Khi hệ thống hỗ trợ wallet user sau này sẽ thay thế

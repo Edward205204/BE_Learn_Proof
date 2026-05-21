@@ -76,13 +76,6 @@ export const CreateLessonSchema = z
     },
     { message: 'Loại TEXT thì phải có textContent', path: ['textContent'] },
   )
-  .refine(
-    (data) => {
-      if (data.type === LessonType.QUIZ) return !!data.quizData
-      return true
-    },
-    { message: 'Loại QUIZ thì phải có quizData', path: ['quizData'] },
-  )
 
 export const ReorderLessonBodySchema = z
   .object({

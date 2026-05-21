@@ -85,4 +85,8 @@ export class EnrollmentService {
     if (!courseIds.length) return []
     return this.enrollRepo.upsertManyEnrollments(userId, courseIds)
   }
+
+  getEnrolledUserIdsByCourse(courseId: string) {
+    return this.enrollRepo.getEnrolledUserIdsByCourse(courseId)
+  }
 }

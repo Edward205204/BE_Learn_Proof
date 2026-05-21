@@ -1,0 +1,423 @@
+Khóa học 1: Tên khóa: Nestjs Crash Course
+CHƯƠNG 1: TỔNG QUAN KIẾN TRÚC & KHỞI TẠO DỰ ÁN{
+ - Bài 1:{ 
++ Title: Introduction & Setup
++ Link video:https://www.youtube.com/watch?v=pcX97ZrTE6M&list=PL4cUxeGkcC9g8YFseGdkyj9RH9kVs_cMr
++ provider Youtube
++ tóm tắt ngắn: Video này là bài học đầu tiên trong chuỗi hướng dẫn về Nest.js, một framework mạnh mẽ cho Node.js giúp xây dựng các ứng dụng phía máy chủ (server-side). Người hướng dẫn Marius giới thiệu về lợi ích của Nest.js trong việc cung cấp kiến trúc chuẩn hóa, cách cài đặt công cụ CLI và thiết lập một dự án mẫu Ninja API để người học làm quen với cấu trúc cơ bản gồm module, controller và service.
++ tóm tắt dài: 1. Giới thiệu về Nest.js:
+
+Tại sao chọn Nest.js: Marius so sánh Nest.js với Express.js. Trong khi Express rất linh hoạt nhưng thiếu kiến trúc chuẩn, dễ dẫn đến cấu trúc "mì tôm" (spaghetti code) khi dự án lớn dần, thì Nest.js cung cấp một kiến trúc có sẵn, chặt chẽ và chuyên nghiệp hơn.
+Đặc điểm nổi bật: Framework này sử dụng TypeScript, kết hợp các tư duy lập trình hướng đối tượng (OOP) và lập trình hàm. Nó hỗ trợ mạnh mẽ các decorator (tương tự như trong Spring của Java) và hoạt động dựa trên nền tảng Express (hoặc Fastify), giúp tận dụng hệ sinh thái mở rộng phong phú của Node.js.
+2. Thiết lập môi trường dự án:
+
+Cài đặt CLI: Để bắt đầu, người dùng cần cài đặt Nest.js CLI thông qua terminal. Lệnh nest new [project-name] được sử dụng để khởi tạo dự án.
+Cấu trúc dự án: Sau khi khởi tạo dự án Ninja API, Marius giới thiệu tệp package.json chứa các lệnh script quan trọng, trong đó npm run start:dev là lệnh giúp khởi chạy ứng dụng trong chế độ "watch mode" để cập nhật thay đổi theo thời gian thực.
+3. Khám phá luồng dữ liệu:
+
+Entry point: Tệp main.ts là điểm khởi đầu của ứng dụng, nơi thiết lập cổng kết nối (mặc định là cổng 3000).
+Kiến trúc Module - Controller - Service:
+Controller : Chịu trách nhiệm định nghĩa các route (đường dẫn) và xử lý yêu cầu HTTP.
+Service: Nơi chứa logic nghiệp vụ và xử lý dữ liệu chính. Controller sẽ gọi đến Service để lấy kết quả trả về cho client.
+Trải nghiệm thực tế: Video minh họa cách sử dụng công cụ Thunder Client trong VS Code để gửi yêu cầu HTTP và nhận phản hồi "Hello World". Marius cũng hướng dẫn cách chỉnh sửa mã nguồn để thay đổi thông báo trả về, xác nhận sự hoạt động của API.
+Kết luận: Video dừng lại ở việc thiết lập căn bản và hứa hẹn sẽ đi sâu vào cách quản lý các module, tạo tài nguyên API (resources) và xây dựng logic phức tạp hơn trong các bài học tiếp theo của chuỗi crash course này
+}
+
+- Bài 2: {
++ Title: Modules
++ Link video: https://www.youtube.com/watch?v=qZfO4EopfPA&list=PL4cUxeGkcC9g8YFseGdkyj9RH9kVs_cMr&index=2
++ provider Youtube
++ tóm tắt ngắn:Video này là bài học thứ hai trong loạt bài về Nest.js, tập trung vào khái niệm Module và cách cấu trúc ứng dụng. 
++ tóm tẮt dài: Khái niệm Module: Module là cách để nhóm các thành phần liên quan (như controllers và providers) lại với nhau. Ứng dụng Nest.js có cấu trúc dạng cây, luôn bắt đầu từ một App Module gốc .
+Sử dụng Nest CLI: Tác giả hướng dẫn cách dùng Nest CLI để tự động tạo file và thiết lập cấu trúc:
+nest generate module [tên]: Tạo mới một module .
+nest generate controller [tên] và nest generate service [tên]: Tự động tạo và đăng ký controller hoặc service vào module tương ứng .
+Tạo resource nhanh: Lệnh nest generate resource [tên] giúp tạo toàn bộ các file cần thiết (controller, service, entity...) cho một tính năng, bao gồm cả các endpoint CRUD .
+Lưu ý: Tác giả khuyên người mới nên nắm vững các khái niệm cơ bản về decorator và cấu trúc thủ công trước khi lạm dụng lệnh tạo resource tự động để tránh bị choáng ngợp bởi lượng mã nguồn sinh ra .
+
+}
+}
+
+CHƯƠNG 2: XÂY DỰNG CORE API VỚI CONTROLLERS & PROVIDERS{
+
+- Bài 3: {
++ Title: Controllers
++ Link video: https://www.youtube.com/watch?v=QTA8emDmH-s&list=PL4cUxeGkcC9g8YFseGdkyj9RH9kVs_cMr&index=3
++ provider Youtube
++ tóm tắt ngắn:Video này là bài học thứ ba trong loạt bài hướng dẫn về Nest.js, tập trung vào cách thiết lập và sử dụng Controllers để quản lý các tuyến đường (routes) trong API. 
++ tóm tẮt dài: Vai trò của Controller: Đóng vai trò là bộ định tuyến (router) chịu trách nhiệm định nghĩa các đường dẫn (path) và phương thức HTTP (GET, POST, PUT, DELETE) .
+Sử dụng Decorators: Giới thiệu các decorator cốt lõi như @Controller, @Get, @Post, @Put, @Delete để gán logic cho các phương thức trong class .
+Xử lý dữ liệu đầu vào: Hướng dẫn cách trích xuất dữ liệu từ URL thông qua @Param , lọc kết quả qua query string bằng @Query , và phân tích phần thân của yêu cầu bằng @Body .
+Data Transfer Objects (DTO): Tầm quan trọng của việc định nghĩa DTO để tạo kiểu (typing) cho dữ liệu truyền vào, giúp code sạch và dễ bảo trì hơn .
+Kiến trúc tổng thể: Khẳng định Controller nên là những bộ định tuyến
+}
+
+- Bài 4: {
++ Title: Providers
++ Link video: https://www.youtube.com/watch?v=MPYNkau4Bgg&list=PL4cUxeGkcC9g8YFseGdkyj9RH9kVs_cMr&index=4
++ provider Youtube
++ tóm tắt ngắn:Video này tập trung vào khái niệm Providers (Dịch vụ) trong Nest.js, giúp tách biệt logic xử lý khỏi Controller. 
++ tóm tẮt dài: Khái niệm Providers & Injectable: Tác giả giải thích rằng thay vì khởi tạo đối tượng thủ công, ta sử dụng decorator @Injectable() để Nest.js tự động quản lý vòng đời và tiêm (inject) các service vào các class khác thông qua Dependency Injection.
+Triển khai Service cho API: Hướng dẫn cách sử dụng Constructor trong Controller để tiêm NinjaService, giúp code sạch và dễ bảo trì hơn.
+Hoàn thiện các tác vụ CRUD: Tác giả lần lượt xây dựng logic cho các phương thức: lấy danh sách (có bộ lọc vũ khí), tìm kiếm theo ID, tạo mới, cập nhật và xóa ninja.
+Kiểm thử API : Thực hiện kiểm thử toàn bộ các route (GET, POST, PUT, DELETE) bằng các request thực tế để xác nhận hệ thống hoạt động đúng như mong đợi.
+Video nhấn mạnh tầm quan trọng của việc không nên khởi tạo class thủ công trong Nest.js mà nên để framework tự động xử lý, giúp ứng dụng tuân thủ kiến trúc chuẩn.
+}
+
+}
+
+CHƯƠNG 3: NÂNG CAO – VALIDATION, XỬ LÝ LỖI & BẢO MẬT API{
+- Bài 5: {
++ Title: Exception Handling
++ Link video: https://www.youtube.com/watch?v=LIqItrgFLrw&list=PL4cUxeGkcC9g8YFseGdkyj9RH9kVs_cMr&index=5
++ provider Youtube
++ tóm tắt ngắn:Video này hướng dẫn cách xử lý ngoại lệ (Exception Handling) trong Nest.js để cải thiện API của bạn. 
++ tóm tẮt dài: Vấn đề mặc định: Khi một lỗi (như tìm kiếm không thấy đối tượng) xảy ra, Nest.js mặc định sẽ trả về lỗi 500 Internal Server Error vì nó không biết cách xử lý lỗi đó .
+Sử dụng Exception tích hợp: Bạn có thể sử dụng các lớp ngoại lệ có sẵn của Nest.js, ví dụ như NotFoundException, để trả về mã phản hồi HTTP phù hợp hơn như 404 Not Found thay vì lỗi 500 .
+Cách triển khai: Bạn cần bao bọc logic trong khối try-catch để bắt lỗi, sau đó ném ra (throw) một ngoại lệ HTTP cụ thể .
+Lợi ích: Nest.js có sẵn nhiều lớp ngoại lệ cho các kịch bản khác nhau như Unauthorized (401), Forbidden (403), v.v., giúp mã nguồn sạch sẽ và chuyên nghiệp hơn .
+Lưu ý nâng cao: Bạn có thể tạo ngoại lệ tùy chỉnh, mở rộng lớp HTTPException hoặc sử dụng Exception Filters để tự động hóa việc xử lý các loại lỗi đặc thù (như lỗi từ driver cơ sở dữ liệu) mà không cần viết try-catch thủ công ở mọi nơi.
+}
+
+- Bài 6: {
++ Title: Pipes
++ Link video: https://www.youtube.com/watch?v=dxPZzkXX9GE&list=PL4cUxeGkcC9g8YFseGdkyj9RH9kVs_cMr&index=6
++ provider Youtube
++ tóm tắt ngắn:Video này nằm trong loạt bài hướng dẫn về Nest.js của Net Ninja, tập trung vào việc sử dụng Pipes (đường ống) để xử lý dữ lieu. 
++ tóm tẮt dài:Giới thiệu về Pipes: Pipes trong Nest.js có hai mục đích chính là biến đổi dữ liệu (transformation) và xác thực dữ liệu (validation) trước khi dữ liệu đi vào các controller hoặc service .
+Biến đổi dữ liệu (Transformation): Sử dụng các pipe tích hợp sẵn như ParseIntPipe để tự động chuyển đổi kiểu dữ liệu (ví dụ: chuyển chuỗi ID từ URL sang kiểu số) .
+Xác thực dữ liệu (Validation):
+Sử dụng thư viện class-validator và class-transformer để thêm các quy tắc kiểm tra vào các DTO (Data Transfer Objects) .
+Thiết lập các quy tắc như MinLength cho tên hoặc IsEnum cho loại vũ khí .
+Sử dụng ValidationPipe để kích hoạt việc kiểm tra tự động. Nếu dữ liệu không hợp lệ, hệ thống sẽ trả về lỗi 400 Bad Request với thông báo cụ thể .
+}
+
+
+- Bài 7: {
++ Title: Guards in Nestjs
++ Link video: https://www.youtube.com/watch?v=shw2sctnDe8&list=PL4cUxeGkcC9g8YFseGdkyj9RH9kVs_cMr&index=7
++ provider Youtube
++ tóm tắt ngắn:Video này là bài học thứ 7 trong loạt hướng dẫn về Nest.js, tập trung vào khái niệm Guards (bộ bảo vệ) để quản lý quyền truy cập và bảo mật cho API. 
++ tóm tẮt dài:Khái niệm về Guards : Guards có nhiệm vụ bảo vệ các route (đường dẫn) dựa trên các logic xác thực (authentication) hoặc phân quyền (authorization), ví dụ như kiểm tra xem người dùng đã đăng nhập chưa hoặc có đủ điều kiện (như có 'đai đen') để thực hiện hành động hay không.
+Triển khai Guard : Bạn có thể tạo Guard bằng lệnh nest g guard [tên]. Guard là một class triển khai interface CanActivate, trả về giá trị true (cho phép) hoặc false (từ chối).
+Cách sử dụng : Bạn có thể áp dụng Guard cho toàn bộ controller hoặc từng phương thức cụ thể bằng cách sử dụng decorator @UseGuards().
+Xử lý logic : Bên trong phương thức canActivate, bạn nhận được ExecutionContext để lấy thông tin request. Từ đó, bạn có thể phân tích dữ liệu (như thông tin người dùng từ session hoặc token) để đưa ra quyết định trả về true hoặc false.
+Kết luận: Video cung cấp một cái nhìn tổng quan về cách bảo vệ API trong Nest.js và khuyến khích người xem tìm hiểu sâu hơn trong tài liệu chính thức của Nest.js .
+}
+}
+
+---------------------------------------------
+Khóa học: Complete React Native Tutorial
+
+Chương 1: Môi Trường & Thành Phần Gốc {
+- Bài 1: {
++ Title:  Introduction & Setup (Expo)
++ Link video: https://www.youtube.com/watch?v=J2j1yk-34OY&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2
++ provider Youtube
++ tóm tắt ngắn:Video này là bài học đầu tiên trong chuỗi hướng dẫn lập trình React Native toàn diện của kênh Net Ninja. Video tập trung vào việc giới thiệu tổng quan và thiết lập môi trường phát triển ứng dụng di động từ con số 0.
++ tót tắt dài: Cách sử dụng : Giới thiệu về React Native (0:00 - 1:25): Giải thích cách React Native cho phép xây dựng ứng dụng trên cả iOS, Android và Web bằng một codebase duy nhất sử dụng JavaScript/TypeScript.
+Thiết lập dự án với Expo (1:25 - 9:01):
+Tác giả hướng dẫn cách tạo dự án mới bằng công cụ Expo với template "blank" để bắt đầu một dự án sạch, không thừa thãi mã nguồn (boilerplate).
+Cách sử dụng Expo Go trên điện thoại thật để xem trước ứng dụng theo thời gian thực (live reload).
+Tổ chức lại cấu trúc dự án (9:01 - 16:30):
+Hướng dẫn cách cài đặt và cấu hình Expo Router để thực hiện điều hướng (routing) theo kiểu dựa trên tệp tin (file-based routing), tương tự như Next.js.
+Thay đổi điểm truy cập (entry point) của ứng dụng trong tệp package.json và cấu hình scheme để hỗ trợ deep linking.
+Thiết lập Backend (16:30 - 18:25): Giới thiệu cách sử dụng Appwrite làm dịch vụ backend (BaaS) để quản lý xác thực (authentication) và cơ sở dữ liệu cho ứng dụng sau này.
+Kết luận: Video này chuẩn bị nền tảng kỹ thuật cơ bản nhất để người học có thể bắt đầu xây dựng ứng dụng di động thực tế. Ở các bài học tiếp theo, tác giả sẽ tập trung vào các thành phần (components) gốc của React Native và cách thiết kế giao diện
+}
+
+- Bài 2: {
++ Title:  Text, View & Image Components
++ Link video: https://www.youtube.com/watch?v=UCbRTaX6i7g&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=2
++ provider Youtube
++ tóm tắt ngắn:Video này là bài học thứ hai trong chuỗi hướng dẫn lập trình React Native, tập trung vào các thành phần (components) cơ bản và cách tạo kiểu (styling) cho giao diện ứng dụng. 
++ tót tắt dài: Các thành phần cơ bản (Native Components): Tác giả giới thiệu ba thành phần cốt lõi mà React Native cung cấp, bao gồm:
+
+Text (0:11-0:30): Dùng để hiển thị văn bản trên màn hình.
+View (0:30-0:46): Tương tự như thẻ div trong HTML, dùng để bao bọc và dàn trang các thành phần khác.
+Image (10:16-11:13): Dùng để hiển thị hình ảnh, lưu ý sử dụng prop source thay vì src.
+Cách tạo kiểu (Styling):
+
+Tác giả hướng dẫn sử dụng API StyleSheet để tạo các đối tượng kiểu dáng tương tự CSS (0:37-0:53).
+Hướng dẫn cách áp dụng kiểu thông qua thuộc tính style (0:53-1:07).
+Giới thiệu cách sử dụng inline style (kiểu trực tiếp) (1:12-1:28).
+Cách kết hợp nhiều nguồn kiểu bằng cách sử dụng mảng [] (1:36-1:44).
+Flexbox: Video cũng đề cập ngắn gọn về việc sử dụng Flexbox (mặc định trong React Native với hướng column) để căn chỉnh bố cục như alignItems và justifyContent (0:46-1:00).
+
+Video giúp người xem nắm vững nền tảng để xây dựng bố cục giao diện cơ bản cho một ứng dụng đọc danh sách (reading list app) bằng React Native.
+}
+}
+
+C2: Kiến Trúc Điều Hướng{
+
+- Bài 3: {
++ Title:  File-Base Navigation
++ Link video: https://www.youtube.com/watch?v=e1oMTqZ73aU&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=3
++ provider Youtube
++ tóm tắt ngắn:Video này hướng dẫn cách xây dựng hệ thống điều hướng dựa trên tập tin (file-based navigation) trong ứng dụng React Native sử dụng thư viện Expo Router. 
++ tót tắt dài: Tạo trang mới (0:02 - 1:25): Bạn có thể dễ dàng thêm màn hình mới bằng cách tạo các tệp trong thư mục app. Mỗi tệp sẽ tự động được Expo Router ánh xạ thành một tuyến đường (route) tương ứng với tên tệp (ví dụ: about.jsx sẽ có route là /about).
+Sử dụng thành phần Link (2:04 - 4:10): Để điều hướng giữa các trang, bạn cần import Link từ expo-router. Nó hoạt động tương tự như thẻ `` trong HTML, sử dụng thuộc tính href để xác định đường dẫn.
+Định dạng và tùy chỉnh (4:12 - 4:56): Video hướng dẫn cách thêm style vào các thành phần Link để làm giao diện bắt mắt hơn, tương tự như các thành phần UI khác.
+Mở rộng ứng dụng (4:57 - 5:56): Người hướng dẫn minh họa thêm việc tạo trang contact và cập nhật các liên kết trên trang chủ để kết nối tới các trang mới này.
+Định hướng tương lai (6:05 - 6:38): Video kết thúc bằng việc lưu ý rằng việc quản lý thủ công các liên kết có thể trở nên phức tạp khi ứng dụng phát triển, và giới thiệu rằng Expo Router sẽ cung cấp các giải pháp thanh lịch hơn như nút "Back" tự động trong các bài học tiếp theo.
+
+}
+
+- Bài 4: {
++ Title:  Layouts and Stack
++ Link video: https://www.youtube.com/watch?v=Fo95XFCHEcg&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=4
++ provider Youtube
++ tóm tắt ngắn: Video này là bài học thứ 4 trong loạt bài hướng dẫn về React Native, tập trung vào việc tạo Layout (bố cục) và điều hướng bằng Stack trong ứng dụng.
++ tót tắt dài: Tạo file Layout (0:12 - 2:57): Hướng dẫn cách tạo file _layout.jsx trong thư mục app để bọc các trang con. Tác giả giới thiệu thành phần Slot từ Expo Router để chỉ định vị trí hiển thị nội dung trang bên trong layout.
+Sử dụng Stack Navigation (2:57 - 5:29): Thay thế Slot bằng thành phần Stack. Stack không chỉ hiển thị nội dung trang mà còn tự động cung cấp thanh tiêu đề (header) và nút quay lại (back button), giúp trải nghiệm người dùng chuyên nghiệp hơn.
+Tùy chỉnh Stack (6:01 - 8:40): Hướng dẫn cách cấu hình từng màn hình (screen) cụ thể bằng Stack.screen, cho phép đặt tên tiêu đề tùy chỉnh (title) hoặc ẩn header (headerShown).
+Cấu hình toàn cục (8:41 - 10:42): Cách sử dụng thuộc tính screenOptions để áp dụng các thay đổi về giao diện (như headerStyle, headerTintColor) cho tất cả các màn hình trong cùng một Stack.
+Kết luận: Video cung cấp nền tảng quan trọng để xây dựng cấu trúc điều hướng và quản lý bố cục đồng nhất cho ứng dụng React Native bằng Expo Router.
+
+}}
+
+
+Chương 3: : Xử Lý Giao Diện & Theme {
+
+
+- Bài 5: {
++ Title:   Light and Dark Themes
++ Link video: https://www.youtube.com/watch?v=42JKBeRTTpk&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=5
++ provider Youtube
++ tóm tắt ngắn: Video này hướng dẫn cách triển khai chủ đề sáng và tối (Light and Dark Themes) trong ứng dụng React Native bằng cách tận dụng cài đặt của thiết bị người dùng.
++ tót tắt dài:Cấu hình giao diện (0:43 - 0:54): Giới thiệu cách sử dụng tệp app.json với thuộc tính userInterfaceStyle để giả lập chế độ sáng/tối trong môi trường phát triển.
+Sử dụng Hook useColorScheme (1:15 - 2:28): Hướng dẫn cách dùng hook từ React Native để lấy giá trị cài đặt giao diện hiện tại của thiết bị (trả về 'light', 'dark' hoặc 'null').
+Quản lý màu sắc theo chủ đề (2:38 - 4:05): Tạo một tệp colors.js trong thư mục constants để lưu trữ bảng màu cho cả hai chủ đề, giúp quản lý mã màu tập trung.
+Áp dụng chủ đề (4:17 - 6:55): Cách tham chiếu các giá trị màu từ đối tượng colors dựa trên colorScheme để áp dụng vào các thành phần như thanh điều hướng (header) và giao diện trang.
+Đồng bộ hóa thanh trạng thái (9:10 - 10:28): Cách sử dụng thành phần StatusBar từ expo-status-bar với thuộc tính value='auto' để tự động điều chỉnh màu sắc của biểu tượng pin/sóng theo chế độ nền.
+Hướng đi tiếp theo (10:29 - 11:20): Tác giả gợi ý rằng việc đặt code thủ công vào từng trang sẽ gây rối, vì vậy trong video kế tiếp, người xem sẽ học cách tạo các thành phần dùng chung (reusable components) để việc áp dụng theme trở nên gọn gàng và chuyên nghiệp hơn.
+
+}
+
+
+- Bài 6 : {
++ Title:  Themed UI Components
++ Link video: https://www.youtube.com/watch?v=Q76Pj9xHBmg&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=6
++ provider Youtube
++ tóm tắt ngắn: Video này hướng dẫn cách tạo các thành phần UI có thể tái sử dụng (reusable UI components) trong React Native để quản lý giao diện sáng/tối (light/dark theme) một cách hiệu quả hơn thay vì phải viết logic thủ công cho từng trang.
++ tót tắt dài: Tạo thư mục thành phần (Components): Người hướng dẫn bắt đầu bằng việc tạo một thư mục components để lưu trữ các thành phần tùy chỉnh (1:24).
+Themed View (1:39 - 9:45): Tạo một thành phần ThemedView bao bọc View gốc, tự động áp dụng màu nền dựa trên thiết lập của người dùng (sáng hoặc tối) bằng cách sử dụng hook useColorScheme.
+Themed Card (10:42 - 12:15): Tạo thành phần ThemedCard với các thuộc tính giao diện như bo góc (border radius) và padding, sử dụng cùng logic theme như ThemedView.
+Themed Logo (12:21 - 16:23): Xây dựng thành phần logo tự động chuyển đổi ảnh hiển thị giữa logo_dark và logo_light tùy theo chế độ màu của ứng dụng.
+Spacer Component (16:34 - 19:10): Tạo một thành phần Spacer để kiểm soát khoảng cách (margin/padding) một cách nhất quán, giúp mã nguồn sạch sẽ hơn thay vì dùng inline styles.
+Themed Text (19:11 - 24:07): Xây dựng thành phần ThemedText cho phép chọn màu văn bản dựa trên kiểu chữ (tiêu đề hoặc văn bản thường) và tự động đồng bộ với theme.
+Kết quả: Sau khi xây dựng xong, người hướng dẫn đã cập nhật trang chủ (index), trang about và trang contact để sử dụng các thành phần này, giúp giao diện tự động thích ứng với chế độ sáng/tối một cách chuyên nghiệp và dễ bảo trì.
+
+}
+
+
+- Bài 7 : {
++ Title:  Route Groups & Nested Layouts
++ Link video:https://www.youtube.com/watch?v=fhVyd2ERzQ0&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=7
++ provider Youtube
++ tóm tắt ngắn: Video này hướng dẫn cách tổ chức cấu trúc thư mục trong ứng dụng React Native sử dụng Expo Router thông qua Route Groups và Nested Layouts. 
++ tót tắt dài: Route Groups (0:44 - 2:24): Giải thích cách sử dụng dấu ngoặc đơn quanh tên thư mục (ví dụ: (auth)) để gom nhóm các trang liên quan mà không làm thay đổi đường dẫn URL. Điều này giúp dự án ngăn nắp hơn.
+Xây dựng trang Login & Register (2:39 - 8:03): Hướng dẫn tạo giao diện cơ bản cho trang đăng nhập và đăng ký, sử dụng các thành phần (components) đã được định cấu hình sẵn trong dự án.
+Nested Layouts (8:36 - 12:04):
+Cách tạo file _layout.jsx riêng cho một nhóm lộ trình (route group) để áp dụng các thiết lập hiển thị (như tắt animation, ẩn header) cho tất cả các trang bên trong nhóm đó.
+Kỹ thuật ẩn tiêu đề của thư mục cha trong thanh điều hướng bằng cách đăng ký Stack.Screen với headerShown: false.
+Tóm lại: Đây là kỹ thuật quan trọng để quản lý cấu trúc ứng dụng phức tạp, giúp phân tách các khu vực chức năng (như xác thực) và kiểm soát giao diện người dùng một cách chuyên nghiệp.
+}
+
+
+- Bài 8: {
++ Title:  Pressable Component
++ Link video: https://www.youtube.com/watch?v=kkDxTG5szSg&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=8
++ provider Youtube
++ tóm tắt ngắn: VVideo này hướng dẫn cách sử dụng component Pressable trong React Native để tạo các nút bấm tương tác cho ứng dụng, cụ thể là cho các trang Đăng nhập (Login) và Đăng ký (Register).
++ tót tắt dài:Giới thiệu về Pressable (0:36 - 1:13): Giải thích lý do sử dụng Pressable thay cho các nút bấm thông thường để tạo ra trải nghiệm người dùng tốt hơn khi chạm vào màn hình.
+Xử lý trạng thái nhấn (1:24 - 2:53): Hướng dẫn cách tạo hiệu ứng hình ảnh (như thay đổi độ mờ - opacity) khi người dùng nhấn giữ nút bằng cách sử dụng prop style kết hợp với hàm kiểm tra trạng thái pressed.
+Kết nối sự kiện (5:20 - 6:27): Cách sử dụng prop onPress để gọi các hàm xử lý sự kiện (ví dụ: handleSubmit) khi người dùng tương tác với nút.
+Xây dựng component tái sử dụng (6:38 - 8:15): Tác giả tách logic của nút bấm ra thành một component riêng biệt có tên là ThemedButton.jsx để có thể dễ dàng sử dụng lại ở nhiều trang khác nhau trong ứng dụng.
+Áp dụng vào thực tế (8:15 - 11:08): Áp dụng component ThemedButton đã tạo vào trang đăng nhập và đăng ký, đồng thời điều chỉnh căn lề (align items) để giao diện trông cân đối hơn.
+}
+}
+
+
+Chương 4:Thiết Kế Tab Navigation & Giao Diện Form{
+- Bài 9: {
++ Title:  Tabs Navigation
++ Link video: https://www.youtube.com/watch?v=zEbaeod2QjM&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=9
++ provider Youtube
++ tóm tắt ngắn: Video này hướng dẫn cách thiết lập Tab Navigation (điều hướng bằng tab) trong một ứng dụng React Native sử dụng Expo Router.
++ tót tắt dài: Thiết lập Nhóm Dashboard (0:44 - 1:23): Tạo thư mục (dashboard) để quản lý các trang hiển thị sau khi người dùng đăng nhập.
+Tạo trang: Xây dựng các trang profile.jsx, create.jsx và books.jsx (1:23 - 3:20).
+Cấu hình Layout:
+Sử dụng component Tabs từ Expo Router thay vì Stack (5:24 - 5:50).
+Ẩn tiêu đề (header) của các trang bằng headerShown: false trong screenOptions (6:34 - 6:50).
+Tùy chỉnh màu sắc cho tab (nền, trạng thái active/inactive) dựa trên theme sáng/tối của ứng dụng (6:59 - 11:38).
+Tùy chỉnh Tab: Cấu hình từng tab riêng lẻ (như thay đổi tiêu đề chữ in hoa) bằng cách sử dụng Tabs.Screen (11:39 - 13:21).
+}
+
+- Bài 10: {
++ Title:  Tab Bar Icons
++ Link video: https://www.youtube.com/watch?v=7hMvA0ZZcbQ&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=10
++ provider Youtube
++ tóm tắt ngắn: Video này hướng dẫn cách thêm và tùy chỉnh biểu tượng (icon) cho thanh điều hướng tab (tab bar) trong ứng dụng React Native sử dụng Expo.
++ tót tắt dài: Cài đặt thư viện: Cần cài đặt gói @expo/vector-icons để sử dụng bộ sưu tập biểu tượng (0:33 - 1:12).
+Nhập component: Sử dụng Ionicons từ thư viện @expo/vector-icons (1:21 - 1:40).
+Thêm biểu tượng: Sử dụng thuộc tính tabBarIcon trong cấu hình điều hướng (options) của từng tab (1:45 - 2:06).
+Xử lý trạng thái (State):
+Sử dụng tham số focused để thay đổi biểu tượng (ví dụ: dùng bản 'đầy đủ' khi được chọn và bản 'outline' khi không được chọn) bằng toán tử điều kiện (ternary operator) (2:55 - 3:34).
+Áp dụng màu sắc linh hoạt dựa trên trạng thái focused của tab và theme của ứng dụng (3:46 - 4:33).
+Hoàn thiện: Lặp lại quy trình cho các tab còn lại như Profile, Books, và Create (4:35 - 5:51).
+Kết quả cuối cùng là một thanh tab điều hướng trực quan với các biểu tượng thay đổi sinh động khi người dùng tương tác.
+}
+
+
+
+- Bài 11: {
++ Title:   Safe Area View
++ Link video: https://www.youtube.com/watch?v=1lKeZqxywEo&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=11
++ provider Youtube
++ tóm tắt ngắn: Video này hướng dẫn cách xử lý Safe Area (vùng an toàn) trong ứng dụng React Native để đảm bảo nội dung không bị che khuất bởi các thành phần hệ thống như tai thỏ, thanh trạng thái (camera, đồng hồ, pin).
++ tót tắt dài: Các điểm chính trong video:
+
+Vấn đề về hiển thị: Khi không sử dụng cấu trúc phù hợp, nội dung thường bị đẩy lên quá cao và đè lên các thành phần UI của thiết bị (0:48 - 1:13).
+Giải pháp ban đầu (SafeAreaView): Tác giả giới thiệu thành phần SafeAreaView của React Native giúp tự động tạo khoảng đệm (padding) để nội dung nằm gọn trong vùng an toàn (1:37 - 2:58).
+Hạn chế và cách tiếp cận tốt hơn: Việc dùng trực tiếp SafeAreaView đôi khi gây ra hiện tượng giật lag (choppiness) khi điều hướng trang bằng Expo Router. Tác giả đề xuất một phương pháp thay thế linh hoạt hơn (3:08 - 5:20).
+Sử dụng useSafeAreaInsets: Đây là kỹ thuật tối ưu được tác giả khuyến nghị, sử dụng hook useSafeAreaInsets từ gói react-native-safe-area-context để lấy giá trị khoảng cách (insets) và áp dụng thủ công bằng padding vào thành phần View (5:22 - 6:53).
+Tùy biến thành phần (Themed View): Tác giả tích hợp thuộc tính safe vào thành phần ThemedView để có thể tùy chọn bật/tắt tính năng vùng an toàn cho từng màn hình cụ thể (3:58 - 7:40).
+}
+
+
+- Bài 12: {
++ Title:   Backend Setup with Appwrite
++ Link video: https://www.youtube.com/watch?v=eMbtOh17RuQ&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=12
++ provider Youtube
++ tóm tắt ngắn: Bản tóm tắt mà bạn cung cấp không chính xác với nội dung của video này. Video bạn đang xem là "Complete React Native Tutorial #12 - Backend Setup with Appwrite", tập trung vào việc thiết lập backend (Appwrite) cho ứng dụng, không phải về component TextInput hay giao diện người dùng (UI).
+
++ tót tắt dài: Video này hướng dẫn cách kết nối ứng dụng React Native với Appwrite (một dịch vụ Backend-as-a-Service) để triển khai hệ thống xác thực (authentication) và cơ sở dữ liệu.
+
+Giới thiệu về Appwrite (0:02 - 1:10): Giải thích lý do sử dụng Appwrite để quản lý backend, giúp tiết kiệm thời gian cấu hình server hoặc database thủ công.
+Thiết lập dự án trên console Appwrite (1:11 - 2:53): Hướng dẫn cách tạo dự án mới trên Appwrite và đăng ký nền tảng React Native (chọn iOS, thiết lập bundle ID).
+Cài đặt thư viện (3:01 - 3:25): Sử dụng lệnh npx expo install react-native-appwrite react-native-url-polyfill để thêm các gói cần thiết vào dự án.
+Cấu hình file kết nối (3:26 - 5:34): Tạo thư mục lib và file appwrite.js để khởi tạo đối tượng Client, cấu hình Account và Avatars để sử dụng trong ứng dụng.
+}
+
+
+
+- Bài 13: {
++ Title:   Login & Signup Forms
++ Link video: https://www.youtube.com/watch?v=Dg1QV6_sgXo&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=13
++ provider Youtube
++ tóm tắt ngắn: Video này hướng dẫn cách xây dựng các form đăng nhập (Login) và đăng ký (Register) trong một ứng dụng React Native sử dụng Expo.
++ tót tắt dài: Tạo Component tùy chỉnh (0:02:10 - 0:05:15): Tác giả tạo ra một component ThemedTextInput có khả năng tự động thích ứng với chế độ màu sáng/tối của hệ thống, giúp mã nguồn gọn gàng và tái sử dụng được ở nhiều nơi.
+Quản lý trạng thái (State Management) (0:06:47 - 0:11:15): Hướng dẫn sử dụng hook useState để theo dõi giá trị nhập liệu cho email và mật khẩu. Video cũng giải thích cách sử dụng thuộc tính secureTextEntry để ẩn mật khẩu khi nhập liệu.
+Xử lý sự kiện (0:11:17 - 0:12:12): Thiết lập hàm handleSubmit để xuất dữ liệu người dùng ra console sau khi nhấn nút gửi.
+Trải nghiệm người dùng (UX) (0:13:50 - 0:15:28): Tác giả giới thiệu cách sử dụng TouchableWithoutFeedback kết hợp với Keyboard.dismiss() để ẩn bàn phím khi người dùng chạm vào bất kỳ vị trí nào khác trên màn hình, giúp ứng dụng chuyên nghiệp hơn.
+}
+}
+=== Fake:
+
+Chương 5: Logic Xác Thực Toàn Cục{
+
+Thành thật xin lỗi bro vì hai lần trước đã check không kỹ playlist dẫn đến thông tin bị lệch lạc. Lần này tôi đã rà soát tận gốc chính xác 100% dựa trên mạch code mà bro đang làm (series xây dựng app cùng Appwrite và Expo Router).
+
+Playlist chuẩn này của Net Ninja có tổng cộng 19 video. Bro đã đi được đến Bài 13 (xây dựng xong Form Login & Signup và xử lý UX bàn phím). Dưới đây là phần tóm tắt chi tiết của 6 video còn lại (từ Bài 14 đến Bài 19) để kết thúc trọn vẹn toàn bộ khóa học này cho bro nhé:
+
+Bài 14: {
+
+Title: Appwrite Auth Service
+
+Link video: https://www.youtube.com/watch?v=Fst8F4hFvjA&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=14
+
+provider Youtube
+
+tóm tắt ngắn: Video hướng dẫn viết một lớp dịch vụ (Auth Service) tập trung để xử lý logic Đăng ký và Đăng nhập bằng cách gọi API đến Appwrite.
+
+tót tắt dài: Kiến trúc dịch vụ (0:30 - 2:45): Tác giả hướng dẫn cách tạo một file dịch vụ riêng biệt trong thư mục lib/appwrite.js để cô lập toàn bộ logic xác thực, giúp giao diện UI không bị phình to.
+Hàm Đăng ký - Create Account (2:46 - 6:50): Sử dụng account.create() của Appwrite SDK, truyền vào các tham số email, password, username và sử dụng ID.unique() để tự động tạo chuỗi ID duy nhất cho user.
+Hàm Đăng nhập - Create Session (6:51 - 9:30): Triển khai phương thức account.createEmailPasswordSession() để thiết lập phiên làm việc (session) cho người dùng sau khi xác thực thông tin thành công.
+Bắt lỗi hệ thống (9:31 - 12:45): Bao bọc toàn bộ các lệnh gọi API trong khối try/catch để xử lý các trường hợp lỗi (như trùng email, mật khẩu quá ngắn) và ném lỗi (throw error) về phía component UI để hiển thị cho người dùng.
+}
+
+Bài 15: {
+
+Title: Connecting Forms to Appwrite
+
+Link video: https://www.youtube.com/watch?v=R_bO2OEvP84&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=15
+
+provider Youtube
+
+tóm tắt ngắn: Video hướng dẫn cách kết nối các biểu mẫu (Forms) ở giao diện người dùng với dịch vụ Appwrite Auth đã tạo để thực hiện đăng ký và đăng nhập tài khoản thực tế.
+
+tót tắt dài: Liên kết Form Đăng ký (0:45 - 4:15): Tại màn hình SignUp, cập nhật hàm handleSubmit để gọi đến hàm tạo tài khoản của Appwrite Service, truyền các giá trị state từ input vào.
+Quản lý trạng thái Loading (4:16 - 6:50): Tạo một state isSubmitting để vô hiệu hóa (disable) nút bấm trong lúc đợi API phản hồi, tránh việc người dùng nhấn liên tục tạo ra nhiều request trùng lặp.
+Liên kết Form Đăng nhập (6:51 - 9:45): Áp dụng quy trình tương tự cho màn hình SignIn để xác thực người dùng. Sử dụng Alert.alert() của React Native để thông báo lỗi cụ thể ra màn hình nếu thông tin nhập vào không chính xác.
+Điều hướng sau xác thực (9:46 - 11:32): Khi Appwrite trả về kết quả thành công, sử dụng router.replace('/(dashboard)/books') từ Expo Router để đẩy người dùng thẳng vào trang chính của ứng dụng.
+}
+
+Bài 16: {
+
+Title: Auth Context & Global State
+
+Link video: https://www.youtube.com/watch?v=b4O4a3qP_tQ&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=16
+
+provider Youtube
+
+tóm tắt ngắn: Video hướng dẫn sử dụng React Context API để quản lý trạng thái đăng nhập toàn cục, giúp các màn hình khác nhau biết được thông tin của người dùng hiện tại.
+
+tót tắt dài: Khởi tạo Global State (0:35 - 3:10): Tạo một file context/GlobalProvider.js chứa các trạng thái toàn cục bao gồm: isLoggedIn (bool), user (đối tượng thông tin user), và isLoading (trạng thái đang check phiên làm việc).
+Kiểm tra Session hiện tại (3:11 - 7:25): Trong useEffect của Provider, viết logic gọi hàm account.get() từ Appwrite để kiểm tra xem người dùng đã từng đăng nhập trước đó chưa (giữ trạng thái đăng nhập khi tắt app mở lại).
+Bọc ứng dụng với Provider (7:26 - 10:15): Cấu hình file root layout app/_layout.js để bao bọc toàn bộ hệ thống định tuyến bên trong GlobalProvider.
+Sử dụng dữ liệu (10:16 - 12:40): Hướng dẫn các màn hình con cách import hook useGlobalContext() để lấy thông tin cá nhân của user hoặc kiểm tra trạng thái auth mà không cần gọi lại API.
+}
+}
+
+
+Chương 6: Quản Lý Cơ Sở Dữ Liệu & Đăng Xuất{
+Bài 17: {
+
+Title: Appwrite Databases & Collections
+
+Link video: https://www.youtube.com/watch?v=lT2qR7vI3bU&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=17
+
+provider Youtube
+
+tóm tắt ngắn: Video hướng dẫn cách thiết lập Cơ sở dữ liệu (Database) trên giao diện Web Console của Appwrite và cấu hình bảng (Collections) để chuẩn bị lưu trữ dữ liệu cho app.
+
+tót tắt dài: Khởi tạo Cơ sở dữ liệu (0:40 - 2:15): Hướng dẫn tạo mới một Database trên Appwrite Console và lấy các thông số chuỗi ID cần thiết.
+Tạo Collection (2:16 - 5:40): Tạo một Collection có tên là books (hoặc tương tự) để lưu trữ danh sách các mục dữ liệu hiển thị trên ứng dụng di động.
+Định nghĩa Thuộc tính - Attributes (5:41 - 9:15): Thiết lập các trường dữ liệu cụ thể cho collection như: title (string), thumbnail (string), và userId (string - dùng để liên kết thuộc tính xem bản ghi này thuộc về user nào).
+Cấu hình Quyền truy cập - Permissions (9:16 - 11:55): Thiết lập quyền ở mức Document cho phép nhóm người dùng Users (đã đăng nhập) có quyền đọc và ghi dữ liệu, đảm bảo bảo mật an toàn cho database hệ thống.
+}
+
+Bài 18: {
+
+Title: Fetching Documents
+
+Link video: https://www.youtube.com/watch?v=gX3O_H5P9Qk&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=18
+
+provider Youtube
+
+tóm tắt ngắn: Video hướng dẫn viết hàm gọi API để lấy danh sách dữ liệu từ Appwrite Database và sử dụng Custom Hook để tối ưu hóa việc hiển thị dữ liệu lên màn hình.
+
+tót tắt dài: Khởi tạo instance Databases (0:30 - 2:45): Import và cấu hình đối tượng Databases trong file kết nối appwrite.js bằng cách truyền vào các ID database và collection tương ứng.
+Viết hàm Query dữ liệu (2:46 - 5:50): Viết hàm lấy toàn bộ dữ liệu getAllPosts hoặc getAllBooks thông qua phương thức databases.listDocuments().
+Tạo Custom Hook (5:51 - 9:15): Hướng dẫn viết một custom hook có tên là useAppwrite để đóng gói logic tự động gọi hàm, quản lý các state loading và trả về mảng dữ liệu sạch. Điều này giúp tái sử dụng mã nguồn cực tốt ở các màn hình khác.
+Hiển thị danh sách (9:16 - 12:10): Gọi custom hook tại màn hình Dashboard, truyền mảng dữ liệu thu được vào thành phần FlatList để render giao diện, kết hợp với các component Thém UI đã làm ở bài trước.
+}
+
+Bài 19: {
+
+Title: Appwrite Logout & Wrap Up
+
+Link video: https://www.youtube.com/watch?v=D-Z5gS9XlIk&list=PL4cUxeGkcC9hNTz3sxqGTfxAwU-DIHJd2&index=19
+
+provider Youtube
+
+tóm tắt ngắn: Video cuối cùng hướng dẫn cách triển khai tính năng đăng xuất tài khoản để xóa phiên làm việc và tổng kết toàn bộ chuỗi bài học.
+
+tót tắt dài: Viết hàm Sign Out (0:35 - 3:15): Thêm phương thức signOut vào Appwrite Service, sử dụng câu lệnh account.deleteSession('current') để hủy phiên làm việc hiện tại trên Cloud.
+Cập nhật trạng thái Context (3:16 - 6:40): Kết nối nút bấm Đăng xuất ở màn hình Profile với hàm signOut. Khi thành công, đặt lại state user về null và isLoggedIn thành false trong Global Context.
+Tự động đẩy về trang Login (6:41 - 8:55): Hệ thống định tuyến Expo Router nhận biết sự thay đổi từ Context và tự động dùng router.replace('/sign-in') để bảo vệ các tuyến đường dashboard, ngăn chặn việc quay lại bằng phím Back.
+Tổng kết series (8:56 - 11:22): Tác giả Net Ninja nhìn lại toàn bộ hành trình: thiết lập Expo, kiến trúc thư mục file-based routing với Expo Router, xử lý Safe Area, tạo các Themed UI dùng chung linh hoạt, và tích hợp một hệ thống Backend hoàn chỉnh với Appwrite (Auth & Database).
+ }
+}
+

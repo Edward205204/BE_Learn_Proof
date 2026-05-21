@@ -6,6 +6,8 @@ import { PaymentStatus } from 'src/generated/prisma/client'
 import { VnpayReturnQueryType } from './payment.model'
 import { EnrollmentService } from '../enrollment/enrollment.service'
 import { CartService } from '../cart/cart.service'
+import { NotificationsService } from '../notifications/notifications.service'
+import envConfig from 'src/shared/config'
 
 @Injectable()
 export class PaymentService {
@@ -14,6 +16,7 @@ export class PaymentService {
     private readonly paymentRepo: PaymentRepo,
     private readonly enrollmentService: EnrollmentService,
     private readonly cartService: CartService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   @Transactional()
@@ -44,12 +47,42 @@ export class PaymentService {
     }
 
     const totalAmount = payableCourses.reduce((acc, course) => acc + course.price, 0)
-    if (totalAmount <= 0) {
-      throw new BadRequestException('Không thể tạo thanh toán cho khóa học miễn phí')
-    }
 
     await this.paymentRepo.createPendingPayments({ userId: body.userId, courses: payableCourses, txnRef })
-    const paymentUrl = this.vnpayInitService.createPayment({ amount: totalAmount, txnRef })
+
+    let paymentUrl: string
+    const courseIdsToEnroll = payableCourses.map((course) => course.id)
+
+    if (totalAmount <= 0) {
+      await this.paymentRepo.completeTransactionsByTxnRef({
+        txnRef,
+        responseCode: '00',
+        vnpTxnNo: 'FREE_COURSE',
+        payDate: new Date(),
+      })
+      await this.enrollmentService.grantEnrollmentsAfterPayment(body.userId, courseIdsToEnroll)
+      await this.cartService.removePurchasedItems(body.userId, courseIdsToEnroll)
+
+      this.notificationsService
+        .notify({
+          userId: body.userId,
+          type: 'PAYMENT',
+          title: 'Thanh toán thành công ✅',
+          message: `Bạn đã đăng ký thành công ${courseIdsToEnroll.length} khóa học. Hãy bắt đầu học ngay!`,
+          link: '/courses/list',
+        })
+        .catch(() => {})
+
+      const redirectUrl = new URL('/checkout/success', envConfig.FE_URL)
+      redirectUrl.searchParams.set('success', 'true')
+      redirectUrl.searchParams.set('message', 'Thanh toán thành công, đã kích hoạt khóa học')
+      redirectUrl.searchParams.set('txnRef', txnRef)
+      redirectUrl.searchParams.set('courseIds', courseIdsToEnroll.join(','))
+
+      paymentUrl = redirectUrl.toString()
+    } else {
+      paymentUrl = this.vnpayInitService.createPayment({ amount: totalAmount, txnRef })
+    }
 
     return {
       paymentUrl,
@@ -111,6 +144,18 @@ export class PaymentService {
     const userId = transactions[0].userId
     await this.enrollmentService.grantEnrollmentsAfterPayment(userId, courseIds)
     await this.cartService.removePurchasedItems(userId, courseIds)
+
+    // Gửi thông báo thanh toán thành công
+    this.notificationsService
+      .notify({
+        userId,
+        type: 'PAYMENT',
+        title: 'Thanh toán thành công ✅',
+        message: `Bạn đã đăng ký thành công ${courseIds.length} khóa học. Hãy bắt đầu học ngay!`,
+        link: '/courses/list',
+      })
+      .catch(() => {}) // fire-and-forget, không block response
+
     return {
       success: true,
       message: 'Thanh toán thành công, đã kích hoạt khóa học',

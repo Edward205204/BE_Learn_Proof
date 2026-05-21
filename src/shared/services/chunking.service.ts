@@ -34,9 +34,45 @@ export class ChunkingService {
   }
 
   buildContext(lesson: any): string {
-    const parts = [lesson.lessonDesc]
-    if (lesson.textContent) parts.push(lesson.textContent)
-    if (lesson.transcript) parts.push(lesson.transcript)
-    return parts.filter(Boolean).join('\n\n')
+    return this.buildContextSections(lesson)
+      .map((section) => section.content)
+      .join('\n\n')
+  }
+
+  buildContextSections(lesson: any): { source: string; label: string; content: string }[] {
+    const sections: { source: string; label: string; content: string }[] = []
+    const metadata = [
+      lesson.title ? `Title: ${lesson.title}` : null,
+      lesson.shortDesc ? `Short Description: ${lesson.shortDesc}` : null,
+      lesson.lessonDesc ? `Full Description: ${lesson.lessonDesc}` : null,
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+
+    if (metadata) {
+      sections.push({
+        source: 'lesson_metadata',
+        label: 'Lesson Metadata',
+        content: metadata,
+      })
+    }
+
+    if (lesson.textContent) {
+      sections.push({
+        source: 'lesson_content',
+        label: 'Lesson Content',
+        content: lesson.textContent,
+      })
+    }
+
+    if (lesson.transcript) {
+      sections.push({
+        source: 'transcript',
+        label: 'Transcript',
+        content: lesson.transcript,
+      })
+    }
+
+    return sections
   }
 }

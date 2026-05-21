@@ -37,6 +37,11 @@ export class LessonController {
     return this.lessonService.getLessonForLearner(lessonId, user.userId)
   }
 
+  @Get('ai-jobs/:jobId')
+  getAiJob(@Param('jobId') jobId: string, @ActiveUser() user: TokenPayload) {
+    return this.lessonService.getAiJob(jobId, user.userId)
+  }
+
   @Get(':lessonId')
   @ZodSerializerDto(LessonDetailResponseSchema)
   getLessonDetail(@Param('lessonId') lessonId: string) {
@@ -51,8 +56,8 @@ export class LessonController {
 
   @Patch(':lessonId')
   @ZodSerializerDto(LessonDetailResponseSchema)
-  updateLesson(@Param('lessonId') lessonId: string, @Body() body: UpdateLessonDto) {
-    return this.lessonService.updateLesson(lessonId, body)
+  updateLesson(@Param('lessonId') lessonId: string, @Body() body: UpdateLessonDto, @ActiveUser() user: TokenPayload) {
+    return this.lessonService.updateLesson(lessonId, body, user.userId)
   }
 
   @Delete(':lessonId')
@@ -71,7 +76,42 @@ export class LessonController {
   }
 
   @Post(':lessonId/ask')
-  askLesson(@Param('lessonId') lessonId: string, @ActiveUser() user: TokenPayload, @Body('question') question: string) {
-    return this.lessonService.askLesson(lessonId, user.userId, question)
+  askLesson(
+    @Param('lessonId') lessonId: string,
+    @ActiveUser() user: TokenPayload,
+    @Body('question') question: string,
+    @Body('language') language?: 'vi' | 'en',
+  ) {
+    return this.lessonService.askLesson(lessonId, user.userId, question, language)
+  }
+
+  @Post(':lessonId/ask-async')
+  askLessonAsync(
+    @Param('lessonId') lessonId: string,
+    @ActiveUser() user: TokenPayload,
+    @Body('question') question: string,
+    @Body('language') language?: 'vi' | 'en',
+  ) {
+    return this.lessonService.askLessonAsync(lessonId, user.userId, question, language)
+  }
+
+  @Post(':lessonId/generate-content')
+  generateContent(
+    @Param('lessonId') lessonId: string,
+    @ActiveUser() user: TokenPayload,
+    @Body('keywords') keywords?: string,
+    @Body('language') language?: 'vi' | 'en',
+  ) {
+    return this.lessonService.generateLessonContent(lessonId, user.userId, keywords, language)
+  }
+
+  @Post(':lessonId/generate-content-async')
+  generateContentAsync(
+    @Param('lessonId') lessonId: string,
+    @ActiveUser() user: TokenPayload,
+    @Body('keywords') keywords?: string,
+    @Body('language') language?: 'vi' | 'en',
+  ) {
+    return this.lessonService.generateLessonContentAsync(lessonId, user.userId, keywords, language)
   }
 }

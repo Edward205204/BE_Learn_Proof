@@ -28,9 +28,12 @@ import { VideoModule } from './modules/video/video.module'
 import { CertificateModule } from './modules/certificate/certificate.module'
 
 import { AiModule } from './modules/ai/ai.module'
+import { NotificationsModule } from './modules/notifications/notifications.module'
+import { QueueModule } from './shared/queue/queue.module'
 
 @Module({
   imports: [
+    QueueModule,
     AiModule,
     AuthModule,
     SharedModule,
@@ -63,6 +66,7 @@ import { AiModule } from './modules/ai/ai.module'
     DashboardModule,
     VideoModule,
     CertificateModule,
+    NotificationsModule,
   ],
 
   controllers: [],

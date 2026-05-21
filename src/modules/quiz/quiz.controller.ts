@@ -4,7 +4,14 @@ import { QuizCmsService } from './quiz-cms.service'
 import { QuizLearnerService } from './quiz-learner.service'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 import { TokenPayload } from 'src/shared/types/jwt.type'
-import { AddQuestionDto, AddAnswerDto, EditContentDto, ChooseCorrectAnswerDto, SubmitQuizDto } from './quiz.dto'
+import {
+  AddQuestionDto,
+  AddAnswerDto,
+  EditContentDto,
+  ChooseCorrectAnswerDto,
+  SubmitQuizDto,
+  UpdateDraftQuestionDto,
+} from './quiz.dto'
 import { ZodSerializerDto } from 'nestjs-zod'
 import {
   QuizBasicResponseSchema,
@@ -114,8 +121,12 @@ export class QuizController {
   // --- AI Quiz ---
 
   @Post('lessons/:id/generate-ai')
-  generateAiQuiz(@Param('id') lessonId: string, @ActiveUser() user: TokenPayload) {
-    return this.quizCmsService.generateAiQuiz(lessonId, user.userId)
+  generateAiQuiz(
+    @Param('id') lessonId: string,
+    @ActiveUser() user: TokenPayload,
+    @Body('language') language?: 'vi' | 'en',
+  ) {
+    return this.quizCmsService.generateAiQuiz(lessonId, user.userId, language)
   }
 
   @Get('lessons/:id/drafts')
@@ -128,9 +139,44 @@ export class QuizController {
     return this.quizCmsService.getDraftById(draftId, user.userId)
   }
 
+  @Get('lessons/:id/overview')
+  getLessonQuizOverview(@Param('id') lessonId: string, @ActiveUser() user: TokenPayload) {
+    return this.quizCmsService.getLessonQuizOverview(lessonId, user.userId)
+  }
+
   @Patch('drafts/:draftId/publish')
   publishDraft(@Param('draftId') draftId: string, @ActiveUser() user: TokenPayload) {
     return this.quizCmsService.publishDraft(draftId, user.userId)
+  }
+
+  @Patch('drafts/:draftId/questions/:questionIndex/accept')
+  acceptDraftQuestion(
+    @Param('draftId') draftId: string,
+    @Param('questionIndex') questionIndex: string,
+    @Body() body: unknown,
+    @ActiveUser() user: TokenPayload,
+  ) {
+    return this.quizCmsService.acceptDraftQuestion(draftId, user.userId, Number(questionIndex), body)
+  }
+
+  @Patch('drafts/:draftId/questions/:questionIndex/reject')
+  rejectDraftQuestion(
+    @Param('draftId') draftId: string,
+    @Param('questionIndex') questionIndex: string,
+    @Body() body: unknown,
+    @ActiveUser() user: TokenPayload,
+  ) {
+    return this.quizCmsService.rejectDraftQuestion(draftId, user.userId, Number(questionIndex), body)
+  }
+
+  @Patch('drafts/:draftId/questions/:questionIndex')
+  updateDraftQuestion(
+    @Param('draftId') draftId: string,
+    @Param('questionIndex') questionIndex: string,
+    @Body() body: UpdateDraftQuestionDto,
+    @ActiveUser() user: TokenPayload,
+  ) {
+    return this.quizCmsService.updateDraftQuestion(draftId, user.userId, Number(questionIndex), body)
   }
 
   @Patch('drafts/:draftId/reject')

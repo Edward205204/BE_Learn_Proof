@@ -52,6 +52,14 @@ export class EnrollmentRepo {
     })
   }
 
+  async getEnrolledUserIdsByCourse(courseId: string): Promise<string[]> {
+    const enrollments = await this.txHost.tx.enrollment.findMany({
+      where: { courseId },
+      select: { userId: true },
+    })
+    return enrollments.map((e) => e.userId)
+  }
+
   upsertManyEnrollments(userId: string, courseIds: string[]) {
     return this.txHost.tx.enrollment.createMany({
       data: courseIds.map((courseId) => ({ userId, courseId })),

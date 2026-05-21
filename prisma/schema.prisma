@@ -108,6 +108,7 @@ model User {
   heartbeats     LessonHeartbeat[]
   quizAttempts   QuizAttempt[]
   auditLogs      AuditLog[]
+  notifications  Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -564,6 +565,7 @@ enum AiJobType {
   LESSON_INDEX
   QUIZ_GENERATION
   RAG_ASK
+  LESSON_CONTENT_GENERATION
 }
 
 enum AiJobStatus {
@@ -577,6 +579,13 @@ enum QuizDraftStatus {
   DRAFT_AI
   PUBLISHED
   REJECTED
+}
+
+enum NotificationType {
+  PAYMENT
+  COURSE_UPDATE
+  MESSAGE
+  SYSTEM
 }
 
 model LessonChunk {
@@ -606,6 +615,7 @@ model AiJob {
   latencyMs   Int?
   retries     Int         @default(0)
   error       String?     @db.Text
+  result      Json?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   quizDrafts  QuizDraft[]
@@ -631,4 +641,19 @@ model QuizDraft {
 
   @@index([lessonId])
   @@index([status])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
 }
