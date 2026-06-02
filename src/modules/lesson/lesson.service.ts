@@ -204,6 +204,43 @@ export class LessonService {
     const enrolled = await this.lessonRepo.checkEnrolled(userId, courseId)
     if (!enrolled) throw new ForbiddenException('Bạn chưa đăng ký khóa học này')
 
+    const lesson = await this.lessonRepo.findLessonDetail(lessonId)
+    if (!lesson) throw new LessonNotFoundException()
+
+    if (lesson.type === LessonType.QUIZ) {
+      const quiz = await this.prisma.quiz.findFirst({
+        where: { lessonId: lesson.id },
+        select: { id: true },
+      })
+      if (!quiz) {
+        throw new BadRequestException('Bài học dạng Quiz này chưa có câu hỏi nào')
+      }
+
+      const requirePass = process.env.REQUIRE_QUIZ_PASS_THRESHOLD !== 'false'
+      if (requirePass) {
+        const passingAttempt = await this.prisma.quizAttempt.findFirst({
+          where: {
+            userId,
+            quizId: quiz.id,
+            score: { gte: 8.0 },
+          },
+        })
+        if (!passingAttempt) {
+          throw new BadRequestException('Bạn cần trả lời đúng ít nhất 80% số câu hỏi để hoàn thành bài test này')
+        }
+      } else {
+        const anyAttempt = await this.prisma.quizAttempt.findFirst({
+          where: {
+            userId,
+            quizId: quiz.id,
+          },
+        })
+        if (!anyAttempt) {
+          throw new BadRequestException('Bạn cần thực hiện bài test trước khi hoàn thành bài học')
+        }
+      }
+    }
+
     // Kiểm tra quy tắc 3 phút
     const progress = await this.lessonRepo.getProgress(userId, lessonId)
     if (progress) {

@@ -4,7 +4,7 @@ services:
     container_name: learn-proof-db
     restart: always
     ports:
-      - '5432:5432'
+      - '5433:5432'
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: '123'
@@ -16,7 +16,7 @@ services:
     container_name: learn-proof-redis
     restart: always
     ports:
-      - '6379:6379'
+      - '6380:6379'
     volumes:
       - redis_data:/data
 

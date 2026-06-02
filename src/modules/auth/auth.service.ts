@@ -40,7 +40,28 @@ export class AuthService {
     private readonly hashingService: HashingService,
     private readonly mailService: MailService,
     private readonly systemSettingsService: SystemSettingsService,
-  ) {}
+  ) {
+    // Tự động khởi tạo tài khoản admin từ seed nếu chưa tồn tại trong database (không cần chạy lại seed)
+    setTimeout(async () => {
+      try {
+        const adminEmail = 't.vinh.1109z@gmail.com'
+        const exists = await this.authRepo.findUserUnique({ email: adminEmail })
+        if (!exists) {
+          const hashedPassword = await this.hashingService.hash('Vinh11092004@')
+          await this.authRepo.createUser({
+            email: adminEmail,
+            password: hashedPassword,
+            fullName: 'Admin',
+            role: Role.ADMIN,
+            provider: 'LOCAL',
+          })
+          console.log(`[AuthService] Tự động tạo tài khoản Admin từ seed thành công: ${adminEmail}`)
+        }
+      } catch (err: any) {
+        console.error('[AuthService] Lỗi khi tự động tạo tài khoản Admin:', err.message)
+      }
+    }, 2000)
+  }
 
   async generateAndSaveTokens(payload: { userId: string; role: Role }) {
     const [accessToken, refreshToken] = await this.tokenService.generateTokens({

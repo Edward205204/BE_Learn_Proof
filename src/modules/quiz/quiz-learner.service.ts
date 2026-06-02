@@ -43,18 +43,19 @@ export class QuizLearnerService {
       }
     })
 
-    const score = (correctCount / totalQuestions) * 10
+    const gradedTotal = Math.min(20, totalQuestions)
+    const score = (correctCount / gradedTotal) * 10
 
     const result = await this.quizRepo.createQuizAttempt({
       quizId,
       userId,
       score,
       correct: correctCount,
-      total: totalQuestions,
+      total: gradedTotal,
     })
 
     return {
-      totalQuestions,
+      totalQuestions: gradedTotal,
       correctCount,
       score: score.toFixed(2),
       resultId: result.id,

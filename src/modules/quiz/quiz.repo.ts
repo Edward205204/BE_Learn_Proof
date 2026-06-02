@@ -216,8 +216,8 @@ export class QuizRepo {
     })
   }
 
-  findQuizForLearnerByLessonId(lessonId: string) {
-    return this.txHost.tx.quiz.findFirst({
+  async findQuizForLearnerByLessonId(lessonId: string) {
+    const quiz = await this.txHost.tx.quiz.findFirst({
       where: { lessonId },
       select: {
         id: true,
@@ -238,6 +238,26 @@ export class QuizRepo {
         },
       },
     })
+
+    if (!quiz) return null
+
+    const questions = quiz.questions
+    if (questions.length <= 20) {
+      return quiz
+    }
+
+    const shuffled = [...questions]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      const temp = shuffled[i]
+      shuffled[i] = shuffled[j]
+      shuffled[j] = temp
+    }
+
+    return {
+      ...quiz,
+      questions: shuffled.slice(0, 20),
+    }
   }
 
   findQuizByLessonId(lessonId: string) {
