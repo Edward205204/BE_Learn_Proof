@@ -195,8 +195,17 @@ export class LessonService {
       }
     }
 
+    // Với bài VIDEO / TEXT: lấy nội dung qua strategy, sau đó đính kèm quiz tổng kết (nếu có)
     const strategy = this.registry.resolve(lesson.type)
-    return strategy.get(lesson)
+    const lessonPayload = await strategy.get(lesson)
+
+    // Quiz đính kèm bài blog/video (gen bởi AI từ CMS) — ẩn đáp án đúng với learner
+    const reviewQuiz = await this.quizLearnerService.getQuizForLesson(lesson.id)
+
+    return {
+      ...lessonPayload,
+      reviewQuiz: reviewQuiz ?? null,
+    }
   }
 
   @Transactional()
