@@ -424,11 +424,18 @@ export class CourseRepo {
       )
     }
 
+    const heroImageSetting = await this.txHost.tx.systemSetting.findUnique({
+      where: { key: 'LANDING_HERO_IMAGE' },
+    })
+    const heroImage =
+      heroImageSetting && typeof heroImageSetting.value === 'string' ? heroImageSetting.value : null
+
     return {
       trending: await attachAnalytics(trending),
       topSelling: await attachAnalytics(topSelling),
       newest: await attachAnalytics(newest),
       topRated: await attachAnalytics(topRated),
+      heroImage,
     }
   }
 

@@ -176,6 +176,7 @@ export const HomeSectionsResponseSchema = z.object({
   topSelling: z.array(HomeCourseCardSchema), // Top 10 totalStudents
   newest: z.array(HomeCourseCardSchema), // 5 mới nhất
   topRated: z.array(HomeCourseCardSchema), // Top 5 avgRating
+  heroImage: z.string().nullable().optional(),
 })
 
 export const CategoryWithCountSchema = z.object({
